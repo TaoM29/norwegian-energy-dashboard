@@ -5,7 +5,7 @@
 
 Minimal, well-documented Streamlit dashboard for the IND320 “Data to Decision” course.  
 **Live app:** https://ind320-project-work-nonewthing.streamlit.app  
-**Repo:** https://github.com/TaoM29/IND320-project-work
+**Repo:** https://github.com/TaoM29/IND320-dashboard-basics
 
 ---
 
@@ -41,7 +41,7 @@ Minimal, well-documented Streamlit dashboard for the IND320 “Data to Decision�
 - https://ind320-project-work-nonewthing.streamlit.app
 
 ## GitHub repository
-- https://github.com/TaoM29/IND320-project-work
+- https://github.com/TaoM29/IND320-dashboard-basics
 
 ## Run locally
 ```bash
