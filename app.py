@@ -1,33 +1,27 @@
 
 import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
+from data_loader import load_data
 
-st.set_page_config(page_title="IND320 – Dashboard Basics", page_icon="📊", layout="centered")
+st.set_page_config(page_title="IND320 – Project Work (Part 1)", page_icon="📊", layout="wide")
 
-st.title("📊 IND320: Minimum Working App")
-st.caption("Deployed from GitHub • Streamlit Cloud")
+st.title("📊 IND320 — Project Work, Part 1")
+st.caption("Use the sidebar to navigate between pages.")
 
-# Tiny dataset
-df = pd.DataFrame({
-    "category": ["A", "B", "C", "D"],
-    "value": [12, 7, 19, 4]
-})
+# Sidebar navigation
+with st.sidebar:
+    st.header("Navigate")
+    st.page_link("app.py", label="Home", icon="🏠")
+    st.page_link("pages/02_Data_Table.py", label="Data Table", icon="📊")
+    st.page_link("pages/03_Explorer.py", label="Explorer", icon="📈")
+    st.page_link("pages/04_About.py", label="About", icon="ℹ️")
+    st.markdown("---")
+    st.caption("Data is cached for speed.")
 
-st.subheader("Data preview")
-st.dataframe(df, use_container_width=True)
+# Quick data preview
+df = load_data()
+st.subheader("Quick preview of data")
+st.dataframe(df.head(), use_container_width=True)
 
-st.subheader("Pick a category")
-choice = st.selectbox("Category", df["category"])
-
-st.subheader("Bar chart")
-fig, ax = plt.subplots()
-ax.bar(df["category"], df["value"])
-ax.set_xlabel("Category")
-ax.set_ylabel("Value")
-st.pyplot(fig)
-
-st.success(f"You selected: {choice}")
 
 
 
