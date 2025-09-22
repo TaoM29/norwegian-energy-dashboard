@@ -16,17 +16,6 @@ Minimal, well-documented Streamlit dashboard for the IND320 “Data to Decision�
 - `part-1.ipynb` — Jupyter notebook: data loading, quick EDA, single-column plots, and all-columns (normalized) plot.
 - `requirements.txt` — minimal dependencies (`streamlit`, `pandas`, `matplotlib`).
 
-Project structure:
-IND320-project-work/
-├─ data/
-│ └─ open-meteo-subset.csv
-├─ .gitignore
-├─ app.py
-├─ data_loader.py
-├─ part-1.ipynb
-├─ README.md
-└─ requirements.txt
-
 
 ## How the app works (requirements → implementation)
 
