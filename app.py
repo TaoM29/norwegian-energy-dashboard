@@ -7,12 +7,16 @@ from data_loader import load_data
 
 st.set_page_config(page_title="IND320 – Project Work (Part 1)", page_icon="📊", layout="wide")
 
+
+
 # ---------- Sidebar "pages" ----------
 with st.sidebar:
     st.header("Navigate")
     page = st.radio("Go to", ["Home", "Data Table", "Explorer", "About"], index=0, label_visibility="collapsed")
     st.markdown("---")
     st.caption("Data is cached for speed.")
+
+
 
 # ---------- Load data once ----------
 df = load_data()  # cached
@@ -21,6 +25,7 @@ if "time" in df.columns:
 else:
     st.error("CSV must contain a 'time' column.")
     st.stop()
+
 
 # Helpers
 def first_month_slice(_df: pd.DataFrame) -> tuple[pd.DataFrame, str, pd.Timestamp, pd.Timestamp]:
@@ -33,12 +38,16 @@ def extract_unit(colname: str) -> str:
     m = re.search(r"\(([^)]+)\)", colname)
     return m.group(1) if m else ""
 
+
+
 # ---------- Page: Home ----------
 if page == "Home":
     st.title("📊 IND320 — Project Work, Part 1")
     st.caption("Use the sidebar to navigate between pages.")
     st.subheader("Quick preview of data")
     st.dataframe(df.head(), use_container_width=True)
+
+
 
 # ---------- Page: Data Table ----------
 elif page == "Data Table":
@@ -85,6 +94,8 @@ elif page == "Data Table":
         },
     )
 
+
+
 # ---------- Page: Explorer ----------
 elif page == "Explorer":
     st.title("📈 Explorer")
@@ -115,6 +126,7 @@ elif page == "Explorer":
 
     fig, ax = plt.subplots(figsize=(11, 4))
     if choice == "All columns":
+        
         # normalize to share one y-axis
         norm = (dff[num_cols] - dff[num_cols].min()) / (dff[num_cols].max() - dff[num_cols].min())
         norm.plot(ax=ax, linewidth=0.9)
@@ -131,6 +143,8 @@ elif page == "Explorer":
         ax.set_ylabel(unit or choice)
         ax.grid(True, linewidth=0.3)
     st.pyplot(fig)
+
+
 
 # ---------- Page: About ----------
 else:
