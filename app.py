@@ -10,12 +10,12 @@ st.caption("Use the sidebar to navigate between pages.")
 # Sidebar navigation
 with st.sidebar:
     st.header("Navigate")
-    st.page_link("app.py", label="Home", icon="🏠")
     st.page_link("pages/02_Data_Table.py", label="Data Table", icon="📊")
     st.page_link("pages/03_Explorer.py", label="Explorer", icon="📈")
     st.page_link("pages/04_About.py", label="About", icon="ℹ️")
     st.markdown("---")
     st.caption("Data is cached for speed.")
+
 
 # Quick data preview
 df = load_data()
