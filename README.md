@@ -1,7 +1,5 @@
 
-# IND320 – Project Work
-
-# IND320 — Dashboard Basics (Part 1)
+# IND320 – Project Work - Dashboards
 
 Minimal, well-documented Streamlit dashboard for the IND320 “Data to Decision” course.  
 **Live app:** https://ind320-project-work-nonewthing.streamlit.app  
