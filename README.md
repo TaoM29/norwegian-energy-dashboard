@@ -47,3 +47,6 @@ Minimal, well-documented Streamlit dashboard for the IND320 â€œData to Decisionâ
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
+
+## Reports
+Export notebooks to PDF into **pdf/** (e.g., pdf/part-1.pdf, pdf/part-2.pdf).
