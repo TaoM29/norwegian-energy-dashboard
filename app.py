@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import streamlit as st
 from data_loader import load_data
 
-st.set_page_config(page_title="IND320 – Project Work (Part 1)", page_icon="📊", layout="wide")
 
+st.set_page_config(page_title="Dashboard Basics – Weather Data", layout="wide")
 
 
 # ---------- Sidebar "pages" ----------

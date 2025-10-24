@@ -1,7 +1,5 @@
 
-# IND320 – Project Work
-
-# IND320 — Dashboard Basics (Part 1)
+# IND320 – Project Work - Dashboards
 
 Minimal, well-documented Streamlit dashboard for the IND320 “Data to Decision” course.  
 **Live app:** https://ind320-project-work-nonewthing.streamlit.app  
@@ -47,3 +45,6 @@ Minimal, well-documented Streamlit dashboard for the IND320 “Data to Decision�
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
+
+## Reports
+Export notebooks to PDF into **pdf/** (e.g., pdf/part-1.pdf, pdf/part-2.pdf).
