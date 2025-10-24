@@ -3,10 +3,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pymongo import MongoClient
 
-st.set_page_config(page_title="Elhub – Energy Production", layout="wide")
-st.title("Elhub – Enery Production")
 
-st.set_page_config(page_title="Page 4 – Production (2021)", layout="wide")
+st.set_page_config(page_title="Elhub – Energy Production", layout="wide")
+st.title("Elhub – Energy Production")
+
 
 # ---- Secrets / Connection (set in .streamlit/secrets.toml or Streamlit Cloud Secrets) ----
 MONGO_URI = st.secrets["MONGO_URI"]
