@@ -1,43 +1,77 @@
+# pages/energy_production.py
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from pymongo import MongoClient
-
+from pymongo.errors import PyMongoError
+from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 
 st.set_page_config(page_title="Elhub – Energy Production", layout="wide")
 st.title("Elhub – Energy Production")
 
+# ---- Mongo helpers ----------------------------------------------------------
+def _ensure_auth_source(uri: str) -> str:
+    """Add/ensure authSource=admin + some safe defaults."""
+    p = urlparse(uri)
+    q = dict(parse_qsl(p.query))
+    q.setdefault("authSource", "admin")
+    q.setdefault("retryWrites", "true")
+    q.setdefault("w", "majority")
+    q.setdefault("appName", "Cluster007")
+    new_q = urlencode(q)
+    return urlunparse((p.scheme, p.netloc, p.path, p.params, new_q, p.fragment))
 
-# ---- Secrets / Connection (set in .streamlit/secrets.toml or Streamlit Cloud Secrets) ----
-MONGO_URI = st.secrets["MONGO_URI"]
-MONGO_DB  = st.secrets.get("MONGO_DB", "ind320")
-COLL_HOURLY = "prod_hour"
-COLL_YEARLY = "prod_year_totals"
+def _mask(uri: str) -> str:
+    """Mask password in any debug/error output."""
+    try:
+        p = urlparse(uri)
+        if p.password:
+            netloc = f"{p.username}:***@{p.hostname}"
+            if p.port:
+                netloc += f":{p.port}"
+            return urlunparse((p.scheme, netloc, p.path, p.params, p.query, p.fragment))
+    except Exception:
+        pass
+    return uri
 
 @st.cache_resource
 def get_db():
-    client = MongoClient(MONGO_URI)
-    client.admin.command("ping")
-    return client[MONGO_DB]
+    # Only read from Streamlit secrets (avoid ENV overrides)
+    uri = st.secrets.get("MONGO_URI", "").strip()
+    if not uri:
+        raise RuntimeError("MONGO_URI is missing in st.secrets")
 
+    uri = _ensure_auth_source(uri)
+    try:
+        client = MongoClient(uri, serverSelectionTimeoutMS=8000)
+        _ = client.server_info()      # forces connect & auth
+        client.admin.command("ping")  # explicit ping
+        return client[st.secrets.get("MONGO_DB", "ind320")]
+    except PyMongoError as e:
+        st.error(f"Mongo auth/connect failed. URI: {_mask(uri)}\n{e}")
+        raise
+
+# ---- Collections ------------------------------------------------------------
 db = get_db()
-hour = db[COLL_HOURLY]
-year = db[COLL_YEARLY]
+hour = db["prod_hour"]
+year = db["prod_year_totals"]
 
-# ---- Controls data ----
+# ---- Controls data ----------------------------------------------------------
 areas = sorted(hour.distinct("price_area"))
 groups_all = sorted(hour.distinct("production_group"))
 months = pd.period_range("2021-01", "2021-12", freq="M")
+month_labels = [m.strftime("%Y-%m") for m in months]
 
-st.title("Production by Area & Group (2021)")
+PAGE = "p4"  # unique key prefix for this page
 
+st.subheader("Production by Area & Group (2021)")
 left, right = st.columns(2)
 
-# ===================== LEFT COLUMN: radio + pie =====================
+# ---------------------- LEFT: radio + pie (yearly totals) --------------------
 with left:
-    pa = st.radio("Choose price area", areas, index=0, horizontal=True)
+    pa = st.radio("Choose price area", areas, index=0, horizontal=True, key=f"{PAGE}_area")
 
-    # Prefer pre-aggregated totals; fallback to on-the-fly aggregation if missing
+    # Prefer pre-aggregated totals; fallback to on-the-fly aggregation
     totals = list(year.find({"price_area": pa}, {"_id": 0}))
     if not totals:
         pipeline = [
@@ -49,61 +83,51 @@ with left:
         totals = list(hour.aggregate(pipeline))
 
     df_tot = pd.DataFrame(totals)
-
     if df_tot.empty:
         st.info(f"No data available for price area **{pa}**.")
     else:
-        fig = plt.figure()
-        plt.pie(
-            df_tot["total_kwh_2021"],
-            labels=df_tot["production_group"],
-            autopct="%1.1f%%",
-            startangle=90,
-        )
-        plt.title(f"Total Production in 2021 – {pa}")
-        plt.axis("equal")
-        st.pyplot(fig)
+        fig1, ax1 = plt.subplots()
+        ax1.pie(df_tot["total_kwh_2021"], labels=df_tot["production_group"],
+                autopct="%1.1f%%", startangle=90)
+        ax1.set_title(f"Total Production in 2021 – {pa}")
+        ax1.axis("equal")
+        st.pyplot(fig1, clear_figure=True)
+        plt.close(fig1)
 
-# ===================== RIGHT COLUMN: pills + month + line =====================
+# ---------------- RIGHT: pills/multiselect + month + line (hourly) -----------
 with right:
-    # st.pills is new; if not available in your Streamlit version, fall back to multiselect
+    # st.pills if available; else fallback to multiselect
     try:
         selected_groups = st.pills(
             "Production groups",
             groups_all,
             selection_mode="multi",
             default=groups_all,
+            key=f"{PAGE}_groups",
         )
     except Exception:
-        selected_groups = st.multiselect("Production groups", groups_all, default=groups_all)
+        selected_groups = st.multiselect(
+            "Production groups", groups_all, default=groups_all, key=f"{PAGE}_groups"
+        )
 
-    month_label = st.selectbox("Month", [m.strftime("%Y-%m") for m in months], index=0)
-    y = int(month_label[:4])
-    m = int(month_label[5:7])
-
+    month_label = st.selectbox("Month", month_labels, index=0, key=f"{PAGE}_month")
+    y = int(month_label[:4]); m = int(month_label[5:7])
     start = pd.Timestamp(year=y, month=m, day=1, tz="UTC")
     end = (start + pd.offsets.MonthEnd(1)).to_pydatetime()
 
-    query = {
-        "price_area": pa,
-        "start_time": {"$gte": start.to_pydatetime(), "$lte": end},
-    }
+    query = {"price_area": pa, "start_time": {"$gte": start.to_pydatetime(), "$lte": end}}
     if selected_groups:
         query["production_group"] = {"$in": selected_groups}
 
-    rows = list(
-        hour.find(
-            query,
-            {"_id": 0, "production_group": 1, "start_time": 1, "quantity_kwh": 1},
-        )
-    )
+    rows = list(hour.find(
+        query, {"_id": 0, "production_group": 1, "start_time": 1, "quantity_kwh": 1}
+    ))
 
     if not rows:
         st.info(f"No hourly data for **{pa}** in **{month_label}** with current filters.")
     else:
         df_hour = pd.DataFrame(rows)
         df_hour["start_time"] = pd.to_datetime(df_hour["start_time"], utc=True)
-
         pivot = (
             df_hour.pivot_table(
                 index="start_time",
@@ -113,31 +137,30 @@ with right:
             )
             .sort_index()
         )
-
-        # Keep only chosen groups (safety)
         if selected_groups:
             pivot = pivot[[c for c in pivot.columns if c in selected_groups]]
 
-        fig2 = plt.figure()
+        fig2, ax2 = plt.subplots()
         for col in pivot.columns:
-            plt.plot(pivot.index, pivot[col], label=col)
-
-        plt.title(f"Hourly Production – {pa} – {month_label}")
-        plt.xlabel("Time (UTC)")
-        plt.ylabel("kWh")
-        plt.legend(ncols=2, loc="upper left")
+            ax2.plot(pivot.index, pivot[col], label=col)
+        ax2.set_title(f"Hourly Production – {pa} – {month_label}")
+        ax2.set_xlabel("Time (UTC)")
+        ax2.set_ylabel("kWh")
+        ax2.legend(ncols=2, loc="upper left")
         plt.tight_layout()
-        st.pyplot(fig2)
+        st.pyplot(fig2, clear_figure=True)
+        plt.close(fig2)
 
-# ===================== EXPANDER =====================
+# ----------------------------- Expander --------------------------------------
 with st.expander("Data source & notes"):
     st.markdown(
         """
 - **Source:** Elhub energy-data API (`PRODUCTION_PER_GROUP_MBA_HOUR`), curated in a Jupyter Notebook.
 - **Fields kept:** `priceArea`, `productionGroup`, `startTime` (UTC), `quantityKwh`.
-- **Storage:** MongoDB Atlas – database `ind320`, collections:
-  - `prod_hour` (hourly curated rows)
-  - `prod_year_totals` (yearly totals per area & group)
-- This page reads directly from MongoDB using credentials stored in **Streamlit secrets**.
+- **Storage:** MongoDB Atlas – database `ind320`  
+  • `prod_hour` (hourly curated rows)  
+  • `prod_year_totals` (yearly totals per area & group)  
+- Credentials are read from **Streamlit secrets**; never hard-coded or read from environment variables.
 """
     )
+
