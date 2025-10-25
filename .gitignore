@@ -210,3 +210,5 @@ __marimo__/
 data/*.csv
 .streamlit/secrets.toml
 data/*.csv
+.streamlit/secrets.toml
+data/*.csv
