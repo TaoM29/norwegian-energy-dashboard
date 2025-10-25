@@ -6,6 +6,12 @@ from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 
+import streamlit as st
+if st.button("Reset DB cache"):
+    st.cache_resource.clear()
+    st.success("DB cache cleared – press Rerun")
+
+
 st.set_page_config(page_title="Elhub – Energy Production", layout="wide")
 st.title("Elhub – Energy Production")
 

@@ -9,7 +9,7 @@ from data_loader import load_data
 st.set_page_config(page_title="Dashboard Basics – Weather Data", layout="wide")
 
 
-# ---------- Sidebar "pages" ----------
+# Sidebar "pages" 
 with st.sidebar:
     st.header("Navigate")
     page = st.radio("Go to", ["Home", "Data Table", "Explorer", "About"], index=0, label_visibility="collapsed")
@@ -18,7 +18,7 @@ with st.sidebar:
 
 
 
-# ---------- Load data once ----------
+# Load data once 
 df = load_data()  # cached
 if "time" in df.columns:
     df = df.dropna(subset=["time"]).sort_values("time")
@@ -40,16 +40,16 @@ def extract_unit(colname: str) -> str:
 
 
 
-# ---------- Page: Home ----------
+# Page: Home
 if page == "Home":
-    st.title("📊 IND320 — Project Work, Part 1")
+    st.title("📊 Dashboard Basics – Weather Data, Part 1")
     st.caption("Use the sidebar to navigate between pages.")
     st.subheader("Quick preview of data")
     st.dataframe(df.head(), use_container_width=True)
 
 
 
-# ---------- Page: Data Table ----------
+# Page: Data Table 
 elif page == "Data Table":
     st.title("📊 Data Table")
     st.caption("One row per variable. The mini line chart shows the FIRST calendar month of the series.")
@@ -96,7 +96,7 @@ elif page == "Data Table":
 
 
 
-# ---------- Page: Explorer ----------
+# Page: Explorer 
 elif page == "Explorer":
     st.title("📈 Explorer")
     st.caption("Select a column (or all) and a month range to plot. Data is read from the local CSV and cached.")
@@ -154,7 +154,7 @@ else:
 **Course:** IND320 – Project Work, Part 1  
 **Data:** `data/open-meteo-subset.csv`  
 **App:** https://ind320-project-work-nonewthing.streamlit.app  
-**Repo:** https://github.com/TaoM29/IND320-project-work
+**Repo:** https://github.com/TaoM29/IND320-dashboard-basics
 
 This app includes four pages with sidebar navigation:
 - Home (data preview)
