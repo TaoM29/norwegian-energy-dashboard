@@ -6,16 +6,33 @@ from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 
-import streamlit as st
+# --------------------------------------------------------------------------------------
+# Page config + quick cache reset
+# --------------------------------------------------------------------------------------
+st.set_page_config(page_title="Elhub – Energy Production", layout="wide")
+st.title("Elhub – Energy Production")
+
 if st.button("Reset DB cache"):
     st.cache_resource.clear()
     st.success("DB cache cleared – press Rerun")
 
+# --------------------------------------------------------------------------------------
+# Consistent colors per production group (used by BOTH pie and line plots)
+# --------------------------------------------------------------------------------------
+GROUP_COLORS = {
+    "hydro":   "#4E79A7",  # blue
+    "wind":    "#59A14F",  # green
+    "solar":   "#EDC948",  # yellow
+    "thermal": "#E15759",  # red
+    "nuclear": "#B07AA1",  # purple
+    "other":   "#BAB0AC",  # gray
+}
+def _colors_for(labels):
+    return [GROUP_COLORS.get(x, "#999999") for x in labels]
 
-st.set_page_config(page_title="Elhub – Energy Production", layout="wide")
-st.title("Elhub – Energy Production")
-
-# ---- Mongo helpers ----------------------------------------------------------
+# --------------------------------------------------------------------------------------
+# Mongo helpers
+# --------------------------------------------------------------------------------------
 def _ensure_auth_source(uri: str) -> str:
     """Add/ensure authSource=admin + some safe defaults."""
     p = urlparse(uri)
@@ -57,12 +74,13 @@ def get_db():
         st.error(f"Mongo auth/connect failed. URI: {_mask(uri)}\n{e}")
         raise
 
-# ---- Collections ------------------------------------------------------------
+# --------------------------------------------------------------------------------------
+# Collections & control data
+# --------------------------------------------------------------------------------------
 db = get_db()
 hour = db["prod_hour"]
 year = db["prod_year_totals"]
 
-# ---- Controls data ----------------------------------------------------------
 areas = sorted(hour.distinct("price_area"))
 groups_all = sorted(hour.distinct("production_group"))
 months = pd.period_range("2021-01", "2021-12", freq="M")
@@ -73,7 +91,9 @@ PAGE = "p4"  # unique key prefix for this page
 st.subheader("Production by Area & Group (2021)")
 left, right = st.columns(2)
 
-# ---------------------- LEFT: radio + pie (yearly totals) --------------------
+# --------------------------------------------------------------------------------------
+# LEFT: radio + pie (yearly totals)
+# --------------------------------------------------------------------------------------
 with left:
     pa = st.radio("Choose price area", areas, index=0, horizontal=True, key=f"{PAGE}_area")
 
@@ -92,15 +112,27 @@ with left:
     if df_tot.empty:
         st.info(f"No data available for price area **{pa}**.")
     else:
-        fig1, ax1 = plt.subplots()
-        ax1.pie(df_tot["total_kwh_2021"], labels=df_tot["production_group"],
-                autopct="%1.1f%%", startangle=90)
+        labels = df_tot["production_group"].tolist()
+        sizes  = df_tot["total_kwh_2021"].tolist()
+        colors = _colors_for(labels)
+
+        fig1, ax1 = plt.subplots(figsize=(6, 6))
+        # Simpler donut/pie: no slice labels to avoid clutter; legend shows percentages
+        ax1.pie(sizes, colors=colors, startangle=90)
         ax1.set_title(f"Total Production in 2021 – {pa}")
         ax1.axis("equal")
+
+        total = sum(sizes) if sizes else 0
+        legend_labels = [f"{g} — {100*s/total:.1f}%" if total else f"{g} — 0.0%" 
+                         for g, s in zip(labels, sizes)]
+        ax1.legend(legend_labels, loc="best", frameon=False)
+
         st.pyplot(fig1, clear_figure=True)
         plt.close(fig1)
 
-# ---------------- RIGHT: pills/multiselect + month + line (hourly) -----------
+# --------------------------------------------------------------------------------------
+# RIGHT: multiselect + month + line (hourly)
+# --------------------------------------------------------------------------------------
 with right:
     # st.pills if available; else fallback to multiselect
     try:
@@ -146,18 +178,27 @@ with right:
         if selected_groups:
             pivot = pivot[[c for c in pivot.columns if c in selected_groups]]
 
-        fig2, ax2 = plt.subplots()
+        fig2, ax2 = plt.subplots(figsize=(8, 4))
         for col in pivot.columns:
-            ax2.plot(pivot.index, pivot[col], label=col)
+            ax2.plot(
+                pivot.index,
+                pivot[col],
+                label=col,
+                linewidth=1.6,
+                color=GROUP_COLORS.get(col, "#999999"),
+            )
+
         ax2.set_title(f"Hourly Production – {pa} – {month_label}")
         ax2.set_xlabel("Time (UTC)")
         ax2.set_ylabel("kWh")
-        ax2.legend(ncols=2, loc="upper left")
-        plt.tight_layout()
+        ax2.legend(title="Group", ncols=2, loc="upper left", frameon=False)
+        fig2.tight_layout()
         st.pyplot(fig2, clear_figure=True)
         plt.close(fig2)
 
-# ----------------------------- Expander --------------------------------------
+# --------------------------------------------------------------------------------------
+# Expander: data source & notes
+# --------------------------------------------------------------------------------------
 with st.expander("Data source & notes"):
     st.markdown(
         """
@@ -169,4 +210,5 @@ with st.expander("Data source & notes"):
 - Credentials are read from **Streamlit secrets**; never hard-coded or read from environment variables.
 """
     )
+
 
