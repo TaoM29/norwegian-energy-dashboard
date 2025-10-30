@@ -12,9 +12,12 @@ from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 st.set_page_config(page_title="Elhub – Energy Production", layout="wide")
 st.title("Elhub – Energy Production")
 
-if st.button("Reset DB cache"):
-    st.cache_resource.clear()
-    st.success("DB cache cleared – press Rerun")
+col_a, col_b = st.columns([1, 3])
+with col_a:
+    if st.button("Reset caches"):
+        st.cache_resource.clear()
+        st.cache_data.clear()
+        st.success("All caches cleared — press Rerun")
 
 # --------------------------------------------------------------------------------------
 # Consistent colors per production group (used by BOTH pie and line plots)
@@ -34,7 +37,7 @@ def _colors_for(labels):
 # Mongo helpers
 # --------------------------------------------------------------------------------------
 def _ensure_auth_source(uri: str) -> str:
-    """Add/ensure authSource=admin + some safe defaults."""
+    """Add/ensure authSource=admin + safe defaults."""
     p = urlparse(uri)
     q = dict(parse_qsl(p.query))
     q.setdefault("authSource", "admin")
@@ -75,40 +78,69 @@ def get_db():
         raise
 
 # --------------------------------------------------------------------------------------
-# Collections & control data
+# Collections & control data (areas/groups rarely change, fetch once)
 # --------------------------------------------------------------------------------------
 db = get_db()
 hour = db["prod_hour"]
 year = db["prod_year_totals"]
 
-areas = sorted(hour.distinct("price_area"))
-groups_all = sorted(hour.distinct("production_group"))
+@st.cache_data(ttl=3600, show_spinner=False)
+def _distinct_values():
+    return sorted(hour.distinct("price_area")), sorted(hour.distinct("production_group"))
+
+areas, groups_all = _distinct_values()
 months = pd.period_range("2021-01", "2021-12", freq="M")
 month_labels = [m.strftime("%Y-%m") for m in months]
 
 PAGE = "p4"  # unique key prefix for this page
 
-st.subheader("Production by Area & Group (2021)")
-left, right = st.columns(2)
-
 # --------------------------------------------------------------------------------------
-# LEFT: radio + pie (yearly totals)
+# Cached data fetchers
 # --------------------------------------------------------------------------------------
-with left:
-    pa = st.radio("Choose price area", areas, index=0, horizontal=True, key=f"{PAGE}_area")
-
-    # Prefer pre-aggregated totals; fallback to on-the-fly aggregation
-    totals = list(year.find({"price_area": pa}, {"_id": 0}))
+@st.cache_data(ttl=600, show_spinner=False)
+def get_year_totals_df(price_area: str) -> pd.DataFrame:
+    """Return yearly totals for a price area as a DataFrame (cached)."""
+    totals = list(year.find({"price_area": price_area}, {"_id": 0}))
     if not totals:
         pipeline = [
-            {"$match": {"price_area": pa}},
+            {"$match": {"price_area": price_area}},
             {"$group": {"_id": "$production_group", "total_kwh_2021": {"$sum": "$quantity_kwh"}}},
             {"$project": {"production_group": "$_id", "total_kwh_2021": 1, "_id": 0}},
             {"$sort": {"total_kwh_2021": -1}},
         ]
         totals = list(hour.aggregate(pipeline))
+    return pd.DataFrame(totals)
 
-    df_tot = pd.DataFrame(totals)
+@st.cache_data(ttl=600, show_spinner=False)
+def get_hourly_df(price_area: str, year_: int, month_: int, groups: tuple[str, ...]) -> pd.DataFrame:
+    """Return hourly rows matching filters as a DataFrame (cached)."""
+    start = pd.Timestamp(year=year_, month=month_, day=1, tz="UTC")
+    end = (start + pd.offsets.MonthEnd(1)).to_pydatetime()
+
+    query = {"price_area": price_area, "start_time": {"$gte": start.to_pydatetime(), "$lte": end}}
+    if groups:
+        query["production_group"] = {"$in": list(groups)}  # Mongo expects list
+
+    rows = list(hour.find(query, {"_id": 0, "production_group": 1, "start_time": 1, "quantity_kwh": 1}))
+    if not rows:
+        return pd.DataFrame(columns=["production_group", "start_time", "quantity_kwh"])
+    df_hour = pd.DataFrame(rows)
+    df_hour["start_time"] = pd.to_datetime(df_hour["start_time"], utc=True)
+    return df_hour
+
+# --------------------------------------------------------------------------------------
+# UI
+# --------------------------------------------------------------------------------------
+st.subheader("Production by Area & Group (2021)")
+left, right = st.columns(2)
+
+# -------------------------------- LEFT: radio + pie (yearly totals) ----------
+with left:
+    pa = st.radio("Choose price area", areas, index=0, horizontal=True, key=f"{PAGE}_area")
+
+    with st.spinner("Loading yearly totals…"):
+        df_tot = get_year_totals_df(pa)
+
     if df_tot.empty:
         st.info(f"No data available for price area **{pa}**.")
     else:
@@ -117,24 +149,21 @@ with left:
         colors = _colors_for(labels)
 
         fig1, ax1 = plt.subplots(figsize=(6, 6))
-        # Simpler donut/pie: no slice labels to avoid clutter; legend shows percentages
+        # Simple pie + legend (percentages), colors consistent across the app
         ax1.pie(sizes, colors=colors, startangle=90)
         ax1.set_title(f"Total Production in 2021 – {pa}")
         ax1.axis("equal")
 
         total = sum(sizes) if sizes else 0
-        legend_labels = [f"{g} — {100*s/total:.1f}%" if total else f"{g} — 0.0%" 
+        legend_labels = [f"{g} — {100*s/total:.1f}%" if total else f"{g} — 0.0%"
                          for g, s in zip(labels, sizes)]
         ax1.legend(legend_labels, loc="best", frameon=False)
 
         st.pyplot(fig1, clear_figure=True)
         plt.close(fig1)
 
-# --------------------------------------------------------------------------------------
-# RIGHT: multiselect + month + line (hourly)
-# --------------------------------------------------------------------------------------
+# --------------------------- RIGHT: multiselect + month + line ----------------
 with right:
-    # st.pills if available; else fallback to multiselect
     try:
         selected_groups = st.pills(
             "Production groups",
@@ -150,22 +179,16 @@ with right:
 
     month_label = st.selectbox("Month", month_labels, index=0, key=f"{PAGE}_month")
     y = int(month_label[:4]); m = int(month_label[5:7])
-    start = pd.Timestamp(year=y, month=m, day=1, tz="UTC")
-    end = (start + pd.offsets.MonthEnd(1)).to_pydatetime()
 
-    query = {"price_area": pa, "start_time": {"$gte": start.to_pydatetime(), "$lte": end}}
-    if selected_groups:
-        query["production_group"] = {"$in": selected_groups}
+    # Cache key wants hashable types → tuple(sorted(...))
+    groups_key = tuple(sorted(selected_groups)) if selected_groups else tuple()
 
-    rows = list(hour.find(
-        query, {"_id": 0, "production_group": 1, "start_time": 1, "quantity_kwh": 1}
-    ))
+    with st.spinner("Loading hourly data…"):
+        df_hour = get_hourly_df(pa, y, m, groups_key)
 
-    if not rows:
+    if df_hour.empty:
         st.info(f"No hourly data for **{pa}** in **{month_label}** with current filters.")
     else:
-        df_hour = pd.DataFrame(rows)
-        df_hour["start_time"] = pd.to_datetime(df_hour["start_time"], utc=True)
         pivot = (
             df_hour.pivot_table(
                 index="start_time",
@@ -207,8 +230,10 @@ with st.expander("Data source & notes"):
 - **Storage:** MongoDB Atlas – database `ind320`  
   • `prod_hour` (hourly curated rows)  
   • `prod_year_totals` (yearly totals per area & group)  
+- Caching: database connection is cached as a **resource**; query results are cached as **data** for 10 minutes.
 - Credentials are read from **Streamlit secrets**; never hard-coded or read from environment variables.
 """
     )
+
 
 
