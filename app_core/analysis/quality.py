@@ -1,5 +1,5 @@
 
-# qc_utils.py
+# quality.py
 import numpy as np, pandas as pd, matplotlib.pyplot as plt
 from scipy.fft import dct, idct
 from sklearn.neighbors import LocalOutlierFactor

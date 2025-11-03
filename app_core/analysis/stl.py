@@ -1,5 +1,5 @@
 
-# stl_utils.py
+# stl.py
 import pandas as pd, matplotlib.pyplot as plt
 from statsmodels.tsa.seasonal import STL
 

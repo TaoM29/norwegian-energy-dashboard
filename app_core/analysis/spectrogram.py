@@ -1,5 +1,5 @@
 
-# spec_utils.py
+# spectrogram.py
 import numpy as np, pandas as pd, matplotlib.pyplot as plt, matplotlib.dates as mdates
 from scipy.signal import spectrogram
 

@@ -1,5 +1,5 @@
 
-# weather_loader.py
+# weather.py
 import pandas as pd, requests, streamlit as st
 
 AREA_COORDS = {
