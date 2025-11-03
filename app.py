@@ -42,7 +42,7 @@ def extract_unit(colname: str) -> str:
 
 # Page: Home
 if page == "Home":
-    st.title("📊 Dashboard Basics – Weather Data, Part 1")
+    st.title("📊 Dashboard Basics – Weather Data ")
     st.caption("Use the sidebar to navigate between pages.")
     st.subheader("Quick preview of data")
     st.dataframe(df.head(), use_container_width=True)
@@ -146,17 +146,16 @@ elif page == "Explorer":
 
 
 
-# ---------- Page: About ----------
+# Page: About 
 else:
     st.title("ℹ️ About")
     st.markdown(
         """
-**Course:** IND320 – Project Work, Part 1  
-**Data:** `data/open-meteo-subset.csv`  
+**Course:** IND320 – Data To Descision
 **App:** https://ind320-project-work-nonewthing.streamlit.app  
 **Repo:** https://github.com/TaoM29/IND320-dashboard-basics
 
-This app includes four pages with sidebar navigation:
+This page includes four pages with sidebar navigation:
 - Home (data preview)
 - Data Table (row-wise LineChartColumn for first month)
 - Explorer (plot with column select + month range slider)
