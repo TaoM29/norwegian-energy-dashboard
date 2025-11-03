@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 import streamlit as st
-from data_loader import load_data
+from app_core.loaders.data_io import load_data
 
 
 st.set_page_config(page_title="Dashboard Basics – Weather Data", layout="wide")

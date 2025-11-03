@@ -2,8 +2,9 @@
 # pages/03_Analysis_STL_Spectrogram.py (NEW A)
 import streamlit as st, pandas as pd
 from pathlib import Path
-from stl_utils import stl_decompose_elhub
-from spec_utils import plot_production_spectrogram
+from app_core.analysis.stl import stl_decompose_elhub
+from app_core.analysis.spectrogram  import plot_production_spectrogram
+
 
 st.title("Analysis — STL & Spectrogram")
 

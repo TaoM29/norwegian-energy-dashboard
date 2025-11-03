@@ -1,8 +1,8 @@
 
 # pages/06_Quality_Outliers_Anomalies.py
 import streamlit as st
-from weather_loader import load_openmeteo_era5
-from qc_utils import plot_temperature_outliers_dct, plot_precip_anomalies_lof
+from app_core.loaders.weather import load_openmeteo_era5
+from app_core.analysis.quality import plot_temperature_outliers_dct, plot_precip_anomalies_lof
 
 st.title("Data Quality — Outliers & Anomalies")
 

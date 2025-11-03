@@ -2,7 +2,7 @@
 # pages/04_Data_Table.py
 import streamlit as st
 import pandas as pd
-from weather_loader import load_openmeteo_era5
+from app_core.loaders.weather import load_openmeteo_era5
 
 st.title("Datatabell")
 st.caption("Én rad per variabel. Minilinjediagrammet viser den FØRSTE kalendermåneden i serien.")

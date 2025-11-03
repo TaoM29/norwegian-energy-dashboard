@@ -4,7 +4,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from weather_loader import load_openmeteo_era5
+from app_core.loaders.weather import load_openmeteo_era5
 
 st.title("Explorer")
 st.caption("Select a column (or all) and a month range to plot. Data is read from the Open-Meteo API and cached.")

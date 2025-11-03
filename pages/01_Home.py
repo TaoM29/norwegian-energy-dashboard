@@ -1,7 +1,7 @@
 
 # pages/01_Home.py
 import streamlit as st
-from weather_loader import load_openmeteo_era5
+from app_core.loaders.weather import load_openmeteo_era5
 
 st.title("Dashboard Basics – Weather Data")
 st.caption("Use the sidebar to navigate between pages.")
