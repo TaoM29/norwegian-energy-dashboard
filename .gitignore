@@ -212,3 +212,6 @@ data/*.csv
 data/*.csv
 .streamlit/secrets.toml
 data/*.csv
+# Allow these two data files for Cloud
+!data/open-meteo-subset.csv
+!data/elhub_prod_by_group_hour_2021.csv
