@@ -6,17 +6,14 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from pathlib import Path
 
-st.set_page_config(page_title="IND320 – Part 2 resub", layout="wide")
+st.set_page_config(page_title="IND320 – Part 2", layout="wide")
 
-# ─────────────────────────────────────────────────────────────
-# Sidebar navigation (4–5 clickable pages; page 4 = production)
-# ─────────────────────────────────────────────────────────────
+
+# Sidebar navigation - 5 clickable pages
 NAV = ["Home", "Data Table", "Explorer", "Energy production", "About"]
 page = st.sidebar.radio("Navigate", NAV, index=0)
 
-# ─────────────────────────────────────────────────────────────
 # Loaders (cached) — local CSVs only
-# ─────────────────────────────────────────────────────────────
 @st.cache_data(show_spinner=False)
 def load_weather_csv(path: Path) -> pd.DataFrame:
     """Part-1 dataset: data/open-meteo-subset.csv"""
@@ -102,9 +99,8 @@ def weather_month_labels(df: pd.DataFrame):
 def elhub_month_labels(df: pd.DataFrame):
     return (df["start_time"].dt.to_period("M").sort_values().unique().astype(str).tolist())
 
-# ─────────────────────────────────────────────────────────────
+
 # PAGE 1 — Home (weather preview)
-# ─────────────────────────────────────────────────────────────
 def page_home():
     st.title("Dashboard Basics – Weather Data, Part 1")
     st.caption("Use the sidebar to navigate between pages.")
@@ -112,9 +108,8 @@ def page_home():
     st.dataframe(WEATHER.head(20), use_container_width=True)
     st.sidebar.caption("Data is cached for speed.")
 
-# ─────────────────────────────────────────────────────────────
+
 # PAGE 2 — Data Table (weather) with inline sparklines
-# ─────────────────────────────────────────────────────────────
 def page_data_table():
     st.title("Data Table")
     st.caption("One row per variable. The mini line chart shows the FIRST calendar month of the series.")
@@ -149,9 +144,7 @@ def page_data_table():
         hide_index=True,
     )
 
-# ─────────────────────────────────────────────────────────────
 # PAGE 3 — Explorer (weather) with month range + all/one variable
-# ─────────────────────────────────────────────────────────────
 def page_explorer():
     st.title("Explorer")
     st.caption("Select a column (or all) and a month range to plot. Data is read from the local CSV and cached.")
@@ -189,9 +182,7 @@ def page_explorer():
     ax.grid(True, alpha=0.25)
     st.pyplot(fig, clear_figure=True)
 
-# ─────────────────────────────────────────────────────────────
 # PAGE 4 — Energy production (Elhub 2021)
-# ─────────────────────────────────────────────────────────────
 def page_energy():
     st.title("Elhub – Energy production (Page 4)")
     if st.button("Reset cache"):
@@ -242,7 +233,6 @@ def page_energy():
         p = pd.Period(month, freq="M")
         m_start = p.to_timestamp()
         m_end   = p.to_timestamp() + pd.offsets.MonthEnd(0)
-        # d_area["start_time"] already tz-naive (fixed in loader). Compare safely:
         d_month = d_area[
             (d_area["start_time"] >= m_start) &
             (d_area["start_time"] <= m_end) &
@@ -276,9 +266,8 @@ def page_energy():
                 ax.legend(loc="best", frameon=False); fig.tight_layout()
             st.pyplot(fig, clear_figure=True)
 
-# ─────────────────────────────────────────────────────────────
+
 # PAGE 5 — About
-# ─────────────────────────────────────────────────────────────
 def page_about():
     st.title("About (Part 2 resubmission)")
     st.markdown(
@@ -287,9 +276,8 @@ def page_about():
         "- Single sidebar with 4–5 clickable pages (no `pages/` folder), matching the instructor’s requirement.\n"
     )
 
-# ─────────────────────────────────────────────────────────────
+
 # Router
-# ─────────────────────────────────────────────────────────────
 if page == "Home":
     page_home()
 elif page == "Data Table":
