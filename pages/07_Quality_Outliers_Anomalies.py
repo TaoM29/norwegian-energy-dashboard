@@ -1,5 +1,5 @@
 
-# pages/06_Quality_Outliers_Anomalies.py
+# pages/07_Quality_Outliers_Anomalies.py
 import streamlit as st
 from app_core.loaders.weather import load_openmeteo_era5
 from app_core.analysis.quality import plot_temperature_outliers_dct, plot_precip_anomalies_lof

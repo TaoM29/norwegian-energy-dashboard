@@ -1,5 +1,5 @@
 
-# pages/02_Price_Area_Selector.py
+# pages/03_Price_Area_Selector.py
 import streamlit as st
 
 st.title("Choose Electricity Price Area")

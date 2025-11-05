@@ -1,5 +1,5 @@
 
-# pages/03_Analysis_STL_Spectrogram.py (NEW A)
+# pages/03_Analysis_STL_Spectrogram.py 
 import streamlit as st, pandas as pd
 from pathlib import Path
 from app_core.analysis.stl import stl_decompose_elhub

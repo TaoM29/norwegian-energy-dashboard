@@ -1,4 +1,5 @@
-# pages/energy_production.py
+
+# pages/02_Energy_Production.py
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -227,6 +228,3 @@ with st.expander("Data source & notes"):
 - Credentials are read from **Streamlit secrets**; never hard-coded or read from environment variables.
 """
     )
-
-
-
