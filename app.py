@@ -1,4 +1,5 @@
 
+from turtle import right
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -182,28 +183,59 @@ def page_explorer():
     ax.grid(True, alpha=0.25)
     st.pyplot(fig, clear_figure=True)
 
-# PAGE 4 — Energy production (Elhub 2021)
+
+
 def page_energy():
+    """Page 4 — Energy production (Elhub 2021 only)."""
     st.title("Elhub – Energy production (Page 4)")
+
+    # Optional cache reset
     if st.button("Reset cache"):
         st.cache_data.clear()
         st.success("Cache cleared.")
+
+    # Area selector
+    areas = sorted(ELHUB["price_area"].dropna().unique().tolist())
     colA, colB = st.columns([2, 2])
     with colA:
-        areas = sorted(ELHUB["price_area"].unique().tolist())
-        area = st.radio("Choose price area", areas, index=areas.index("NO1") if "NO1" in areas else 0, horizontal=True)
+        area = st.radio(
+            "Choose price area",
+            areas,
+            index=areas.index("NO1") if "NO1" in areas else 0,
+            horizontal=True,
+        )
+
+    # Area data, restricted to 2021 only 
     d_area = ELHUB[ELHUB["price_area"] == area].copy()
     if d_area.empty:
-        st.info("No data for this area."); return
+        st.info("No data for this area.")
+        return
+    d_area = d_area[d_area["start_time"].dt.year == 2021].copy()
+    if d_area.empty:
+        st.info("No 2021 data for this area.")
+        return
+
+    # Controls
     groups = sorted(d_area["production_group"].dropna().unique().tolist(), key=str.lower)
-    months = elhub_month_labels(d_area)
+    months = (
+        d_area["start_time"]
+        .dt.to_period("M")
+        .sort_values()
+        .unique()
+        .astype(str)
+        .tolist()
+    )  # guaranteed to be 2021-01..2021-12 if data is complete
+
     left, right = st.columns([7, 5], gap="large")
     with right:
         sel_groups = st.multiselect("Production groups", options=groups, default=groups)
         month = st.selectbox("Month", options=months, index=0)
+
     if not sel_groups:
-        st.info("Select at least one group."); return
-    # Annual Pie (left)
+        st.info("Select at least one group.")
+        return
+
+    # Annual Pie (left) 
     with left:
         d_annual = (
             d_area[d_area["production_group"].isin(sel_groups)]
@@ -211,6 +243,7 @@ def page_energy():
             .sum()
             .sort_values("quantity_kwh", ascending=False)
         )
+
         fig_pie, ax_pie = plt.subplots(figsize=(7.5, 7.5))
         colors = [color_for(g) for g in d_annual["production_group"]]
         wedges, texts, autotexts = ax_pie.pie(
@@ -225,55 +258,74 @@ def page_energy():
         ax_pie.axis("equal")
         ax_pie.set_title(f"Total Production in 2021 – {area}", fontsize=13, pad=10)
         for t in autotexts:
-            t.set_fontsize(10); t.set_weight("bold")
+            t.set_fontsize(10)
+            t.set_weight("bold")
         fig_pie.tight_layout()
         st.pyplot(fig_pie, clear_figure=True)
-    # Hourly line (right)
+
+    # Hourly line for selected month (right) 
     with right:
-        p = pd.Period(month, freq="M")
+        p = pd.Period(month, freq="M")  # from the 2021-only options above
         m_start = p.to_timestamp()
-        m_end   = p.to_timestamp() + pd.offsets.MonthEnd(0)
+        m_end = p.to_timestamp() + pd.offsets.MonthEnd(0)
+
         d_month = d_area[
-            (d_area["start_time"] >= m_start) &
-            (d_area["start_time"] <= m_end) &
-            (d_area["production_group"].isin(sel_groups))
+            (d_area["start_time"] >= m_start)
+            & (d_area["start_time"] <= m_end)
+            & (d_area["production_group"].isin(sel_groups))
         ].copy()
+
         st.caption(f"Hourly Production – {area} – {month}")
         if d_month.empty:
             st.info("No data for this month/selection.")
-        else:
-            pivot = (
-                d_month.pivot_table(index="start_time", columns="production_group",
-                                    values="quantity_kwh", aggfunc="sum")
-                .sort_index().fillna(0.0)
+            return
+
+        pivot = (
+            d_month.pivot_table(
+                index="start_time",
+                columns="production_group",
+                values="quantity_kwh",
+                aggfunc="sum",
             )
-            fig, ax = plt.subplots(figsize=(10.5, 4.2))
-            # subtle alternating day background
-            dates = pivot.index.normalize().unique()
-            for i, dt in enumerate(dates):
-                if i % 2 == 1:
-                    ax.axvspan(dt, dt + pd.Timedelta(days=1), color="#000", alpha=0.04, linewidth=0)
-            for g in pivot.columns:
-                ax.plot(pivot.index, pivot[g].values, label=g, linewidth=1.4, color=color_for(g))
-            ax.set_ylabel("kWh"); ax.set_xlabel("Time"); ax.grid(True, alpha=0.25)
-            ax.xaxis.set_major_locator(mdates.AutoDateLocator(minticks=6, maxticks=10))
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
-            fig.autofmt_xdate()
-            if len(pivot.columns) > 4:
-                ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1.0), frameon=False, title="Group")
-                fig.tight_layout(rect=[0, 0, 0.86, 1])
-            else:
-                ax.legend(loc="best", frameon=False); fig.tight_layout()
-            st.pyplot(fig, clear_figure=True)
+            .sort_index()
+            .fillna(0.0)
+        )
 
+        fig, ax = plt.subplots(figsize=(10.5, 4.2))
 
+        # subtle alternating day background
+        dates = pivot.index.normalize().unique()
+        for i, dt in enumerate(dates):
+            if i % 2 == 1:
+                ax.axvspan(dt, dt + pd.Timedelta(days=1), color="#000", alpha=0.04, linewidth=0)
+
+        # lines
+        for g in pivot.columns:
+            ax.plot(pivot.index, pivot[g].values, label=g, linewidth=1.4, color=color_for(g))
+
+        ax.set_ylabel("kWh")
+        ax.set_xlabel("Time")
+        ax.grid(True, alpha=0.25)
+        ax.xaxis.set_major_locator(mdates.AutoDateLocator(minticks=6, maxticks=10))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
+        fig.autofmt_xdate()
+
+        if len(pivot.columns) > 4:
+            ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1.0), frameon=False, title="Group")
+            fig.tight_layout(rect=[0, 0, 0.86, 1])
+        else:
+            ax.legend(loc="best", frameon=False)
+            fig.tight_layout()
+
+        st.pyplot(fig, clear_figure=True)
+  
 # PAGE 5 — About
 def page_about():
     st.title("About (Part 2 resubmission)")
     st.markdown(
         "- Pages 1–3 use **Part-1 weather data** (`open-meteo-subset.csv`).\n"
         "- Page 4 is **Energy production** using **Elhub 2021** CSV.\n"
-        "- Single sidebar with 4–5 clickable pages (no `pages/` folder), matching the instructor’s requirement.\n"
+        "- Single sidebar with 4–5 clickable pages"
     )
 
 
