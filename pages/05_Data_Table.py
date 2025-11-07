@@ -4,8 +4,8 @@ import streamlit as st
 import pandas as pd
 from app_core.loaders.weather import load_openmeteo_era5
 
-st.title("Datatabell")
-st.caption("Én rad per variabel. Minilinjediagrammet viser den FØRSTE kalendermåneden i serien.")
+st.title("Data Table")
+st.caption("One row per variable. Mini line chart shows the FIRST calendar month of the series.")
 
 area = st.session_state.get("selected_area", "NO1")
 year = st.session_state.get("selected_year", 2021)
@@ -28,8 +28,8 @@ first_month_end = (first_month_start + pd.offsets.MonthEnd(0))
 df_first = df[(df["time"] >= first_month_start) & (df["time"] <= first_month_end)].copy()
 
 st.write(
-    f"Første måned: **{first_month_start:%Y-%m}** "
-    f"({first_month_start:%Y-%m-%d} → {first_month_end:%Y-%m-%d}) • Rader: {len(df_first)}"
+    f"First month: **{first_month_start:%Y-%m}** "
+    f"({first_month_start:%Y-%m-%d} → {first_month_end:%Y-%m-%d}) • Rows: {len(df_first)}"
 )
 
 # build summary rows with sparkline data 

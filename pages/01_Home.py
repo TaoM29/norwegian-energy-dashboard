@@ -3,7 +3,7 @@
 import streamlit as st
 from app_core.loaders.weather import load_openmeteo_era5
 
-st.title("Dashboard Basics – Weather Data")
+st.title("Dashboard – Weather Data")
 st.caption("Use the sidebar to navigate between pages.")
 
 # area/year set on page 2

@@ -4,7 +4,7 @@ import streamlit as st
 from app_core.loaders.weather import load_openmeteo_era5
 from app_core.analysis.quality import plot_temperature_outliers_dct, plot_precip_anomalies_lof
 
-st.title("Data Quality — Outliers & Anomalies")
+st.title("Data Quality — SPC & LOF")
 
 area = st.session_state.get("selected_area", "NO1")
 year = st.session_state.get("selected_year", 2021)

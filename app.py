@@ -19,7 +19,7 @@ with st.sidebar:
 
 
 # Load data once 
-df = load_data()  # cached
+df = load_data()  
 if "time" in df.columns:
     df = df.dropna(subset=["time"]).sort_values("time")
 else:
