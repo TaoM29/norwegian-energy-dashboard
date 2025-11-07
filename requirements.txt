@@ -8,4 +8,5 @@ requests
 scikit-learn
 scipy
 statsmodels
-
+seaborn
+plotly  

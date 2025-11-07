@@ -1,5 +1,5 @@
 
-# pages/04_Data_Table.py
+# pages/05_Data_Table.py
 import streamlit as st
 import pandas as pd
 from app_core.loaders.weather import load_openmeteo_era5
