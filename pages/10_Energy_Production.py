@@ -99,6 +99,7 @@ else:
     )
     st.plotly_chart(fig, use_container_width=True)
 
+
 # Hourly lines
 df_hour = hourly_df(AREA, YEAR, int(month_label), groups_key)
 st.subheader(f"Hourly — {AREA} — {YEAR}-{month_label}")

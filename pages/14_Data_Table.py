@@ -32,7 +32,7 @@ def first_month_span(df: pd.DataFrame) -> tuple[pd.Timestamp, pd.Timestamp]:
 
 df = get_weather(area, year)
 
-# --- variable meta (display names & units) ---
+# variable meta (display names & units) 
 VARS_UNITS = [
     ("temperature_2m (°C)",    "°C"),
     ("precipitation (mm)",     "mm"),

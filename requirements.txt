@@ -9,4 +9,8 @@ scikit-learn
 scipy
 statsmodels
 seaborn
-plotly  
+plotly
+streamlit-folium
+folium
+branca
+requests

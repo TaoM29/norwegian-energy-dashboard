@@ -15,13 +15,13 @@ from app_core.loaders.weather import load_openmeteo_era5
 st.set_page_config(page_title="Data Quality — SPC & LOF", layout="wide")
 st.title("Data Quality — SPC & LOF")
 
-# --- global selection (comes from 02_Price_Area_Selector) ---
+# global selection (comes from 02_Price_Area_Selector) 
 AREA = st.session_state.get("selected_area", "NO1")
 YEAR = int(st.session_state.get("selected_year", 2024))
 st.caption(f"Active selection → **Area:** {AREA} • **Year:** {YEAR}")
 st.page_link("pages/02_Price_Area_Selector.py", label="Change area/year", icon=":material/settings:")
 
-# --- data load (cached) ---
+# data load (cached) 
 @st.cache_data(ttl=1800, show_spinner=False)
 def get_weather(area: str, year: int) -> pd.DataFrame:
     df = load_openmeteo_era5(area, year).copy()
@@ -36,9 +36,8 @@ COL_PREC = "precipitation (mm)"
 
 tabs = st.tabs(["Outlier / SPC (Temperature)", "Anomaly / LOF (Precipitation)"])
 
-# ======================================================================================
+
 # TAB 1 — SPC-style temperature outliers via DCT low-pass trend + robust bounds
-# ======================================================================================
 with tabs[0]:
     if COL_TEMP not in df.columns:
         st.warning(f"Column `{COL_TEMP}` not found in the weather dataset.")
@@ -129,9 +128,8 @@ with tabs[0]:
     with st.expander("Sample outliers (first 30)"):
         st.dataframe(out_df.loc[out_df["is_outlier"]].head(30), use_container_width=True)
 
-# ======================================================================================
+
 # TAB 2 — LOF anomalies for precipitation (Plotly)
-# ======================================================================================
 with tabs[1]:
     if COL_PREC not in df.columns:
         st.warning(f"Column `{COL_PREC}` not found in the weather dataset.")

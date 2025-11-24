@@ -9,13 +9,13 @@ from app_core.loaders.weather import load_openmeteo_era5
 st.title("Explorer (Weather)")
 st.caption("Pick variables, resample/smooth, and a month range. Data comes from Open-Meteo and is cached.")
 
-# --- global selection (from 02_Price_Area_Selector.py) ---
+# global selection (from 02_Price_Area_Selector.py) 
 area = st.session_state.get("selected_area", "NO1")
 year = int(st.session_state.get("selected_year", 2024))
 st.caption(f"Active selection → **Area:** {area} • **Year:** {year}")
 st.page_link("pages/02_Price_Area_Selector.py", label="Change area/year", icon=":material/settings:")
 
-# --- load & cache ---
+# load & cache
 @st.cache_data(ttl=1800, show_spinner=False)
 def get_weather(a: str, y: int) -> pd.DataFrame:
     df = load_openmeteo_era5(a, y).copy()
@@ -34,7 +34,7 @@ VARS_ALL = [
 ]
 VARS_PRESENT = [v for v in VARS_ALL if v in df.columns]
 
-# --- controls ---
+# controls
 left, right = st.columns([2, 2])
 with left:
     sel_vars = st.multiselect(
@@ -71,7 +71,7 @@ if not sel_vars:
     st.info("Pick at least one variable to draw the chart.")
     st.stop()
 
-# --- filter to selected months ---
+# filter to selected months
 start_ts = pd.Period(start_lbl, freq="M").start_time.tz_localize("UTC")
 end_ts   = (pd.Period(end_lbl,   freq="M").end_time.tz_localize("UTC"))
 mask = (df["time"] >= start_ts) & (df["time"] <= end_ts)
@@ -81,10 +81,10 @@ if df_rng.empty:
     st.warning("No rows in the selected range.")
     st.stop()
 
-# --- reshape long for plotly ---
+# reshape long for plotly 
 long = df_rng.melt(id_vars="time", var_name="variable", value_name="value")
 
-# --- resample (per variable) ---
+# resample (per variable) 
 if rule != "H":
     # precipitation is an accumulation; most others are averages
     def agg_for(var: str) -> str:
@@ -98,7 +98,7 @@ if rule != "H":
             .reset_index()
     )
 
-# --- smoothing (rolling mean in hours) ---
+# smoothing (rolling mean in hours) 
 if smooth_h and smooth_h > 0:
     long = (
         long.set_index("time")
@@ -107,7 +107,7 @@ if smooth_h and smooth_h > 0:
             .reset_index()
     )
 
-# --- normalization 0–1 (per variable over the chosen window) ---
+# normalization 0–1 (per variable over the chosen window) 
 if normalize:
     mins = long.groupby("variable")["value"].transform("min")
     maxs = long.groupby("variable")["value"].transform("max")

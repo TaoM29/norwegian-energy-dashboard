@@ -22,9 +22,8 @@ with left:
         st.cache_resource.clear()
         st.success("Caches cleared. Press ⌘/Ctrl+R to rerun.")
 
-# -------------------------------------------------------------------
+
 # Global selections (set on 02_Price_Area_Selector.py)
-# -------------------------------------------------------------------
 AREA = st.session_state.get("selected_area", "NO1")
 YEAR = int(st.session_state.get("selected_year", 2022))
 
@@ -67,9 +66,8 @@ with q1:
 with q2:
     ovl = st.number_input("Overlap (hours)", 0, 4095, 84, step=1)
 
-# -------------------------------------------------------------------
+
 # Data loader — full year, tied to AREA/YEAR
-# -------------------------------------------------------------------
 @st.cache_data(ttl=900, show_spinner=False)
 def load_year_df(area: str, group: str, year: int) -> pd.DataFrame:
     """Fetch one full year's hourly rows for a price area+group."""
@@ -102,9 +100,7 @@ else:
     st.caption(f"Rows loaded: **{len(df_year):,}** | span: {span}")
     st.dataframe(df_year.head(30), use_container_width=True, height=280)
 
-# -------------------------------------------------------------------
 # Plots
-# -------------------------------------------------------------------
 tabs = st.tabs(["STL (Plotly)", "Spectrogram (Plotly)"])
 
 with tabs[0]:

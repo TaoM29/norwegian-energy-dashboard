@@ -52,6 +52,7 @@ else:
     year_end   = dt.date(y2, 12, 31)
     year_list  = list(range(min(y1, y2), max(y1, y2) + 1))
 
+
 # Persist globally so other pages can read the same state
 st.session_state["selected_area"] = area
 # Legacy single-year key for older pages:
@@ -60,6 +61,7 @@ st.session_state["selected_year"] = year_list[-1]
 st.session_state["selected_years"] = year_list
 st.session_state["selected_start_date"] = year_start
 st.session_state["selected_end_date"] = year_end
+
 
 # Nice little summary 
 st.success(

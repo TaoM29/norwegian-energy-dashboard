@@ -35,9 +35,7 @@ st.caption(
     "You can jump there anytime via the link above."
 )
 
-# ------------------------------------------------------------------
 # Helpful links & notes
-# ------------------------------------------------------------------
 st.markdown(
     """
 **Project links**
