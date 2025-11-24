@@ -23,9 +23,8 @@ except Exception:
 
 from app_core.loaders.mongo_utils import get_db
 
-# -------------------------------------------------------------------
+
 # Basic page setup
-# -------------------------------------------------------------------
 st.set_page_config(page_title="Map — Price Areas", layout="wide")
 st.title("Map — Price Areas & Aggregates")
 
@@ -34,9 +33,8 @@ st.caption(f"Active price area: **{SELECTED_AREA}** (set on “02 · Price Area 
 
 db = get_db()
 
-# -------------------------------------------------------------------
+
 # GeoJSON helpers
-# -------------------------------------------------------------------
 def canonical_area(value: str) -> str | None:
     """
     Normalize many variants to 'NO1'..'NO5'.
@@ -83,9 +81,8 @@ def detect_area_field(gj: Dict[str, Any]) -> Tuple[str | None, List[str]]:
     })
     return field, areas
 
-# -------------------------------------------------------------------
+
 # Sidebar: choose GeoJSON
-# -------------------------------------------------------------------
 with st.sidebar:
     st.header("GeoJSON")
     files = list_local_geojson_files()
@@ -109,9 +106,9 @@ if not AREA_FIELD or not AREAS:
 
 st.caption(f"Detected GeoJSON field for price-area code: **{AREA_FIELD}**")
 
-# -------------------------------------------------------------------
+
+
 # Controls
-# -------------------------------------------------------------------
 colA, colB, colC, colD = st.columns([1.2, 1.2, 1, 2])
 
 with colA:
@@ -135,9 +132,9 @@ with colD:
     start_dt = end_dt - timedelta(days=days - 1)
     st.caption(f"Period: **{start_dt:%Y-%m-%d} → {end_dt:%Y-%m-%d}**")
 
-# -------------------------------------------------------------------
+
+
 # Mongo aggregation
-# -------------------------------------------------------------------
 def _agg_mean(coll_name: str, group_field: str, group_value: str,
               start: datetime, end: datetime) -> pd.DataFrame:
     pipe = [
@@ -175,9 +172,9 @@ if vmin == vmax:
 cmap = cm.linear.YlOrRd_09.scale(vmin, vmax)
 cmap.caption = f"Mean kWh ({kind.lower()} • {grp})"
 
-# -------------------------------------------------------------------
+
+
 # Folium map
-# -------------------------------------------------------------------
 m = folium.Map(location=[65.0, 13.5], zoom_start=4.6, tiles="cartodbpositron")
 
 def style_fn(feature):

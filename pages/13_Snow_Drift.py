@@ -14,7 +14,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 
 
-# ----------------------------- Page setup -----------------------------
+# Page setup
 st.set_page_config(page_title="Snow Drift (Tabler)", layout="wide")
 st.title("Snow Drift — Tabler")
 
@@ -57,7 +57,7 @@ else:
     st.stop()  # gracefully bail until a point is chosen
 
 
-# ----------------------- Utilities (Tabler functions) -----------------------
+# Utilities (Tabler functions) 
 def compute_Qupot(hourly_wind_speeds: List[float], dt: int = 3600) -> float:
     """Potential wind-driven transport (kg/m): sum(u^3.8 * dt)/233847"""
     return float(sum((float(u) ** 3.8) * dt for u in hourly_wind_speeds) / 233847.0)
@@ -103,7 +103,7 @@ def tabler_transport(T: float, F: float, theta: float, Swe_mm: float,
     }
 
 
-# ---------------------------- Data loading ----------------------------
+# Data loading
 @st.cache_data(ttl=3600, show_spinner=True)
 def load_era5_point(lat: float, lon: float, start_date: date, end_date: date) -> pd.DataFrame:
     """
@@ -160,7 +160,7 @@ def season_span(start_season: int, end_season: int) -> Tuple[date, date]:
     return start, end
 
 
-# ----------------------------- UI controls -----------------------------
+# UI controls
 with st.expander("Advanced Tabler parameters", expanded=False):
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -197,7 +197,7 @@ if df.empty:
 st.dataframe(df.head(24), use_container_width=True, height=240)
 
 
-# ---------------------------- Calculations ----------------------------
+# Calculations
 def compute_yearly(df_seasoned: pd.DataFrame, T: float, F: float, theta: float) -> pd.DataFrame:
     records = []
     for s in sorted(df_seasoned["season"].unique()):
@@ -308,7 +308,7 @@ with st.expander("Fence height calculator (optional)"):
 
 
 
-# ---- Bonus: Monthly snow drift (Jul -> Jun) and overlay with yearly average ----
+# Bonus: Monthly snow drift (Jul -> Jun) and overlay with yearly average 
 def _season_month_index(dt: pd.Timestamp) -> int:
     """Map calendar months to 'season months' where Jul=1, ..., Jun=12."""
     return ((dt.month - 7) % 12) + 1  # Jul=1 ... Jun=12
@@ -389,7 +389,7 @@ else:
 monthly_df = compute_monthly_results(df, seasons_used, T=float(T), F=float(F), theta=float(theta))
 
 
-# ---- Monthly vs. Yearly Snow Drift (same figure, twin axes) ----
+# Monthly vs. Yearly Snow Drift (same figure, twin axes) 
 st.subheader("Monthly vs. Yearly Snow Drift (Qt)")
 
 if monthly_df.empty:
