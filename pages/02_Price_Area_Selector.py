@@ -1,5 +1,5 @@
 
-# pages/04_Price_Area_Selector.py
+# pages/02_Price_Area_Selector.py
 import streamlit as st
 import datetime as dt
 
@@ -9,7 +9,7 @@ YEARS = [2021, 2022, 2023, 2024]
 
 st.title("Global selection — Area & Year(s)")
 
-# Remember last choice (fallbacks are sensible)
+# Remember last choice 
 default_area = st.session_state.get("selected_area", "NO1")
 default_year = st.session_state.get("selected_year", 2024)
 
@@ -52,7 +52,7 @@ else:
     year_end   = dt.date(y2, 12, 31)
     year_list  = list(range(min(y1, y2), max(y1, y2) + 1))
 
-# --- Persist globally so other pages can read the same state ---
+# Persist globally so other pages can read the same state
 st.session_state["selected_area"] = area
 # Legacy single-year key for older pages:
 st.session_state["selected_year"] = year_list[-1]
@@ -61,7 +61,7 @@ st.session_state["selected_years"] = year_list
 st.session_state["selected_start_date"] = year_start
 st.session_state["selected_end_date"] = year_end
 
-# --- Nice little summary ---
+# Nice little summary 
 st.success(
     f"**Area:** {area}  \n"
     + (f"**Year:** {year_list[-1]}" if len(year_list) == 1 else f"**Years:** {year_list[0]}–{year_list[-1]}")
