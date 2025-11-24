@@ -1,5 +1,5 @@
 
-# pages/06_Explorer.py
+# pages/07_Explorer.py
 import streamlit as st
 import pandas as pd
 import numpy as np
