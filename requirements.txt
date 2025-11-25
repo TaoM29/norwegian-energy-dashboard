@@ -7,10 +7,10 @@ certifi
 requests
 scikit-learn
 scipy
-statsmodels
 seaborn
 plotly
 streamlit-folium
 folium
 branca
 requests
+statsmodels
