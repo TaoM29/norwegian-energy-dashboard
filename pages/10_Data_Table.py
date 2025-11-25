@@ -1,5 +1,5 @@
 
-# pages/14_Data_Table.py
+# pages/10_Data_Table.py
 import pandas as pd
 import plotly.express as px
 import streamlit as st

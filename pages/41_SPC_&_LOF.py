@@ -1,5 +1,5 @@
 
-# pages/31_SPC_&_LOF.py
+# pages/41_SPC_&_LOF.py
 from __future__ import annotations
 
 import numpy as np

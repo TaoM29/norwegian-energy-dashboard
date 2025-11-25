@@ -1,5 +1,5 @@
 
-# pages/13_Snow_Drift.py
+# pages/21_Snow_Drift.py
 from __future__ import annotations
 
 import math
@@ -22,11 +22,11 @@ st.title("Snow Drift — Tabler")
 clicked = st.session_state.get("clicked_coord")
 if not clicked:
     st.info(
-        "No coordinate selected yet. Open **12 · Map Price Areas**, click on the map, "
+        "No coordinate selected yet. Open **20 · Map Price Areas**, click on the map, "
         "then return here.",
         icon="🗺️",
     )
-    st.page_link("pages/12_Map_Price_Areas.py", label="Go to Map page", icon=":material/map:")
+    st.page_link("pages/20_Map_Price_Areas.py", label="Go to Map page", icon=":material/map:")
     st.stop()
 
 lat, lon = float(clicked[0]), float(clicked[1])
@@ -46,7 +46,7 @@ coord = st.session_state.get("clicked_coord")
 row = st.columns([1, 3])
 with row[0]:
     st.page_link(
-        "pages/12_Map_Price_Areas.py",
+        "pages/20_Map_Price_Areas.py",
         label="Pick / change coordinate on the map",
         icon=":material/location_on:"
     )

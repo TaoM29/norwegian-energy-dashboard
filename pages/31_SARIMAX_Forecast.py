@@ -1,12 +1,10 @@
 
-# pages/22_SARIMAX_Forecast.py
+# pages/31_SARIMAX_Forecast.py
 from __future__ import annotations
-
 import math
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import List, Dict, Tuple
-
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -32,8 +30,7 @@ st.caption(f"Active selection → **Area:** {AREA} • **Year:** {YEAR}")
 db = get_db()
 
 
-# Helpers / Loaders 
-
+# HELPERS / LOADERS 
 def _energy_collections_for_span(kind: str, start: datetime, end: datetime) -> List[Tuple[str, str]]:
     """
     Return a list of (collection_name, group_field) to query for the given
@@ -214,7 +211,7 @@ with st.sidebar:
         "wind_gusts_10m (m/s)",
         "wind_direction_10m (°)",
     ]
-    exog_vars = st.multiselect("Select weather variables (optional)", WEATHER_CHOICES, default=[])
+    exog_vars = st.multiselect("Select weather variables ()", WEATHER_CHOICES, default=[])
     exog_future_strategy = st.selectbox("Future exog strategy", ["last", "hod-mean"], index=0,
                                         help="How to create exogenous values during the forecast horizon.")
 
@@ -242,7 +239,7 @@ with st.sidebar:
     st.caption("Tip: if model fails to converge, try smaller orders or disable seasonality.")
 
 
-# Load & Prepare 
+# LOAD & PREPARE
 with st.spinner("Loading energy + weather data…"):
     dfE_hourly = load_energy_span(AREA, kind, group, TRAIN_START, TRAIN_END)
     if dfE_hourly.empty:
@@ -272,7 +269,8 @@ with st.spinner("Loading energy + weather data…"):
     y = y.asfreq(FREQ)
 
 
-# Fit & Forecast 
+
+# FIT & FORECAST
 
 # dynamic start index
 if dynamic_toggle:
@@ -378,8 +376,7 @@ st.plotly_chart(fig, use_container_width=True)
 
 
 
-# Details and Notes
-
+# DETAILS & NOTES
 with st.expander("Model details"):
     st.markdown(
         f"""

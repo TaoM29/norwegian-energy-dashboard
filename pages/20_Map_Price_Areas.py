@@ -1,5 +1,5 @@
 
-# pages/12_Map_Price_Areas.py
+# pages/20_Map_Price_Areas.py
 from __future__ import annotations
 
 import json, re, glob
@@ -205,11 +205,29 @@ if "clicked_coord" in st.session_state:
 
 out = st_folium(m, height=620, use_container_width=True)
 
+
 if out and out.get("last_clicked"):
     lat = out["last_clicked"]["lat"]
     lon = out["last_clicked"]["lng"]
     st.session_state["clicked_coord"] = (lat, lon)
     st.success(f"Saved click: **({lat:.5f}, {lon:.5f})**")
+
+
+# Hand-off to Snow Drift
+if "clicked_coord" in st.session_state:
+    lat, lon = st.session_state["clicked_coord"]
+    st.caption("Next: compute snow drift for the clicked point")
+    st.page_link(
+        "pages/21_Snow_Drift.py",
+        label=f"Go to Snow Drift (Tabler) for ({lat:.5f}, {lon:.5f})",
+        icon=":material/ac_unit:"
+    )
+else:
+    st.info(
+        "Tip: Click anywhere on the map to choose a coordinate. "
+        "Then you can open the **Snow Drift** page to compute drift for that point.",
+        icon="🧭",
+    )
 
 # Table
 st.subheader("Mean kWh per price area (selected interval)")
