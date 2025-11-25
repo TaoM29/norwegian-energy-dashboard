@@ -22,7 +22,7 @@ st.set_page_config(page_title="SARIMAX Forecast — Energy", layout="wide")
 st.title("Forecasting — SARIMAX (Energy)")
 st.caption("Dynamic SARIMAX with optional weather exogenous variables.")
 
-# ---------- Global selection from page 02 ----------
+# Global selection from page 02 
 AREA = st.session_state.get("selected_area", "NO1")
 YEAR = int(st.session_state.get("selected_year", 2024))
 st.page_link("pages/02_Price_Area_Selector.py", label="Change area / year", icon=":material/settings:")
@@ -32,7 +32,7 @@ st.caption(f"Active selection → **Area:** {AREA} • **Year:** {YEAR}")
 db = get_db()
 
 
-# ========================== Helpers / Loaders ==========================
+# Helpers / Loaders 
 
 def _energy_collections_for_span(kind: str, start: datetime, end: datetime) -> List[Tuple[str, str]]:
     """
@@ -178,8 +178,7 @@ def build_exog_future(exog_train: pd.DataFrame, horizon: int, freq: str, strateg
     return fut_vals
 
 
-# =============================== UI ===============================
-
+# UI 
 with st.sidebar:
     st.header("Controls")
 
@@ -243,8 +242,7 @@ with st.sidebar:
     st.caption("Tip: if model fails to converge, try smaller orders or disable seasonality.")
 
 
-# =============================== Load & Prepare ===============================
-
+# Load & Prepare 
 with st.spinner("Loading energy + weather data…"):
     dfE_hourly = load_energy_span(AREA, kind, group, TRAIN_START, TRAIN_END)
     if dfE_hourly.empty:
@@ -273,7 +271,8 @@ with st.spinner("Loading energy + weather data…"):
         st.warning("Very short training set; consider expanding the training window.")
     y = y.asfreq(FREQ)
 
-# =============================== Fit & Forecast ===============================
+
+# Fit & Forecast 
 
 # dynamic start index
 if dynamic_toggle:
@@ -325,8 +324,8 @@ except Exception as exc:
     st.exception(exc)
     st.stop()
 
-# =============================== Plot ===============================
 
+# Plot 
 st.subheader("Forecast")
 
 fig = go.Figure()
@@ -379,7 +378,7 @@ st.plotly_chart(fig, use_container_width=True)
 
 
 
-# =============================== Details / Notes ===============================
+# Details and Notes
 
 with st.expander("Model details"):
     st.markdown(
