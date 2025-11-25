@@ -9,6 +9,7 @@ YEARS = [2021, 2022, 2023, 2024]
 
 st.title("Global selection — Area & Year(s)")
 
+
 # Remember last choice 
 default_area = st.session_state.get("selected_area", "NO1")
 default_year = st.session_state.get("selected_year", 2024)
@@ -55,8 +56,10 @@ else:
 
 # Persist globally so other pages can read the same state
 st.session_state["selected_area"] = area
+
 # Legacy single-year key for older pages:
 st.session_state["selected_year"] = year_list[-1]
+
 # New, richer keys:
 st.session_state["selected_years"] = year_list
 st.session_state["selected_start_date"] = year_start

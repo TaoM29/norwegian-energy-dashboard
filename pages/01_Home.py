@@ -2,6 +2,8 @@
 # pages/01_Home.py
 import streamlit as st
 
+
+
 st.set_page_config(page_title="Home — IND320 Energy & Weather", layout="wide")
 
 st.title("IND320 — Energy & Weather Dashboard")

@@ -8,6 +8,7 @@ from app_core.loaders.mongo_utils import (
     get_db, get_prod_coll_for_year, COLL_PROD_TOTALS_2021
 )
 
+
 # global scope from selector 
 def require_area_year():
     area = st.session_state.get("selected_area")
@@ -29,7 +30,9 @@ GROUP_COLORS = {
     "thermal": "#E15759", "nuclear": "#B07AA1", "other": "#BAB0AC",
 }
 
+
 db = get_db()
+
 
 @st.cache_data(ttl=1800, show_spinner=False)
 def all_groups() -> list[str]:
@@ -41,6 +44,7 @@ def all_groups() -> list[str]:
         except Exception:
             pass
     return sorted(g)
+
 
 @st.cache_data(ttl=600, show_spinner=False)
 def totals_df(area: str, year_: int, groups: tuple[str, ...]) -> pd.DataFrame:
@@ -66,6 +70,7 @@ def totals_df(area: str, year_: int, groups: tuple[str, ...]) -> pd.DataFrame:
     ]
     return pd.DataFrame(list(coll.aggregate(pipe, allowDiskUse=True)))
 
+
 @st.cache_data(ttl=600, show_spinner=False)
 def hourly_df(area: str, year_: int, month_: int, groups: tuple[str, ...]) -> pd.DataFrame:
     coll = get_prod_coll_for_year(year_)
@@ -81,11 +86,13 @@ def hourly_df(area: str, year_: int, month_: int, groups: tuple[str, ...]) -> pd
     df["start_time"] = pd.to_datetime(df["start_time"], utc=True)
     return df
 
+
 # UI controls (NO area/year pickers here!)
 groups_all = all_groups()
 month_label = st.selectbox("Month (hourly view)", [f"{m:02d}" for m in range(1, 13)], index=0)
 selected_groups = st.multiselect("Production groups", groups_all, default=groups_all)
 groups_key = tuple(sorted(selected_groups)) if selected_groups else tuple()
+
 
 # Totals pie
 df_tot = totals_df(AREA, YEAR, groups_key)

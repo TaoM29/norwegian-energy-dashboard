@@ -6,6 +6,7 @@ import streamlit as st
 from datetime import datetime
 from app_core.loaders.mongo_utils import get_cons_coll
 
+
 # global scope from selector 
 def require_area_year():
     area = st.session_state.get("selected_area")
@@ -28,11 +29,14 @@ GROUP_COLORS = {
     "private": "#76B7B2", "business": "#AF7AA1",
 }
 
+
 cons = get_cons_coll()
+
 
 @st.cache_data(ttl=1800, show_spinner=False)
 def all_cons_groups() -> list[str]:
     return sorted(cons.distinct("consumption_group"))
+
 
 @st.cache_data(ttl=600, show_spinner=False)
 def totals_df(area: str, year_: int, groups: tuple[str, ...]) -> pd.DataFrame:
@@ -46,6 +50,7 @@ def totals_df(area: str, year_: int, groups: tuple[str, ...]) -> pd.DataFrame:
         {"$sort": {"total_kwh": -1}},
     ]
     return pd.DataFrame(list(cons.aggregate(pipe, allowDiskUse=True)))
+
 
 @st.cache_data(ttl=600, show_spinner=False)
 def hourly_df(area: str, year_: int, month_: int, groups: tuple[str, ...]) -> pd.DataFrame:
@@ -61,11 +66,13 @@ def hourly_df(area: str, year_: int, month_: int, groups: tuple[str, ...]) -> pd
     df["start_time"] = pd.to_datetime(df["start_time"], utc=True)
     return df
 
+
 # UI (no local area/year)
 groups_all = all_cons_groups()
 month_label = st.selectbox("Month (hourly view)", [f"{m:02d}" for m in range(1, 13)], index=0)
 selected_groups = st.multiselect("Consumption groups", groups_all, default=groups_all)
 groups_key = tuple(sorted(selected_groups)) if selected_groups else tuple()
+
 
 # Totals
 df_tot = totals_df(AREA, YEAR, groups_key)
@@ -78,6 +85,7 @@ else:
         color="consumption_group", color_discrete_map=GROUP_COLORS, hole=0.35
     )
     st.plotly_chart(fig, use_container_width=True)
+
 
 # Hourly
 df_hour = hourly_df(AREA, YEAR, int(month_label), groups_key)

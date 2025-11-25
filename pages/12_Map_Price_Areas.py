@@ -217,3 +217,5 @@ st.dataframe(
     df_mean.sort_values("price_area").assign(mean_kwh=lambda d: d["mean_kwh"].round(2)),
     hide_index=True, use_container_width=True
 )
+
+

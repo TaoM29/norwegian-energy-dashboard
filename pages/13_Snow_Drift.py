@@ -32,7 +32,8 @@ if not clicked:
 lat, lon = float(clicked[0]), float(clicked[1])
 st.caption(f"Using coordinate from Map page → **({lat:.5f}, {lon:.5f})**")
 
-# Defaults for Tabler parameters (you can expose these in an expander)
+
+# Defaults for Tabler parameters 
 DEFAULT_T = 3000   # maximum transport distance [m]
 DEFAULT_F = 30000  # fetch distance [m]
 DEFAULT_THETA = 0.5  # relocation coefficient
@@ -464,3 +465,5 @@ else:
             pivot.round(2).reset_index().rename(columns={"season": "Season"}),
             use_container_width=True, hide_index=True
         )
+
+
