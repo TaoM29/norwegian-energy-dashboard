@@ -201,6 +201,10 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
+# Streamlit
+.streamlit/secrets.toml
+
+
 # Marimo
 marimo/_static/
 marimo/_lsp/
@@ -212,12 +216,11 @@ data/*.csv
 data/*.csv
 .streamlit/secrets.toml
 data/*.csv
+
 # Allow these two data files for Cloud
 !data/open-meteo-subset.csv
 !data/elhub_prod_by_group_hour_2021.csv
 
-# Custom additions
-printf "\n# Streamlit secrets\n.streamlit/secrets.toml\n\n# Local caches\ndata/elhub_cache/\n*.parquet\n__pycache__/\n*.pyc\n.ipynb_checkpoints/\n" >> .gitignore
 
 # Python bytecode
 __pycache__/
@@ -236,3 +239,6 @@ __pycache__/
 # Envs
 .venv/
 ENV/
+
+# Local environment variables
+.env
