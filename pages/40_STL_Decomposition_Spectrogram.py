@@ -1,5 +1,5 @@
 
-# pages/40_Analysis_STL_Spectrogram.py
+# pages/40_STL_Decomposition_Spectrogram.py
 from __future__ import annotations
 
 import pandas as pd
@@ -101,7 +101,7 @@ else:
     st.dataframe(df_year.head(30), use_container_width=True, height=280)
 
 # Plots
-tabs = st.tabs(["STL (Plotly)", "Spectrogram (Plotly)"])
+tabs = st.tabs(["STL", "Spectrogram"])
 
 with tabs[0]:
     if not df_year.empty:

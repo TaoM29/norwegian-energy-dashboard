@@ -11,7 +11,8 @@ from datetime import datetime
 from app_core.loaders.weather import load_openmeteo_era5
 from app_core.loaders.mongo_utils import get_db, get_prod_coll_for_year
 
-# ---------------- Page setup ----------------
+
+# Page setup 
 st.set_page_config(page_title="Sliding Window Correlation", layout="wide")
 st.title("Meteorology ↔ Energy — Sliding Window Correlation")
 
@@ -25,7 +26,8 @@ AREA = st.session_state.get("selected_area", "NO1")
 YEAR = int(st.session_state.get("selected_year", 2024))
 st.caption(f"Active selection → **Area:** {AREA} • **Year:** {YEAR}")
 
-# ---------------- Controls ----------------
+
+# Controls
 with st.sidebar:
     st.header("Controls")
 
@@ -55,7 +57,8 @@ with st.sidebar:
     month_start = pd.Timestamp(f"{YEAR}-{m}-01 00:00:00", tz="UTC")
     month_end = (month_start + pd.offsets.MonthEnd(1)).replace(hour=23, minute=59, second=59)
 
-# ---------------- Data loaders ----------------
+
+# Data loaders
 @st.cache_data(ttl=1800, show_spinner=False)
 def load_weather(area: str, year: int) -> pd.DataFrame:
     """Open-Meteo ERA5 for area/year, hourly, UTC."""
@@ -132,7 +135,8 @@ def zscore(x: pd.Series) -> pd.Series:
     std = v.std(ddof=0)
     return (v - v.mean()) / std if std and not np.isnan(std) and std != 0.0 else v * 0.0
 
-# ---------------- Fetch & align data ----------------
+
+# Data fetching and alignment
 with st.spinner("Loading weather…"):
     df_wx = load_weather(AREA, YEAR)
 
@@ -193,7 +197,8 @@ minp = win  # require full window
 rho = xy["wx"].rolling(window=win, min_periods=minp, center=True).corr(xy["en"])
 rho.name = "rolling_corr"
 
-# ---------------- Plots ----------------
+
+# Plots
 # Top plot: the two series (optionally z-scored)
 wx_plot = zscore(xy["wx"]) if normalize_plot else xy["wx"]
 en_plot = zscore(xy["en"]) if normalize_plot else xy["en"]
@@ -232,7 +237,7 @@ fig_rho.update_layout(
 st.plotly_chart(fig_rho, use_container_width=True)
 
 
-# ---------------- Notes ----------------
+# Notes
 with st.expander("Notes"):
     st.markdown(
         f"""

@@ -6,7 +6,7 @@ import streamlit as st
 
 from app_core.loaders.weather import load_openmeteo_era5
 
-st.title("Explorer (Weather)")
+st.title("Explorer of Weather Data")
 st.caption("Pick variables, resample/smooth, and a month range. Data comes from Open-Meteo and is cached.")
 
 # global selection (from 02_Price_Area_Selector.py) 
@@ -40,7 +40,7 @@ with left:
     sel_vars = st.multiselect(
         "Variables to plot",
         options=VARS_PRESENT,
-        default=VARS_PRESENT,  # start with all; you can reduce
+        default=VARS_PRESENT,  
     )
 with right:
     # Month range (first → last month present)

@@ -25,7 +25,7 @@ from app_core.loaders.mongo_utils import get_db
 
 
 # Basic page setup
-st.set_page_config(page_title="Map — Price Areas", layout="wide")
+st.set_page_config(page_title="Map of Price Areas", layout="wide")
 st.title("Map — Price Areas & Aggregates")
 
 SELECTED_AREA = st.session_state.get("selected_area", "NO1")

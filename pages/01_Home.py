@@ -37,27 +37,20 @@ safe_link(first_existing("pages/13_Energy_Consumption.py"), "Energy Consumption"
 
 
 st.subheader("🗺️ Regional & Local")
-safe_link(first_existing("pages/12_Map_Price_Areas.py", "pages/20_Map_Price_Areas.py"),
-           "Map — Price Areas", icon=":material/map:")
-safe_link(first_existing("pages/13_Snow_Drift.py", "pages/21_Snow_Drift.py"),
-          "Snow Drift (Tabler)", icon=":material/ac_unit:")
+safe_link(first_existing("pages/20_Price_Areas_Map.py"), "Map Price Areas", icon=":material/map:")
+safe_link(first_existing("pages/21_Snow_Drift.py"),"Snow Drift (Tabler)", icon=":material/ac_unit:")
 
 
 
 st.subheader("📈 Modelling")
-safe_link(first_existing("pages/16_Sliding_Correlation.py", "pages/30_Sliding_Correlation.py"),
-          "Sliding Correlation", icon=":material/multiline_chart:")
-safe_link(first_existing("pages/20_SARIMAX_Forecast.py", "pages/31_SARIMAX_Forecast.py"),
-          "SARIMAX Forecast", icon=":material/insights:")
+safe_link(first_existing("pages/30_Sliding_Correlation.py"), "Sliding Correlation", icon=":material/multiline_chart:")
+safe_link(first_existing("pages/31_SARIMAX_Forecast.py"),"SARIMAX Forecast", icon=":material/insights:")
 
 
 
 st.subheader("🧪 Quality & Diagnostics")
-safe_link(first_existing("pages/20_Analysis_STL_Spectrogram.py", "pages/22_Analysis_STL_Spectrogram.py",
-                         "pages/40_Analysis_STL_Spectrogram.py"),
-          "STL & Spectrogram (Production)", icon=":material/analytics:")
-safe_link(first_existing("pages/31_SPC_&_LOF.py", "pages/41_SPC_&_LOF.py"),
-          "Data Quality (SPC / LOF)", icon=":material/bug_report:")
+safe_link(first_existing("pages/40_STL_Decomposition_Spectrogram.py"),"STL & Spectrogram (Production)", icon=":material/analytics:")
+safe_link(first_existing("pages/41_SPC_&_LOF.py"),"Data Quality (SPC / LOF)", icon=":material/bug_report:")
 
 st.divider()
 safe_link(first_existing("pages/90_About.py"), "About", icon=":material/info:")
