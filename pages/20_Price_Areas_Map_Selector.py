@@ -25,11 +25,11 @@ from app_core.loaders.mongo_utils import get_db
 
 
 # Basic page setup
-st.set_page_config(page_title="Map of Price Areas", layout="wide")
-st.title("Map — Price Areas & Aggregates")
+st.set_page_config(page_title="Price Areas Map — Choropleth & Click-to-Select", layout="wide")
+st.title("Price Areas Map — Choropleth & Click-to-Select")
 
 SELECTED_AREA = st.session_state.get("selected_area", "NO1")
-st.caption(f"Active price area: **{SELECTED_AREA}** (set on “02 · Price Area Selector”)")
+st.caption(f"Active price area: **{SELECTED_AREA}** (set on “· Price Area Selector”)")
 
 db = get_db()
 

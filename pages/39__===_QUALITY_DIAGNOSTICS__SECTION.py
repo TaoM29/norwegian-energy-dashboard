@@ -9,8 +9,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.page_link("pages/40_STL_Decomposition_Spectrogram.py", label="Analysis — STL Decomposition & Spectrogram", icon=":material/analytics:")
-st.page_link("pages/41_SPC_&_LOF.py",                label="Data Quality — SPC & LOF",    icon=":material/bug_report:")
+st.page_link("pages/40_STL_Decomposition_and_Spectrogram.py", label="Time-Series Analysis — STL Decomposition & Spectrogram", icon=":material/analytics:")
+st.page_link("pages/41_SPC_and_LOF_Data_Quality.py",                label="Data Quality — SPC (Outliers) & LOF (Anomalies)",    icon=":material/bug_report:")
 
 st.stop()
 

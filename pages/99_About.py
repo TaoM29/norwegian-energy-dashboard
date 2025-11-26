@@ -9,6 +9,7 @@ st.markdown(
     """
 This app explores **Norwegian energy production & consumption** (Elhub) together with **weather** (ERA5 via Open-Meteo).  
 It uses a shared selection of **Price Area** and **Year** (set on *Price Area Selector*) and interactive Plotly visuals throughout.
+The app is built with Streamlit + Plotly. All times are shown in UTC.
 """
 )
 
@@ -36,14 +37,15 @@ with c1:
     st.page_link("pages/02_Price_Area_Selector.py", label="Price Area Selector", icon=":material/tune:")
 
     st.caption("Exploration")
-    st.page_link("pages/10_Data_Table.py", label="Data Table (Weather)", icon=":material/table_chart:")
-    st.page_link("pages/11_Explorer.py", label="Explorer (Weather)", icon=":material/insights:")
+    st.page_link("pages/10_Weather_Overview_Stats_and_Sparklines.py", label="Weather Overview - Stats & Sparklines", icon=":material/table_chart:")
+    st.page_link("pages/11_Weather_Explorer_Multi_Series_and_Resampling.py", label="Weather Explorer - Multi-Series & Resampling", icon=":material/insights:")
     st.page_link("pages/12_Energy_Production.py", label="Energy Production", icon=":material/bolt:")
     st.page_link("pages/13_Energy_Consumption.py", label="Energy Consumption", icon=":material/battery_full:")
 
+
 with c2:
     st.caption("Regional & Local")
-    st.page_link("pages/20_Price_Areas_Map.py", label="Map — Price Areas", icon=":material/map:")
+    st.page_link("pages/20_Price_Areas_Map_Selector.py", label="Price Areas Map - Choropleth & Click-to-Select", icon=":material/map:")
     st.page_link("pages/21_Snow_Drift.py", label="Snow Drift (Tabler)", icon=":material/ac_unit:")
 
     st.caption("Modelling")
@@ -51,8 +53,9 @@ with c2:
     st.page_link("pages/31_SARIMAX_Forecast.py", label="SARIMAX Forecast (with exogenous weather)", icon=":material/monitoring:")
 
     st.caption("Quality & Diagnostics")
-    st.page_link("pages/40_STL_Decomposition_Spectrogram.py", label="Analysis — STL & Spectrogram", icon=":material/analytics:")
-    st.page_link("pages/41_SPC_&_LOF.py", label="SPC & LOF (data quality)", icon=":material/health_metrics:")
+    st.page_link("pages/40_STL_Decomposition_and_Spectrogram.py", label="Time-Series Analysis — STL Decomposition & Spectrogram", icon=":material/analytics:")
+    st.page_link("pages/41_SPC_and_LOF_Data_Quality.py", label="Data Quality — SPC (Outliers) & LOF (Anomalies)", icon=":material/health_metrics:")
+
 
 st.divider()
 
@@ -69,13 +72,15 @@ st.markdown(
 """
 )
 
-# Project links
+
+# Project links & author
 st.subheader("Project links")
 st.markdown(
     """
-- 🌐 **Cloud app**: https://ind320-project-work-nonewthing.streamlit.app  
-- 🧑‍💻 **Repository**: https://github.com/TaoM29/IND320-dashboard-basics
+- 🌐 **Cloud app:** https://ind320-project-work-nonewthing.streamlit.app  
+- 🧑‍💻 **GitHub repo:** https://github.com/TaoM29/IND320-dashboard-basics
 """
 )
 
-st.caption("Built with Streamlit + Plotly. All times are shown in UTC.")
+st.caption("Design & implementation by **Taofik Muhriz**.")
+

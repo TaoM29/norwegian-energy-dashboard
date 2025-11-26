@@ -9,7 +9,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.page_link("pages/20_Price_Areas_Map.py", label="Map of Price Areas & Aggregates", icon=":material/map:")
+st.page_link("pages/20_Price_Areas_Map_Selector.py", label="Price Areas Map — Choropleth & Click-to-Select", icon=":material/map:")
 st.page_link("pages/21_Snow_Drift.py",      label="Snow Drift — Tabler",      icon=":material/ac_unit:")
 
 st.stop()

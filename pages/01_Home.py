@@ -59,25 +59,25 @@ with st.expander("Quick start", expanded=True):
 
 # Link blocks
 st.subheader("🔎 Exploration")
-safe_link(first_existing("pages/10_Data_Table.py"),       "Data Table (Weather)",     icon=":material/table_chart:")
-safe_link(first_existing("pages/11_Explorer.py"),         "Explorer",                  icon=":material/insights:")
-safe_link(first_existing("pages/12_Energy_Production.py"),"Energy Production",         icon=":material/bolt:")
-safe_link(first_existing("pages/13_Energy_Consumption.py"),"Energy Consumption",       icon=":material/battery_full:")
+safe_link(first_existing("pages/10_Weather_Overview_Stats_and_Sparklines.py"), "Weather Overview - Stats & Sparklines", icon=":material/table_chart:")
+safe_link(first_existing("pages/11_Weather_Explorer_Multi_Series_and_Resampling.py"), "Weather Explorer - Multi-Series & Resampling", icon=":material/insights:")
+safe_link(first_existing("pages/12_Energy_Production.py"),"Energy Production Hourly and Totals", icon=":material/bolt:")
+safe_link(first_existing("pages/13_Energy_Consumption.py"),"Energy Consumption Hourly and Totals", icon=":material/battery_full:")
 
 
 st.subheader("🗺️ Regional & Local")
-safe_link(first_existing("pages/20_Price_Areas_Map.py"), "Price Areas Map & Aggregates", icon=":material/map:")
-safe_link(first_existing("pages/21_Snow_Drift.py"),      "Snow Drift (Tabler)",       icon=":material/ac_unit:")
+safe_link(first_existing("pages/20_Price_Areas_Map_Selector.py"), "Price Areas Map - Choropleth & Click-to-Select", icon=":material/map:")
+safe_link(first_existing("pages/21_Snow_Drift.py"), "Snow Drift (Tabler)", icon=":material/ac_unit:")
 
 
 st.subheader("📈 Modelling")
-safe_link(first_existing("pages/30_Sliding_Correlation.py"), "Sliding Correlation",    icon=":material/multiline_chart:")
-safe_link(first_existing("pages/31_SARIMAX_Forecast.py"),    "SARIMAX Forecast",       icon=":material/insights:")
+safe_link(first_existing("pages/30_Sliding_Correlation.py"), "Sliding Correlation", icon=":material/multiline_chart:")
+safe_link(first_existing("pages/31_SARIMAX_Forecast.py"),"SARIMAX Forecast (with exogenous weather)", icon=":material/insights:")
 
 
 st.subheader("🧪 Quality & Diagnostics")
-safe_link(first_existing("pages/40_STL_Decomposition_Spectrogram.py"), "STL & Spectrogram", icon=":material/analytics:")
-safe_link(first_existing("pages/41_SPC_&_LOF.py"),                      "Data Quality (SPC / LOF)", icon=":material/bug_report:")
+safe_link(first_existing("pages/40_STL_Decomposition_and_Spectrogram.py"), "Time-Series Analysis — STL Decomposition & Spectrogram", icon=":material/analytics:")
+safe_link(first_existing("pages/41_SPC_and_LOF_Data_Quality.py"), "Data Quality — SPC (Outliers) & LOF (Anomalies)", icon=":material/bug_report:")
 
 
 st.divider()

@@ -22,11 +22,11 @@ st.title("Snow Drift — Tabler")
 clicked = st.session_state.get("clicked_coord")
 if not clicked:
     st.info(
-        "No coordinate selected yet. Open **Price Areas Map**, click on the map, "
+        "No coordinate selected yet. Open **Price Areas Map — Choropleth & Click-to-Select**, click on the map, "
         "then return here.",
         icon="🗺️",
     )
-    st.page_link("pages/20_Price_Areas_Map.py", label="Go to Map page", icon=":material/map:")
+    st.page_link("pages/20_Price_Areas_Map_Selector.py", label="Go to Map page", icon=":material/map:")
     st.stop()
 
 lat, lon = float(clicked[0]), float(clicked[1])
@@ -46,7 +46,7 @@ coord = st.session_state.get("clicked_coord")
 row = st.columns([1, 3])
 with row[0]:
     st.page_link(
-        "pages/20_Price_Areas_Map.py",
+        "pages/20_Price_Areas_Map_Selector.py",
         label="Pick / change coordinate on the map",
         icon=":material/location_on:"
     )
@@ -54,7 +54,7 @@ with row[0]:
 if coord:
     st.success(f"Coordinate selected: **({coord[0]:.5f}, {coord[1]:.5f})**")
 else:
-    st.warning("No coordinate selected yet. Please open **Price Areas Map** and click the map.")
+    st.warning("No coordinate selected yet. Please open **Price Areas Map — Choropleth & Click-to-Select** and click the map.")
     st.stop()  # gracefully bail until a point is chosen
 
 

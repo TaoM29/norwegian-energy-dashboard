@@ -13,7 +13,7 @@ from sklearn.neighbors import LocalOutlierFactor
 from app_core.loaders.weather import load_openmeteo_era5
 
 st.set_page_config(page_title="Data Quality — SPC & LOF", layout="wide")
-st.title("Data Quality — SPC & LOF")
+st.title("Data Quality — SPC (Outliers) & LOF (Anomalies)")
 
 # global selection (comes from 02_Price_Area_Selector) 
 AREA = st.session_state.get("selected_area", "NO1")

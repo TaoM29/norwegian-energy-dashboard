@@ -6,7 +6,7 @@ import streamlit as st
 
 from app_core.loaders.weather import load_openmeteo_era5
 
-st.title("Explorer of Weather Data")
+st.title("Weather Explorer — Multi-Series & Resampling")
 st.caption("Pick variables, resample/smooth, and a month range. Data comes from Open-Meteo and is cached.")
 
 # global selection (from 02_Price_Area_Selector.py) 

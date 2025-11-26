@@ -12,7 +12,7 @@ from app_core.analysis.stl import stl_decompose_elhub
 from app_core.analysis.spectrogram import production_spectrogram  
 
 st.set_page_config(page_title="STL Decomposition & Spectrogram", layout="wide")
-st.title("STL Decomposition & Spectrogram")
+st.title("Time-Series Analysis — STL Decomposition & Spectrogram")
 
 
 # Global selection (from page 02) + tiny link to change it

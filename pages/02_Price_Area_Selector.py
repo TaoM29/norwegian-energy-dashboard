@@ -7,7 +7,7 @@ import datetime as dt
 PRICE_AREAS = ["NO1", "NO2", "NO3", "NO4", "NO5"]
 YEARS = [2021, 2022, 2023, 2024]
 
-st.title("Global selection — Area & Year(s)")
+st.title("Global selection — Price Area & Year") 
 
 
 # Remember last choice 
