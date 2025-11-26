@@ -1,5 +1,5 @@
 
-# pages/11_Explorer.py
+# pages/11_Weather_Explorer_Multi_Series_and_Resampling.py
 import pandas as pd
 import plotly.express as px
 import streamlit as st

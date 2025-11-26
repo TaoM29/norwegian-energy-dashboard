@@ -16,6 +16,22 @@ from app_core.loaders.mongo_utils import get_db, get_prod_coll_for_year
 st.set_page_config(page_title="Sliding Window Correlation", layout="wide")
 st.title("Meteorology ↔ Energy — Sliding Window Correlation")
 
+
+# quick explainer for casual users 
+st.markdown(
+    """
+**What this shows**
+
+- **Top panel:** the selected **weather variable** and **energy series** aligned hour-by-hour for the chosen month.  
+  Turn on *Normalize series* to view both on the same scale (z-score) — this affects **only** the top plot.
+- **Lag:** positive values shift **weather forward** in time (tests whether weather **leads** energy by that many hours).
+- **Bottom panel:** a **rolling Pearson correlation** (centered window).  
+  `r ≈ +1` → move together, `r ≈ −1` → move oppositely, `r ≈ 0` → little linear relationship.
+- **Window length:** longer = smoother trend (broader context). Shorter = reacts to local variation (more detail).
+
+*Tip:* Vary the **window length** and try small positive/negative **lags** to compare short-term patterns with longer-term trends.
+"""
+)
 # quick nav back to selector
 row = st.columns([1, 6])
 with row[0]:

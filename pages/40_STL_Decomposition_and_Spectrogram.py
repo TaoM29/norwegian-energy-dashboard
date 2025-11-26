@@ -1,5 +1,5 @@
 
-# pages/40_STL_Decomposition_Spectrogram.py
+# pages/40_STL_Decomposition_and_Spectrogram.py
 from __future__ import annotations
 
 from datetime import datetime

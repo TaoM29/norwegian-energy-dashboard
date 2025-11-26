@@ -22,7 +22,7 @@ st.title("Snow Drift — Tabler")
 clicked = st.session_state.get("clicked_coord")
 if not clicked:
     st.info(
-        "No coordinate selected yet. Open **Price Areas Map — Choropleth & Click-to-Select**, click on the map, "
+        "No coordinate selected yet. Open **Price Areas Map — Click-to-Select**, click on the map, "
         "then return here.",
         icon="🗺️",
     )

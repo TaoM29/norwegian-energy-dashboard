@@ -66,7 +66,7 @@ safe_link(first_existing("pages/13_Energy_Consumption.py"),"Energy Consumption H
 
 
 st.subheader("🗺️ Regional & Local")
-safe_link(first_existing("pages/20_Price_Areas_Map_Selector.py"), "Price Areas Map - Choropleth & Click-to-Select", icon=":material/map:")
+safe_link(first_existing("pages/20_Price_Areas_Map_Selector.py"), "Price Areas Map - Click-to-Select", icon=":material/map:")
 safe_link(first_existing("pages/21_Snow_Drift.py"), "Snow Drift (Tabler)", icon=":material/ac_unit:")
 
 

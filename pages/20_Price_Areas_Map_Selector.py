@@ -1,11 +1,9 @@
 
-# pages/20_Map_Price_Areas.py
+# pages/20_Price_Areas_Map_Selector.py
 from __future__ import annotations
-
 import json, re, glob
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Tuple
-
 import pandas as pd
 import streamlit as st
 
@@ -24,22 +22,24 @@ except Exception:
 from app_core.loaders.mongo_utils import get_db
 
 
-# Basic page setup
-st.set_page_config(page_title="Price Areas Map — Choropleth & Click-to-Select", layout="wide")
-st.title("Price Areas Map — Choropleth & Click-to-Select")
+# Page setup
+st.set_page_config(page_title="Price Areas Map — Click-to-Select", layout="wide")
+st.title("Price Areas Map — Click-to-Select")
 
 SELECTED_AREA = st.session_state.get("selected_area", "NO1")
-st.caption(f"Active price area: **{SELECTED_AREA}** (set on “· Price Area Selector”)")
+st.caption(f"Active price area: **{SELECTED_AREA}** (set on “02 · Price Area Selector”)")
 
-db = get_db()
+# DB as a cached resource (prevents reconnect on reruns)
+@st.cache_resource
+def _db():
+    return get_db()
+
+db = _db()
 
 
-# GeoJSON helpers
+# GeoJSON helpers (cached) 
 def canonical_area(value: str) -> str | None:
-    """
-    Normalize many variants to 'NO1'..'NO5'.
-    Accepts: 'NO1', 'no1', 'NO 1', 'NO-1', 'NO1 – Østlandet', etc.
-    """
+    """Normalize many variants to 'NO1'..'NO5' (e.g., 'NO 1', 'NO-1', 'no1', 'NO1 – ...')."""
     if not isinstance(value, str):
         return None
     m = re.search(r"NO\s*[- ]?\s*([1-5])", value, flags=re.IGNORECASE)
@@ -48,22 +48,24 @@ def canonical_area(value: str) -> str | None:
 def list_local_geojson_files() -> List[str]:
     return sorted(glob.glob("data/*.geojson"))
 
+@st.cache_data(ttl=24 * 3600, show_spinner=False)
 def load_geojson(path: str) -> Dict[str, Any]:
-    # Handle UTF-8 BOM if present
+    """Load GeoJSON (handles UTF-8 BOM)."""
     with open(path, "r", encoding="utf-8-sig") as f:
         return json.load(f)
 
-def detect_area_field(gj: Dict[str, Any]) -> Tuple[str | None, List[str]]:
+@st.cache_data(ttl=24 * 3600, show_spinner=False)
+def detect_area_field_cached(gj_dump: str) -> Tuple[str | None, List[str]]:
     """
-    Try to find which property holds NO1..NO5 codes.
-    Returns: (field_name | None, list_of_detected_areas)
+    Detect which property holds NO1..NO5 codes.
+    Cached on the JSON dump string so we don't re-scan on reruns.
     """
+    gj: Dict[str, Any] = json.loads(gj_dump)
     features = gj.get("features", [])
     if not features:
         return None, []
 
     score: Dict[str, int] = {}
-    # Look at up to first 200 features to score candidate keys
     for feat in features[:200]:
         props = feat.get("properties", {}) or {}
         for k, v in props.items():
@@ -82,7 +84,7 @@ def detect_area_field(gj: Dict[str, Any]) -> Tuple[str | None, List[str]]:
     return field, areas
 
 
-# Sidebar: choose GeoJSON
+# Sidebar: choose GeoJSON 
 with st.sidebar:
     st.header("GeoJSON")
     files = list_local_geojson_files()
@@ -94,8 +96,9 @@ with st.sidebar:
     gj_path = st.selectbox("Choose GeoJSON", files, index=files.index(default_path) if default_path in files else 0)
     st.session_state["map_geojson_path"] = gj_path
 
-GEOJSON = load_geojson(gj_path)
-AREA_FIELD, AREAS = detect_area_field(GEOJSON)
+with st.spinner("Parsing GeoJSON…"):
+    GEOJSON = load_geojson(gj_path)
+    AREA_FIELD, AREAS = detect_area_field_cached(json.dumps(GEOJSON, sort_keys=True))
 
 if not AREA_FIELD or not AREAS:
     st.error(
@@ -107,8 +110,7 @@ if not AREA_FIELD or not AREAS:
 st.caption(f"Detected GeoJSON field for price-area code: **{AREA_FIELD}**")
 
 
-
-# Controls
+# Controls 
 colA, colB, colC, colD = st.columns([1.2, 1.2, 1, 2])
 
 with colA:
@@ -133,13 +135,12 @@ with colD:
     st.caption(f"Period: **{start_dt:%Y-%m-%d} → {end_dt:%Y-%m-%d}**")
 
 
-
-# Mongo aggregation
+# Mongo aggregation (cached) 
 def _agg_mean(coll_name: str, group_field: str, group_value: str,
-              start: datetime, end: datetime) -> pd.DataFrame:
+              start: datetime, end: datetime, areas: List[str]) -> pd.DataFrame:
     pipe = [
         {"$match": {
-            "price_area": {"$in": AREAS},
+            "price_area": {"$in": areas},
             group_field: group_value,
             "start_time": {"$gte": start, "$lte": end},
         }},
@@ -149,32 +150,48 @@ def _agg_mean(coll_name: str, group_field: str, group_value: str,
     rows = list(db[coll_name].aggregate(pipe, allowDiskUse=True))
     return pd.DataFrame(rows) if rows else pd.DataFrame(columns=["price_area", "mean_kwh"])
 
-def mean_by_area(kind: str, group: str, start: datetime, end: datetime) -> pd.DataFrame:
+def _mean_by_area_uncached(kind: str, group: str, start: datetime, end: datetime, areas: List[str]) -> pd.DataFrame:
     if kind == "Production":
-        df21 = _agg_mean("prod_hour", "production_group", group, start, end)
-        df24 = _agg_mean("elhub_production_mba_hour", "production_group", group, start, end)
+        df21 = _agg_mean("prod_hour", "production_group", group, start, end, areas)
+        df24 = _agg_mean("elhub_production_mba_hour", "production_group", group, start, end, areas)
         df = pd.concat([df21, df24], ignore_index=True)
         return df.groupby("price_area", as_index=False)["mean_kwh"].mean() if not df.empty else df
-    return _agg_mean("elhub_consumption_mba_hour", "consumption_group", group, start, end)
+    return _agg_mean("elhub_consumption_mba_hour", "consumption_group", group, start, end, areas)
+
+@st.cache_data(ttl=900, show_spinner=False, max_entries=128)
+def mean_by_area_cached(kind: str, group: str, start_iso: str, end_iso: str, areas_tuple: tuple[str, ...]) -> pd.DataFrame:
+    """Cache the aggregation keyed by params to keep the map snappy."""
+    start = datetime.fromisoformat(start_iso)
+    end = datetime.fromisoformat(end_iso)
+    areas = list(areas_tuple)
+    df = _mean_by_area_uncached(kind, group, start, end, areas)
+    return df.copy()
 
 with st.spinner("Querying MongoDB for mean kWh…"):
-    df_mean = mean_by_area(kind, grp, start_dt, end_dt)
+    df_mean = mean_by_area_cached(
+        kind=kind,
+        group=grp,
+        start_iso=start_dt.isoformat(),
+        end_iso=end_dt.isoformat(),
+        areas_tuple=tuple(sorted(AREAS)),
+    )
 
 if df_mean.empty:
     st.info("No rows for the chosen interval/group. Try another period or group.")
     st.stop()
 
-# Map value dict & color scale
+
+# Choropleth setup 
 val_map = {r["price_area"]: float(r["mean_kwh"]) for _, r in df_mean.iterrows()}
 vmin, vmax = min(val_map.values()), max(val_map.values())
 if vmin == vmax:
     vmax = vmin + 1.0
+
 cmap = cm.linear.YlOrRd_09.scale(vmin, vmax)
 cmap.caption = f"Mean kWh ({kind.lower()} • {grp})"
 
 
-
-# Folium map
+# Folium map 
 m = folium.Map(location=[65.0, 13.5], zoom_start=4.6, tiles="cartodbpositron")
 
 def style_fn(feature):
@@ -205,15 +222,14 @@ if "clicked_coord" in st.session_state:
 
 out = st_folium(m, height=620, use_container_width=True)
 
-
 if out and out.get("last_clicked"):
     lat = out["last_clicked"]["lat"]
     lon = out["last_clicked"]["lng"]
     st.session_state["clicked_coord"] = (lat, lon)
-    st.success(f"Saved click: **({lat:.5f}, {lon:.5f})**")
+    st.toast(f"Saved click: ({lat:.5f}, {lon:.5f})", icon="✅")
 
 
-# Hand-off to Snow Drift
+# Hand-off to Snow Drift 
 if "clicked_coord" in st.session_state:
     lat, lon = st.session_state["clicked_coord"]
     st.caption("Next: compute snow drift for the clicked point")
@@ -229,7 +245,7 @@ else:
         icon="🧭",
     )
 
-# Table
+# Table 
 st.subheader("Mean kWh per price area (selected interval)")
 st.dataframe(
     df_mean.sort_values("price_area").assign(mean_kwh=lambda d: d["mean_kwh"].round(2)),
