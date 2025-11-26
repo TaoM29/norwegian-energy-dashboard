@@ -77,7 +77,6 @@ st.markdown(
 st.subheader("Project links")
 st.markdown(
     """
-- 🌐 **Cloud app:** https://ind320-project-work-nonewthing.streamlit.app  
 - 🧑‍💻 **GitHub repo:** https://github.com/TaoM29/IND320-dashboard-basics
 """
 )

@@ -138,7 +138,7 @@ with tabs[0]:
     # give the plots more internal bottom space + tidy x-axis 
     for k in ("observed", "seasonal", "trend", "resid"):
         figs[k].update_layout(margin=dict(t=40, r=10, b=80, l=10))
-        figs[k].update_xaxes(tickformat="%Y-%m")  # optional: cleaner monthly ticks
+        figs[k].update_xaxes(tickformat="%Y-%m")  
 
 
     # helper to add space between plots
@@ -149,7 +149,7 @@ with tabs[0]:
         st.json({**details, "dataset": KIND})
 
     st.plotly_chart(figs["observed"], use_container_width=True, theme=None)
-    _spacer()  # add space between plots
+    _spacer()  
     st.plotly_chart(figs["seasonal"], use_container_width=True, theme=None)
     _spacer()
     st.plotly_chart(figs["trend"], use_container_width=True, theme=None)

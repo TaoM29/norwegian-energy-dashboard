@@ -33,7 +33,6 @@ st.divider()
 st.markdown(
     """
 **Project links**
-- 🌐 App (Cloud): https://ind320-project-work-nonewthing.streamlit.app
 - 🧑‍💻 Repo: https://github.com/TaoM29/IND320-dashboard-basics
 """
 )
