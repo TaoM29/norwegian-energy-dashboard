@@ -14,7 +14,8 @@ It uses a shared selection of **Price Area** and **Year** (set on *Price Area Se
 
 st.divider()
 
-# --- How to use ---------------------------------------------------------------
+
+# How to use (quick start)
 st.subheader("How to use (quick start)")
 st.markdown(
     """
@@ -23,7 +24,8 @@ st.markdown(
 """
 )
 
-# --- Quick links grouped like the sidebar ------------------------------------
+
+# Quick links grouped like the sidebar 
 st.subheader("Quick links")
 
 c1, c2 = st.columns(2)
@@ -41,8 +43,8 @@ with c1:
 
 with c2:
     st.caption("Regional & Local")
-    st.page_link("pages/20_Map_Price_Areas.py", label="Map — Price Areas", icon=":material/map:")
-    st.page_link("pages/21_Snow_Drift.py", label="Snow Drift (Tabler 2003)", icon=":material/ac_unit:")
+    st.page_link("pages/20_Price_Areas_Map.py", label="Map — Price Areas", icon=":material/map:")
+    st.page_link("pages/21_Snow_Drift.py", label="Snow Drift (Tabler)", icon=":material/ac_unit:")
 
     st.caption("Modelling")
     st.page_link("pages/30_Sliding_Correlation.py", label="Sliding Correlation (Weather ↔ Energy)", icon=":material/show_chart:")
@@ -54,7 +56,8 @@ with c2:
 
 st.divider()
 
-# --- Data sources / tech notes -----------------------------------------------
+
+# Data sources / tech notes 
 st.subheader("Data sources")
 st.markdown(
     """
@@ -66,7 +69,7 @@ st.markdown(
 """
 )
 
-# --- Project links (same as app.py) ------------------------------------------
+# Project links
 st.subheader("Project links")
 st.markdown(
     """

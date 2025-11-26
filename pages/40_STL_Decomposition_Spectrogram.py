@@ -2,52 +2,48 @@
 # pages/40_STL_Decomposition_Spectrogram.py
 from __future__ import annotations
 
-import pandas as pd
-import streamlit as st
 from datetime import datetime
+import pandas as pd
+import plotly.graph_objects as go
+import streamlit as st
 
-from app_core.loaders.mongo_utils import get_prod_coll_for_year
+from app_core.loaders.mongo_utils import get_db
 from app_core.analysis.stl import stl_decompose_elhub
-from app_core.analysis.spectrogram import production_spectrogram
+from app_core.analysis.spectrogram import production_spectrogram  
 
-st.set_page_config(page_title="Analysis — STL & Spectrogram", layout="wide")
-st.title("Analysis — STL & Spectrogram (Production)  ↪️")
-st.caption("Area and year come from **02 · Price Area Selector**.")
-
-# Quick cache reset
-left, _ = st.columns([1, 6])
-with left:
-    if st.button("Reset caches"):
-        st.cache_data.clear()
-        st.cache_resource.clear()
-        st.success("Caches cleared. Press ⌘/Ctrl+R to rerun.")
+st.set_page_config(page_title="STL Decomposition & Spectrogram", layout="wide")
+st.title("STL Decomposition & Spectrogram")
 
 
-# Global selections (set on 02_Price_Area_Selector.py)
+# Global selection (from page 02) + tiny link to change it
 AREA = st.session_state.get("selected_area", "NO1")
-YEAR = int(st.session_state.get("selected_year", 2022))
+YEAR = int(st.session_state.get("selected_year", 2024))
+st.caption(f"Active selection → **Area:** {AREA} • **Year:** {YEAR}")
+st.page_link("pages/02_Price_Area_Selector.py", label="Change area/year", icon=":material/settings:")
 
-@st.cache_data(ttl=600, show_spinner=False)
-def groups_for_year(year: int) -> list[str]:
-    """Return available production groups for the selected year (optional nicety)."""
-    coll = get_prod_coll_for_year(year)
-    if coll is None:
-        return ["hydro","wind","solar","thermal","nuclear","other"]
-    vals = coll.distinct("production_group") or []
-    # keep a consistent order if possible
-    order = ["hydro","wind","solar","thermal","nuclear","other"]
-    present = [g for g in order if g in vals]
-    extras  = [g for g in vals if g not in present]
-    return present + extras
+# Dataset kind + group pickers
+colA, colB = st.columns([1.2, 2.5])
+with colA:
+    KIND = st.radio("Dataset", ["Production", "Consumption"], horizontal=True)
 
-group = st.selectbox(
-    "Production group",
-    groups_for_year(YEAR),
-    index=2,
-    key="stl_group",
-)
+with colB:
+    if KIND == "Production":
+        groups = ["hydro", "wind", "solar", "thermal", "nuclear", "other"]
+        group_key = "stl_group_prod"
+        default_index = 2  # solar
+        group_col = "production_group"
+    else:
+        groups = ["household", "cabin", "primary", "secondary", "tertiary", "industry", "private", "business"]
+        group_key = "stl_group_cons"
+        default_index = 0  # household
+        group_col = "consumption_group"
 
-# STL params
+    GROUP = st.selectbox(f"{KIND} group", groups,
+                         index=min(default_index, len(groups)-1),
+                         key=group_key)
+
+
+# Parameters
 st.subheader("STL parameters")
 p1, p2, p3, p4 = st.columns(4)
 with p1:
@@ -67,66 +63,109 @@ with q2:
     ovl = st.number_input("Overlap (hours)", 0, 4095, 84, step=1)
 
 
-# Data loader — full year, tied to AREA/YEAR
+# Data loader
 @st.cache_data(ttl=900, show_spinner=False)
-def load_year_df(area: str, group: str, year: int) -> pd.DataFrame:
-    """Fetch one full year's hourly rows for a price area+group."""
-    coll = get_prod_coll_for_year(year)
-    if coll is None:
-        return pd.DataFrame(columns=["price_area","production_group","start_time","quantity_kwh"])
+def load_year_df(kind: str, area: str, group: str, year: int,
+                 price_area_col="price_area",
+                 group_col="production_group",
+                 value_col="quantity_kwh",
+                 time_col="start_time") -> pd.DataFrame:
+    """
+    Fetch one full year's worth of hourly rows for the given dataset (Production/Consumption),
+    price area, group and year.
+    Collections:
+      - Production: 2021 -> prod_hour; 2022–2024 -> elhub_production_mba_hour
+      - Consumption: 2021–2024 -> elhub_consumption_mba_hour
+    """
+    db = get_db()
     start = datetime(year, 1, 1)
-    end   = datetime(year + 1, 1, 1)
-    rows = list(coll.find(
-        {"price_area": area,
-         "production_group": group,
-         "start_time": {"$gte": start, "$lt": end}},
-        {"_id": 0, "price_area": 1, "production_group": 1, "start_time": 1, "quantity_kwh": 1}
-    ))
-    if not rows:
-        return pd.DataFrame(columns=["price_area","production_group","start_time","quantity_kwh"])
-    df = pd.DataFrame(rows)
-    df["start_time"] = pd.to_datetime(df["start_time"], utc=True)
-    return df.sort_values("start_time").reset_index(drop=True)
+    end = datetime(year + 1, 1, 1)
 
-with st.spinner(f"Loading {AREA} · {group} · {YEAR} …"):
-    df_year = load_year_df(AREA, group, YEAR)
+    if kind == "Production":
+        coll_name = "prod_hour" if year == 2021 else "elhub_production_mba_hour"
+    else:
+        coll_name = "elhub_consumption_mba_hour"
+
+    query = {
+        price_area_col: area,
+        group_col: group,
+        time_col: {"$gte": start, "$lt": end},
+    }
+    proj = {"_id": 0, price_area_col: 1, group_col: 1, time_col: 1, value_col: 1}
+
+    rows = list(db[coll_name].find(query, proj))
+    if not rows:
+        return pd.DataFrame(columns=[price_area_col, group_col, time_col, value_col])
+
+    df = pd.DataFrame(rows)
+    df[time_col] = pd.to_datetime(df[time_col], utc=True)
+    df = df.sort_values(time_col).reset_index(drop=True)
+    return df
+
+with st.spinner(f"Loading {KIND.lower()} · {AREA} · {GROUP} · {YEAR} …"):
+    df_year = load_year_df(KIND, AREA, GROUP, YEAR, group_col=group_col)
+
 
 # Preview
 st.subheader("Data preview")
 if df_year.empty:
-    st.info(f"No data for **{AREA} / {group} / {YEAR}**. Try another combination on *02 · Price Area Selector*.")
+    st.info(f"No data for **{AREA} / {GROUP} / {YEAR} ({KIND.lower()})**. Try another combination.")
+    st.stop()
 else:
     span = f"{df_year['start_time'].min()} → {df_year['start_time'].max()}"
     st.caption(f"Rows loaded: **{len(df_year):,}** | span: {span}")
     st.dataframe(df_year.head(30), use_container_width=True, height=280)
 
+
 # Plots
 tabs = st.tabs(["STL", "Spectrogram"])
 
 with tabs[0]:
-    if not df_year.empty:
-        figs, details, _ = stl_decompose_elhub(
-            df_year,
-            area=AREA,
-            group=group,
-            period=int(period_h),
-            seasonal=int(seasonal),
-            trend=int(trend),
-            robust=bool(robust),
-        )
-        with st.expander("STL setup (JSON)", expanded=False):
-            st.json(details)
-        st.plotly_chart(figs["observed"], use_container_width=True)
-        st.plotly_chart(figs["seasonal"], use_container_width=True)
-        st.plotly_chart(figs["trend"],   use_container_width=True)
-        st.plotly_chart(figs["resid"],   use_container_width=True)
+    if df_year.empty:
+        st.stop()
+
+    figs, details, _ = stl_decompose_elhub(
+        df_year,
+        area=AREA,
+        group=GROUP,
+        period=int(period_h),
+        seasonal=int(seasonal),
+        trend=int(trend),
+        robust=bool(robust),
+        group_col=group_col,
+    )
+
+    # --- give the plots more internal bottom space + tidy x-axis ---
+    for k in ("observed", "seasonal", "trend", "resid"):
+        figs[k].update_layout(margin=dict(t=40, r=10, b=80, l=10))
+        figs[k].update_xaxes(tickformat="%Y-%m")  # optional: cleaner monthly ticks
+
+    # --- simple vertical spacer helper ---
+    def _spacer(px: int = 28):
+        st.markdown(f"<div style='height:{px}px'></div>", unsafe_allow_html=True)
+
+    with st.expander("STL setup (JSON)", expanded=False):
+        st.json({**details, "dataset": KIND})
+
+    st.plotly_chart(figs["observed"], use_container_width=True, theme=None)
+    _spacer()  # add space between plots
+    st.plotly_chart(figs["seasonal"], use_container_width=True, theme=None)
+    _spacer()
+    st.plotly_chart(figs["trend"], use_container_width=True, theme=None)
+    _spacer()
+    st.plotly_chart(figs["resid"], use_container_width=True, theme=None)
+
 
 with tabs[1]:
-    if not df_year.empty:
-        fig_sp, *_ = production_spectrogram(
-            df_year, area=AREA, group=group,
-            window_len=int(win), overlap=int(ovl),
-        )
-        st.plotly_chart(fig_sp, use_container_width=True)
+    fig_sp, *_ = production_spectrogram(
+        df_year,
+        area=AREA,
+        group=GROUP,
+        window_len=int(win),
+        overlap=int(ovl),
+        # pass the correct group_col for either prod or cons
+        group_col=group_col,
+        # defaults: time_col="start_time", area_col="price_area", value_col="quantity_kwh"
+    )
+    st.plotly_chart(fig_sp, use_container_width=True, theme=None)
 
-st.caption("Change **Area** or **Year** on the page: *02 · Price Area Selector*.")

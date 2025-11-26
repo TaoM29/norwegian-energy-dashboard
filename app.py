@@ -28,6 +28,7 @@ with c2:
 
 st.divider()
 
+
 # Project links
 st.markdown(
     """
