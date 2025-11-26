@@ -130,8 +130,14 @@ fig.update_traces(opacity=opacity)
 fig.update_layout(
     hovermode="x unified",
     xaxis=dict(rangeslider=dict(visible=True)),
-    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
-    margin=dict(t=40, r=10, b=10, l=10),
+    legend=dict(
+        orientation="h",
+        yanchor="top",
+        y=-0.15,       # put legend under the x-axis
+        xanchor="left",
+        x=0,
+    ),
+    margin=dict(t=40, r=10, b=70, l=10),  # extra bottom space for legend
 )
 
 st.plotly_chart(fig, use_container_width=True)
