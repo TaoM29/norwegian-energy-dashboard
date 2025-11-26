@@ -32,7 +32,7 @@ st.markdown(
   - Blue = actuals, Gray = fitted (in-sample), Pink = forecast, Dark band = **95% confidence interval**.  
   - A dotted vertical line marks the **end of training**; everything to the right is the forecast horizon.
 - **Aggregation rules:** when using *Daily* frequency, energy → **sum**; weather → **mean** (temperature/wind) and **sum** (precipitation).
-- Check the side tab for controls.
+- Check the side tab for **Controls**.
 
 *Tip:* Start with small orders and a sensible season length (`s=24` for hourly daily cycle, `s=7` for daily weekly cycle). Then adjust horizon and exogenous variables to see how the forecast and its uncertainty respond.
 """

@@ -135,12 +135,13 @@ with tabs[0]:
         group_col=group_col,
     )
 
-    # --- give the plots more internal bottom space + tidy x-axis ---
+    # give the plots more internal bottom space + tidy x-axis 
     for k in ("observed", "seasonal", "trend", "resid"):
         figs[k].update_layout(margin=dict(t=40, r=10, b=80, l=10))
         figs[k].update_xaxes(tickformat="%Y-%m")  # optional: cleaner monthly ticks
 
-    # --- simple vertical spacer helper ---
+
+    # helper to add space between plots
     def _spacer(px: int = 28):
         st.markdown(f"<div style='height:{px}px'></div>", unsafe_allow_html=True)
 
@@ -163,9 +164,7 @@ with tabs[1]:
         group=GROUP,
         window_len=int(win),
         overlap=int(ovl),
-        # pass the correct group_col for either prod or cons
         group_col=group_col,
-        # defaults: time_col="start_time", area_col="price_area", value_col="quantity_kwh"
     )
     st.plotly_chart(fig_sp, use_container_width=True, theme=None)
 

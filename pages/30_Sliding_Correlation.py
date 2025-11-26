@@ -28,6 +28,7 @@ st.markdown(
 - **Bottom panel:** a **rolling Pearson correlation** (centered window).  
   `r ≈ +1` → move together, `r ≈ −1` → move oppositely, `r ≈ 0` → little linear relationship.
 - **Window length:** longer = smoother trend (broader context). Shorter = reacts to local variation (more detail).
+- Check the side tab for **Controls**.
 
 *Tip:* Vary the **window length** and try small positive/negative **lags** to compare short-term patterns with longer-term trends.
 """

@@ -121,7 +121,7 @@ with colB:
         groups = ["hydro", "wind", "solar", "thermal", "nuclear", "other"]
         grp = st.selectbox("Group", groups, index=2)
     else:
-        groups = ["household", "cabin", "primary", "secondary", "tertiary", "industry", "private", "business"]
+        groups = ["household", "cabin", "primary", "secondary", "tertiary"]
         grp = st.selectbox("Group", groups, index=0)
 
 with colC:

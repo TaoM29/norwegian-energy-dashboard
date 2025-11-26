@@ -5,6 +5,18 @@ Minimal, well-documented Streamlit dashboard for the IND320 “Data to Decision�
 **Live app:** https://ind320-project-work-nonewthing.streamlit.app  
 **Repo:** https://github.com/TaoM29/IND320-dashboard-basics
 
+---
+
+## What this repo contains
+- `app_core`- folder with relevant loaders and analysis tools
+- `data/` — project data used by notebooks and the app.
+- `notebooks/` —
+- `pages/` - different pages for different parts of the project.
+- `pdf/` - exported notebook PDFs.
+- `app.py` — self-contained Streamlit app with pages/ contents
+- `requirements.txt` —  library dependencies for this project
+
+
 
 ## Run locally
 ```bash
@@ -13,4 +25,4 @@ streamlit run app.py
 ```
 
 If you see import or cache issues, run from the repo root and click Rerun in Streamlit.
-For Streamlit Cloud, mirror your local secrets (Mongo, etc.) in the app’s Secrets.
+
