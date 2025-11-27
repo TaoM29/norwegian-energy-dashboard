@@ -180,7 +180,14 @@ with tabs[1]:
             help="Approximate fraction of anomalies."
         )
     with c2:
-        n_neighbors = st.slider("LOF n_neighbors", 10, 120, 60, 5)
+        n_neighbors = st.slider("LOF n_neighbors", 
+                                min_value=10,
+                                max_value=120,
+                                value=60,
+                                step=5,
+                                help="Size of the local neighbourhood used by LOF. Larger values give smoother, more global anomaly scores; "
+                                "smaller values focus on very local deviations."
+    )
 
     s = pd.to_numeric(df[COL_PREC], errors="coerce").fillna(0.0)
     nonzero = (s > 0).sum()
