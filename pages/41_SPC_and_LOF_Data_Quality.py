@@ -15,13 +15,13 @@ from app_core.loaders.weather import load_openmeteo_era5
 st.set_page_config(page_title="Data Quality — SPC & LOF", layout="wide")
 st.title("Data Quality — SPC (Outliers) & LOF (Anomalies)")
 
-# global selection (comes from 02_Price_Area_Selector) 
+# global selection (comes from 02_Price_Area_Selector)
 AREA = st.session_state.get("selected_area", "NO1")
 YEAR = int(st.session_state.get("selected_year", 2024))
 st.caption(f"Active selection → **Area:** {AREA} • **Year:** {YEAR}")
 st.page_link("pages/02_Price_Area_Selector.py", label="Change area/year", icon=":material/settings:")
 
-# data load (cached) 
+# data load (cached)
 @st.cache_data(ttl=1800, show_spinner=False)
 def get_weather(area: str, year: int) -> pd.DataFrame:
     df = load_openmeteo_era5(area, year).copy()
@@ -46,22 +46,35 @@ with tabs[0]:
     # controls
     c1, c2, c3 = st.columns([1, 1, 3])
     with c1:
-        keep_frac = st.slider("Keep low-freq fraction", 0.01, 0.30, 0.10, 0.01,
-                              help="Fraction of lowest DCT frequencies to keep in the trend.")
+        keep_frac = st.slider(
+            "Keep low-frequency fraction (DCT)",
+            min_value=0.001,
+            max_value=0.05,
+            value=0.01,
+            step=0.001,
+            help="Fraction of the lowest DCT coefficients kept in the trend "
+                 "(e.g., 0.01 ≈ first 1% of coefficients).",
+        )
     with c2:
-        k_sigma = st.slider("SPC width (k·σ₍robust₎)", 1.0, 6.0, 3.0, 0.1,
-                            help="Half-width of control band in units of robust σ (MAD-based).")
+        k_sigma = st.slider(
+            "SPC width (k·σ₍robust₎)",
+            1.0,
+            6.0,
+            3.0,
+            0.1,
+            help="Half-width of control band in units of robust σ (MAD-based).",
+        )
     with c3:
         st.caption("SPC-based outlier detection: trend via DCT low-pass; bounds = trend ± k·σ₍robust₎.")
 
-    # --- FIX: make a time-indexed, hourly series before time interpolation ---
+    # Make a time-indexed, hourly series before interpolation
     ts = df.copy()
     ts["time"] = pd.to_datetime(ts["time"], utc=True)
     ts = ts.set_index("time").sort_index()
 
     # Regular hourly grid → time-weighted interpolation now valid
     s = pd.to_numeric(ts[COL_TEMP], errors="coerce").asfreq("H")
-    s = s.interpolate(method="time", limit=6)  # ✅ requires DatetimeIndex
+    s = s.interpolate(method="time", limit=6)
 
     n = int(s.notna().sum())
     if n < 24:
@@ -85,36 +98,58 @@ with tabs[0]:
     band_lo = trend - k_sigma * sigma_robust
     is_out = (y > band_hi) | (y < band_lo)
 
+    # SATV (standardized actual-to-trend value)
+    if sigma_robust:
+        satv = resid / sigma_robust
+        max_abs_satv = float(np.max(np.abs(satv)))
+    else:
+        satv = np.zeros_like(resid)
+        max_abs_satv = 0.0
+
     out_df = pd.DataFrame({
-        "time": s.index.to_pydatetime(),  
+        "time": s.index.to_pydatetime(),
         "value": y,
         "trend": trend,
         "lo": band_lo,
         "hi": band_hi,
+        "satv": satv,
         "is_outlier": is_out,
     })
 
     # summary
     n_out = int(is_out.sum())
-    st.caption(f"Points: **{len(out_df):,}** • Outliers: **{n_out:,}** "
-               f"({(100*n_out/len(out_df)):.2f}%) • σᵣ ≈ {sigma_robust:.3g}")
+    st.caption(
+        f"Points: **{len(out_df):,}** • Outliers: **{n_out:,}** "
+        f"({(100*n_out/len(out_df)):.2f}%) • σᵣ ≈ {sigma_robust:.3g} • "
+        f"max |SATV| ≈ {max_abs_satv:.2f}"
+    )
 
     # plotly figure
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=out_df["time"], y=out_df["lo"], mode="lines",
-                             line=dict(width=0), name="Lower bound", hoverinfo="skip", showlegend=False))
-    fig.add_trace(go.Scatter(x=out_df["time"], y=out_df["hi"], mode="lines",
-                             fill="tonexty", fillcolor="rgba(200,200,200,0.2)",
-                             line=dict(width=0), name="Control band", hoverinfo="skip"))
-    fig.add_trace(go.Scatter(x=out_df["time"], y=out_df["trend"], mode="lines",
-                             line=dict(width=1.6, dash="dash"), name="Trend (DCT low-pass)"))
-    fig.add_trace(go.Scatter(x=out_df["time"], y=out_df["value"], mode="lines",
-                             line=dict(width=1.2), name=COL_TEMP))
+    fig.add_trace(go.Scatter(
+        x=out_df["time"], y=out_df["lo"], mode="lines",
+        line=dict(width=0), name="Lower bound", hoverinfo="skip", showlegend=False
+    ))
+    fig.add_trace(go.Scatter(
+        x=out_df["time"], y=out_df["hi"], mode="lines",
+        fill="tonexty", fillcolor="rgba(200,200,200,0.2)",
+        line=dict(width=0), name="Control band", hoverinfo="skip"
+    ))
+    fig.add_trace(go.Scatter(
+        x=out_df["time"], y=out_df["trend"], mode="lines",
+        line=dict(width=1.6, dash="dash"), name="Trend (DCT low-pass)"
+    ))
+    fig.add_trace(go.Scatter(
+        x=out_df["time"], y=out_df["value"], mode="lines",
+        line=dict(width=1.2), name=COL_TEMP
+    ))
     if n_out:
-        fig.add_trace(go.Scatter(x=out_df.loc[out_df["is_outlier"], "time"],
-                                 y=out_df.loc[out_df["is_outlier"], "value"],
-                                 mode="markers", marker=dict(size=6, color="#E15759"),
-                                 name="Outliers"))
+        fig.add_trace(go.Scatter(
+            x=out_df.loc[out_df["is_outlier"], "time"],
+            y=out_df.loc[out_df["is_outlier"], "value"],
+            mode="markers", marker=dict(size=6, color="#E15759"),
+            name="Outliers",
+        ))
 
     fig.update_layout(
         xaxis_title="Time (UTC)",
@@ -126,7 +161,10 @@ with tabs[0]:
     st.plotly_chart(fig, use_container_width=True)
 
     with st.expander("Sample outliers (first 30)"):
-        st.dataframe(out_df.loc[out_df["is_outlier"]].head(30), use_container_width=True)
+        st.dataframe(
+            out_df.loc[out_df["is_outlier"]].head(30),
+            use_container_width=True
+        )
 
 
 # TAB 2 — LOF anomalies for precipitation (Plotly)
@@ -137,8 +175,10 @@ with tabs[1]:
 
     c1, c2 = st.columns(2)
     with c1:
-        contamination = st.slider("LOF contamination", 0.001, 0.05, 0.01, 0.001,
-                                  help="Approximate fraction of anomalies.")
+        contamination = st.slider(
+            "LOF contamination", 0.001, 0.05, 0.01, 0.001,
+            help="Approximate fraction of anomalies."
+        )
     with c2:
         n_neighbors = st.slider("LOF n_neighbors", 10, 120, 60, 5)
 
@@ -167,8 +207,10 @@ with tabs[1]:
     })
 
     n_anom = int(a_df["is_anom"].sum())
-    st.caption(f"Points: **{len(a_df):,}** • Anomalies: **{n_anom:,}** "
-               f"({(100*n_anom/len(a_df)):.2f}%) • n_neighbors={n_eff}")
+    st.caption(
+        f"Points: **{len(a_df):,}** • Anomalies: **{n_anom:,}** "
+        f"({(100*n_anom/len(a_df)):.2f}%) • n_neighbors={n_eff}"
+    )
 
     fig_p = go.Figure()
     fig_p.add_trace(go.Scatter(
@@ -191,4 +233,7 @@ with tabs[1]:
     st.plotly_chart(fig_p, use_container_width=True)
 
     with st.expander("Sample anomalies (first 30)"):
-        st.dataframe(a_df.loc[a_df["is_anom"]].head(30), use_container_width=True)
+        st.dataframe(
+            a_df.loc[a_df["is_anom"]].head(30),
+            use_container_width=True
+        )
