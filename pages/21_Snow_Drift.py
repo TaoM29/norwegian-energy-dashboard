@@ -176,7 +176,7 @@ with st.expander("Advanced Tabler parameters", expanded=False):
 # we’ll load a wide span first time, then let the user choose seasons to analyze
 st.subheader("Select seasons (Jul → Jun)")
 min_default, max_default = 2021, 2024  
-y1, y2 = st.slider("Season range", min_value=2000, max_value=2025,
+y1, y2 = st.slider("Season range", min_value=2000, max_value=2024,
                    value=(min_default, max_default), step=1)
 
 start_date, end_date = season_span(y1, y2)
