@@ -181,14 +181,25 @@ if df_mean.empty:
     st.stop()
 
 
+
 # Choropleth setup 
 val_map = {r["price_area"]: float(r["mean_kwh"]) for _, r in df_mean.iterrows()}
-vmin, vmax = min(val_map.values()), max(val_map.values())
+vmin = min(val_map.values())
+vmax = max(val_map.values())
 if vmin == vmax:
     vmax = vmin + 1.0
 
-cmap = cm.linear.YlOrRd_09.scale(vmin, vmax)
+# Make the legend cleaner: round limits and use a stepped colorbar
+vmin_legend = round(vmin, 1)
+vmax_legend = round(vmax, 1)
+
+# 5–6 steps is usually enough
+cmap = cm.linear.YlOrRd_09.scale(vmin_legend, vmax_legend).to_step(4)
 cmap.caption = f"Mean kWh ({kind.lower()} • {grp})"
+
+
+
+
 
 
 # Folium map 

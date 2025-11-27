@@ -8,7 +8,7 @@ import streamlit as st
 
 from app_core.loaders.weather import load_openmeteo_era5
 
-st.title("Weather Overview - Stats & Sparklines")
+st.title("Weather Overview — Stats & Sparklines")
 st.caption("Quick statistical overview of ERA5 weather for the selected area & year.")
 
 # Global selection (shared across app)
