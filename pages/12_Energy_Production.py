@@ -23,7 +23,7 @@ AREA, YEAR = require_area_year()
 st.caption(f"Scope: **{AREA}**, **{YEAR}**")
 st.page_link("pages/02_Price_Area_Selector.py", label="Change selection", icon=":material/settings:")
 
-st.title("Energy Production (2021–2024)")
+st.title("Energy Production - Production Groups Overview")
 
 GROUP_COLORS = {
     "hydro": "#4E79A7", "wind": "#59A14F", "solar": "#EDC948",

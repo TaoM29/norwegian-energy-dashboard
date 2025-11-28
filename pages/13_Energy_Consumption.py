@@ -21,7 +21,7 @@ AREA, YEAR = require_area_year()
 st.caption(f"Scope: **{AREA}**, **{YEAR}**")
 st.page_link("pages/02_Price_Area_Selector.py", label="Change selection", icon=":material/settings:")
 
-st.title("Energy Consumption (2021–2024)")
+st.title("Energy Consumption - Consumption Groups Overview")
 
 GROUP_COLORS = {
     "household": "#4E79A7", "cabin": "#59A14F", "primary": "#EDC948",
