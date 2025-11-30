@@ -8,13 +8,13 @@ Well-documented Streamlit dashboard for the IND320 “Data to Decision” course
 ---
 
 ## What this repo contains
-- `app_core`- folder with relevant loaders and analysis tools
+- `app_core`- folder with relevant loaders and analysis tools.
 - `data/` — project data used by notebooks and the app.
-- `notebooks/` — jupyter notebooks for each project part
+- `notebooks/` — jupyter notebooks for each project part.
 - `pages/` - different pages for different parts of the project.
 - `pdf/` - exported notebook PDFs.
-- `app.py` — self-contained Streamlit app with pages/ contents
-- `requirements.txt` —  library dependencies for this project
+- `app.py` — self-contained Streamlit app with pages/ contents.
+- `requirements.txt` —  library dependencies for this project.
 
 
 
