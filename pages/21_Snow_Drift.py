@@ -15,7 +15,6 @@ import plotly.express as px
 
 
 # Page setup
-st.set_page_config(page_title="Snow Drift (Tabler)", layout="wide")
 st.title("Snow Drift — Tabler")
 
 # Coordinate from Map page

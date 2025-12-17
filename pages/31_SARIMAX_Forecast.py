@@ -17,7 +17,6 @@ from app_core.loaders.weather import load_openmeteo_era5
 
 
 # Page setup
-st.set_page_config(page_title="Forecasting — SARIMAX (Energy)", layout="wide")
 st.title("Forecasting — SARIMAX (Energy)")
 
 # quick explainer for casual users 

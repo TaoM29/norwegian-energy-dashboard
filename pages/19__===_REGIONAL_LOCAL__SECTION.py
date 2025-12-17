@@ -1,6 +1,5 @@
 
 import streamlit as st
-st.set_page_config(page_title="Regional & Local — Section", page_icon="🗺️", layout="wide")
 
 st.markdown(
     "<h1 style='margin-bottom:0'>🗺️ Regional & Local</h1>"

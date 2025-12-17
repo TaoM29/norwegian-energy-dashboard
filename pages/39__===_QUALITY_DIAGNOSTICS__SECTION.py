@@ -1,6 +1,6 @@
 
 import streamlit as st
-st.set_page_config(page_title="Quality & Diagnostics — Section", page_icon="🧪", layout="wide")
+
 
 st.markdown(
     "<h1 style='margin-bottom:0'>🧪 Quality & Diagnostics</h1>"

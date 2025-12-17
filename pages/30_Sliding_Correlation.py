@@ -13,7 +13,6 @@ from app_core.loaders.mongo_utils import get_db, get_prod_coll_for_year
 
 
 # Page setup 
-st.set_page_config(page_title="Sliding Window Correlation", layout="wide")
 st.title("Meteorology ↔ Energy — Sliding Window Correlation")
 
 

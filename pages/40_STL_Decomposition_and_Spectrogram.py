@@ -11,7 +11,6 @@ from app_core.loaders.mongo_utils import get_db
 from app_core.analysis.stl import stl_decompose_elhub
 from app_core.analysis.spectrogram import production_spectrogram  
 
-st.set_page_config(page_title="STL Decomposition & Spectrogram", layout="wide")
 st.title("Time-Series Analysis — STL Decomposition & Spectrogram")
 
 

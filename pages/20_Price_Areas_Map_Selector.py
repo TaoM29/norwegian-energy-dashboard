@@ -23,7 +23,6 @@ from app_core.loaders.mongo_utils import get_db
 
 
 # Page setup
-st.set_page_config(page_title="Price Areas Map — Click-to-Select", layout="wide")
 st.title("Price Areas Map — Click-to-Select")
 
 SELECTED_AREA = st.session_state.get("selected_area", "NO1")

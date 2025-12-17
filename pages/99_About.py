@@ -2,7 +2,6 @@
 # pages/99_About.py
 import streamlit as st
 
-st.set_page_config(page_title="About", layout="wide")
 st.title("About this app")
 
 st.markdown(
