@@ -76,7 +76,7 @@ st.markdown(
 st.subheader("Project links")
 st.markdown(
     """
-- 🧑‍💻 **GitHub repo:** https://github.com/TaoM29/IND320-dashboard-basics
+- 🧑‍💻 **GitHub repo:** https://github.com/TaoM29/data-to-descision-dashboard
 """
 )
 

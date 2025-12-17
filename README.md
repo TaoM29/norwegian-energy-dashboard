@@ -2,8 +2,8 @@
 # Dashboards & Data Pipeline
 
 Well-documented Streamlit dashboard for the IND320 “Data to Decision” course.  
-**Live app:** https://ind320-project-work-nonewthing.streamlit.app  
-**Repo:** https://github.com/TaoM29/IND320-dashboard-basics
+- **Live app:** https://data-to-descision-dashboard-nonewthing.streamlit.app
+- **Repo:** https://github.com/TaoM29/data-to-descision-dashboard
 
 ---
 
@@ -12,9 +12,9 @@ Well-documented Streamlit dashboard for the IND320 “Data to Decision” course
 - `data/` — project data used by notebooks and the app.
 - `notebooks/` — jupyter notebooks for each project part.
 - `pages/` - different pages for different parts of the project.
-- `pdf/` - exported notebook PDFs.
 - `app.py` — self-contained Streamlit app with pages/ contents.
 - `requirements.txt` —  library dependencies for this project.
+
 
 
 
