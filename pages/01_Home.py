@@ -3,9 +3,8 @@
 import os
 import streamlit as st
 
-st.set_page_config(page_title="Home — IND320 Energy & Weather", layout="wide")
 
-st.title("IND320 — Energy & Weather Dashboard")
+st.title("Energy & Weather Dashboard")
 st.caption("Interactive exploration of Elhub production/consumption (2021–2024) and Open-Meteo ERA5 weather.")
 
 

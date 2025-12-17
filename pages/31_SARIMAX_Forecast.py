@@ -191,7 +191,7 @@ with st.sidebar:
     kind = st.radio("Energy kind", ["Production", "Consumption"], horizontal=False)
     groups = (["hydro", "wind", "solar", "thermal", "nuclear", "other"]
               if kind == "Production"
-              else ["household", "cabin", "primary", "secondary", "tertiary", "industry", "private", "business"])
+              else ["household", "cabin", "primary", "secondary", "tertiary"])
     group = st.selectbox("Energy group", groups, index=0)
 
     freq_label = st.selectbox("Frequency", ["Hourly", "Daily"], index=0)

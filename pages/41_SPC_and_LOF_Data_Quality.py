@@ -167,7 +167,7 @@ with tabs[0]:
         )
 
 
-# TAB 2 — LOF anomalies for precipitation (Plotly)
+# TAB 2 — LOF anomalies for precipitation data
 with tabs[1]:
     if COL_PREC not in df.columns:
         st.warning(f"Column `{COL_PREC}` not found in the weather dataset.")

@@ -193,7 +193,7 @@ if vmin == vmax:
 vmin_legend = round(vmin, 1)
 vmax_legend = round(vmax, 1)
 
-# 5–6 steps is usually enough
+# 4 steps should be enough
 cmap = cm.linear.YlOrRd_09.scale(vmin_legend, vmax_legend).to_step(4)
 cmap.caption = f"Mean kWh ({kind.lower()} • {grp})"
 

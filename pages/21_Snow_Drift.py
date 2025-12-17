@@ -34,9 +34,9 @@ st.caption(f"Using coordinate from Map page → **({lat:.5f}, {lon:.5f})**")
 
 
 # Defaults for Tabler parameters 
-DEFAULT_T = 3000   # maximum transport distance [m]
-DEFAULT_F = 30000  # fetch distance [m]
-DEFAULT_THETA = 0.5  # relocation coefficient
+DEFAULT_T = 3000       # maximum transport distance [m]
+DEFAULT_F = 30000      # fetch distance [m]
+DEFAULT_THETA = 0.5    # relocation coefficient
 
 
 # Status + quick link to map
@@ -55,7 +55,7 @@ if coord:
     st.success(f"Coordinate selected: **({coord[0]:.5f}, {coord[1]:.5f})**")
 else:
     st.warning("No coordinate selected yet. Please open **Price Areas Map — Choropleth & Click-to-Select** and click the map.")
-    st.stop()  # gracefully bail until a point is chosen
+    st.stop()  # bail until a point is chosen
 
 
 # Utilities (Tabler functions) 
@@ -173,7 +173,8 @@ with st.expander("Advanced Tabler parameters", expanded=False):
     with c3:
         theta = st.slider("Relocation coefficient θ", 0.0, 1.0, value=float(DEFAULT_THETA), step=0.05)
 
-# we’ll load a wide span first time, then let the user choose seasons to analyze
+
+# load a wide span first time, then let the user choose seasons to analyze
 st.subheader("Select seasons (Jul → Jun)")
 min_default, max_default = 2021, 2024  
 y1, y2 = st.slider("Season range", min_value=2000, max_value=2024,
@@ -315,7 +316,6 @@ def _season_month_index(dt: pd.Timestamp) -> int:
     return ((dt.month - 7) % 12) + 1  # Jul=1 ... Jun=12
 
 def _compute_Qupot_from_speeds(wind_speeds: pd.Series, dt_sec: int = 3600) -> float:
-    # Potential transport sum(u^3.8 * dt) / 233847  [kg/m]
     if len(wind_speeds) == 0:
         return 0.0
     return float(((wind_speeds.astype(float) ** 3.8) * dt_sec).sum() / 233847.0)

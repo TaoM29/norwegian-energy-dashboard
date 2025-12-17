@@ -33,7 +33,7 @@ with colB:
         default_index = 2  # solar
         group_col = "production_group"
     else:
-        groups = ["household", "cabin", "primary", "secondary", "tertiary", "industry", "private", "business"]
+        groups = ["household", "cabin", "primary", "secondary", "tertiary"]
         group_key = "stl_group_cons"
         default_index = 0  # household
         group_col = "consumption_group"
