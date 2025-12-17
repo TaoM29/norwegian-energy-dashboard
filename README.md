@@ -1,7 +1,7 @@
 
 # Dashboards & Data Pipeline
 
-Well-documented Streamlit dashboard for the IND320 “Data to Decision” course.  
+Well-documented "Data to Decision" Streamlit dashboard
 - **Live app:** https://data-to-descision-dashboard-nonewthing.streamlit.app
 - **Repo:** https://github.com/TaoM29/data-to-descision-dashboard
 
