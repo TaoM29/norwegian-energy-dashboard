@@ -51,10 +51,9 @@ st.markdown(
 - If **Seasonal** changes shape/amplitude → changing daily/weekly behavior.
 - Large spikes in **Residual** or isolated hot spots in the spectrogram can hint at unusual events.
 
-Check the controls above to switch dataset/group and tune STL/spectrogram parameters.
+Check the controls below to switch dataset/group and tune STL/spectrogram parameters.
 """
 )
-
 
 # Global selection (from page 02) + tiny link to change it
 AREA = st.session_state.get("selected_area", "NO1")
