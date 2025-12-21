@@ -9,7 +9,9 @@ import streamlit as st
 
 from app_core.loaders.mongo_utils import get_db
 from app_core.analysis.stl import stl_decompose_elhub
+from app_core.loaders.elhub_year import load_elhub_year_df
 from app_core.analysis.spectrogram import production_spectrogram  
+
 
 st.title("Time-Series Analysis — STL Decomposition & Spectrogram")
 
@@ -64,45 +66,20 @@ with q2:
 
 # Data loader
 @st.cache_data(ttl=900, show_spinner=False)
-def load_year_df(kind: str, area: str, group: str, year: int,
-                 price_area_col="price_area",
-                 group_col="production_group",
-                 value_col="quantity_kwh",
-                 time_col="start_time") -> pd.DataFrame:
-    """
-    Fetch one full year's worth of hourly rows for the given dataset (Production/Consumption),
-    price area, group and year.
-    Collections:
-      - Production: 2021 -> prod_hour; 2022–2024 -> elhub_production_mba_hour
-      - Consumption: 2021–2024 -> elhub_consumption_mba_hour
-    """
+def load_year_df_cached(kind: str, area: str, group: str, year: int, group_col: str) -> pd.DataFrame:
     db = get_db()
-    start = datetime(year, 1, 1)
-    end = datetime(year + 1, 1, 1)
+    return load_elhub_year_df(
+        db=db,
+        kind=kind,
+        area=area,
+        group=group,
+        year=year,
+        group_col=group_col,
+    )
 
-    if kind == "Production":
-        coll_name = "prod_hour" if year == 2021 else "elhub_production_mba_hour"
-    else:
-        coll_name = "elhub_consumption_mba_hour"
-
-    query = {
-        price_area_col: area,
-        group_col: group,
-        time_col: {"$gte": start, "$lt": end},
-    }
-    proj = {"_id": 0, price_area_col: 1, group_col: 1, time_col: 1, value_col: 1}
-
-    rows = list(db[coll_name].find(query, proj))
-    if not rows:
-        return pd.DataFrame(columns=[price_area_col, group_col, time_col, value_col])
-
-    df = pd.DataFrame(rows)
-    df[time_col] = pd.to_datetime(df[time_col], utc=True)
-    df = df.sort_values(time_col).reset_index(drop=True)
-    return df
 
 with st.spinner(f"Loading {KIND.lower()} · {AREA} · {GROUP} · {YEAR} …"):
-    df_year = load_year_df(KIND, AREA, GROUP, YEAR, group_col=group_col)
+    df_year = load_year_df_cached(KIND, AREA, GROUP, YEAR, group_col=group_col)
 
 
 # Preview
