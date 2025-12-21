@@ -1,5 +1,5 @@
 
-[![CI - Tests](https://github.com/TaoM29/data-to-descision-dashboard/actions/workflows/tests.yml/badge.svg)](https://github.com/TaoM29/data-to-descision-dashboard/actions/workflows/tests.yml)
+[![CI - Tests](https://github.com/TaoM29/data-to-descision-dashboard/actions/workflows/tests.yml/badge.svg)](https://github.com/TaoM29/data-to-descision-dashboard/actions/workflows/tests.yml) [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://data-to-descision-dashboard-nonewthing.streamlit.app)
 
 
 # Dashboards & Data Pipeline
