@@ -46,7 +46,7 @@ def load_energy_series_hourly(
             d.set_index("start_time")["quantity_kwh"]
             .astype(float)
             .sort_index()
-            .resample("H")
+            .resample("h")
             .sum()
         )
 
@@ -69,6 +69,6 @@ def load_energy_series_hourly(
         d.set_index("start_time")["quantity_kwh"]
         .astype(float)
         .sort_index()
-        .resample("H")
+        .resample("h")
         .sum()
     )
