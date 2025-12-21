@@ -1,9 +1,6 @@
-
-# pages/31_SARIMAX_Forecast.py
 from __future__ import annotations
 
-import math
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List, Dict, Tuple, Optional
 
 import numpy as np
@@ -12,11 +9,15 @@ import plotly.graph_objects as go
 import streamlit as st
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
-# project loaders
 from app_core.loaders.mongo_utils import get_db
 from app_core.loaders.weather import load_openmeteo_era5
-
-
+from app_core.loaders.elhub_span import load_energy_span_df
+from app_core.loaders.weather_span import load_weather_span_df
+from app_core.analysis.sarimax_utils import (
+    aggregate_freq,
+    build_exog_future,
+    rolling_origin_backtest_sarimax,
+)
 
 st.title("Forecasting — SARIMAX (Energy)")
 
@@ -42,20 +43,15 @@ st.markdown(
   - **MAE** (Mean Absolute Error) — lower is better  
   - **RMSE** (Root Mean Squared Error) — penalizes large errors  
   - **MASE** (Mean Absolute Scaled Error) — **< 1 means better than the seasonal-naive baseline**
-
-- Check the side tab for **Controls** (including backtest horizon, step size, and number of folds).
 """
 )
 
-# Global selection from page 02
 AREA = st.session_state.get("selected_area", "NO1")
 YEAR = int(st.session_state.get("selected_year", 2024))
 st.page_link("pages/02_Price_Area_Selector.py", label="Change area / year", icon=":material/settings:")
 st.caption(f"Active selection → **Area:** {AREA} • **Year:** {YEAR}")
 
 
-
-# Cached DB client
 @st.cache_resource
 def _db():
     return get_db()
@@ -64,214 +60,18 @@ def _db():
 db = _db()
 
 
-
-
-# Helpers / Loaders
-def _energy_collections_for_span(kind: str, start: datetime, end: datetime) -> List[Tuple[str, str]]:
-    """Return (collection, group_field) across the span (handles 2021 vs 2022–2024 split)."""
-    years = range(start.year, end.year + 1)
-    out: List[Tuple[str, str]] = []
-    if kind == "Production":
-        for y in years:
-            if y <= 2021:
-                out.append(("prod_hour", "production_group"))
-            else:
-                out.append(("elhub_production_mba_hour", "production_group"))
-    else:  # Consumption
-        for _y in years:
-            out.append(("elhub_consumption_mba_hour", "consumption_group"))
-
-    # de-dupe preserving order
-    seen, uniq = set(), []
-    for t in out:
-        if t not in seen:
-            seen.add(t)
-            uniq.append(t)
-    return uniq
-
-
-
 @st.cache_data(ttl=900, show_spinner=False, max_entries=128)
 def load_energy_span_cached(area: str, kind: str, group: str, start_iso: str, end_iso: str) -> pd.DataFrame:
-    """Load hourly energy (quantity_kwh) for [start,end] with stable cache keys."""
     start = datetime.fromisoformat(start_iso)
     end = datetime.fromisoformat(end_iso)
-    colls = _energy_collections_for_span(kind, start, end)
-
-    frames: List[pd.DataFrame] = []
-    for coll_name, group_field in colls:
-        pipe = [
-            {
-                "$match": {
-                    "price_area": area,
-                    group_field: group,
-                    "start_time": {"$gte": start, "$lte": end},
-                }
-            },
-            {"$project": {"_id": 0, "start_time": 1, "quantity_kwh": 1}},
-        ]
-        rows = list(db[coll_name].aggregate(pipe, allowDiskUse=True))
-        if rows:
-            frames.append(pd.DataFrame(rows))
-
-    if not frames:
-        return pd.DataFrame(columns=["time", "quantity_kwh"])
-
-    df = pd.concat(frames, ignore_index=True)
-    df["time"] = pd.to_datetime(df["start_time"], utc=True)
-    df = df[["time", "quantity_kwh"]].sort_values("time").reset_index(drop=True)
-
-    start_ts = pd.Timestamp(start, tz="UTC")
-    end_ts = pd.Timestamp(end, tz="UTC")
-    return df[(df["time"] >= start_ts) & (df["time"] <= end_ts)]
-
+    return load_energy_span_df(db=db, area=area, kind=kind, group=group, start=start, end=end)
 
 
 @st.cache_data(ttl=1800, show_spinner=False, max_entries=64)
 def load_weather_span_cached(area: str, start_iso: str, end_iso: str) -> pd.DataFrame:
-    """Load ERA5 hourly weather for [start,end] by stitching per-year files (cached)."""
     start = datetime.fromisoformat(start_iso)
     end = datetime.fromisoformat(end_iso)
-
-    frames: List[pd.DataFrame] = []
-    for y in range(start.year, end.year + 1):
-        w = load_openmeteo_era5(area, y).copy()
-        w["time"] = pd.to_datetime(w["time"], utc=True)
-        frames.append(w)
-
-    if not frames:
-        return pd.DataFrame()
-
-    dfw = pd.concat(frames, ignore_index=True)
-    start_ts = pd.Timestamp(start, tz="UTC")
-    end_ts = pd.Timestamp(end, tz="UTC")
-    dfw = dfw[(dfw["time"] >= start_ts) & (dfw["time"] <= end_ts)]
-    return dfw.sort_values("time").reset_index(drop=True)
-
-
-
-def aggregate_freq(df_energy: pd.DataFrame, df_weather: pd.DataFrame, freq: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Align energy and weather at requested frequency.
-    freq: "H" or "D"
-    Energy is kWh → sum for resampling to daily.
-    Weather: temp/wind = mean; precipitation = sum.
-    """
-    if freq == "H":
-        e = df_energy.set_index("time").asfreq("H")
-        e["quantity_kwh"] = e["quantity_kwh"].astype(float).fillna(0.0)
-
-        w = df_weather.set_index("time").asfreq("H")
-        for col in w.columns:
-            if col == "precipitation (mm)":
-                w[col] = w[col].astype(float).fillna(0.0)
-            else:
-                w[col] = w[col].astype(float).interpolate(limit=6)
-        return e, w
-
-    # Daily
-    e = df_energy.set_index("time").resample("D")["quantity_kwh"].sum().to_frame()
-
-    agg: Dict[str, str] = {}
-    for c in df_weather.columns:
-        if c == "time":
-            continue
-        agg[c] = "sum" if "precipitation" in c else "mean"
-    w = df_weather.set_index("time").resample("D").agg(agg)
-
-    return e, w
-
-
-
-def build_exog_future(exog_train: pd.DataFrame, horizon: int, freq: str, strategy: str) -> pd.DataFrame:
-    """
-    Create future exogenous values for forecasting.
-      - 'last': repeat the last observed row
-      - 'hod-mean': hour-of-day mean (hourly) / day-of-week mean (daily)
-    """
-    if exog_train is None or exog_train.empty:
-        return exog_train
-
-    last_index = exog_train.index[-1]
-    if freq == "H":
-        fut_index = pd.date_range(last_index + pd.Timedelta(hours=1), periods=horizon, freq="H", tz="UTC")
-    else:
-        fut_index = pd.date_range(last_index + pd.Timedelta(days=1), periods=horizon, freq="D", tz="UTC")
-
-    if strategy == "last":
-        fut_vals = pd.DataFrame(
-            np.repeat(exog_train.iloc[[-1]].to_numpy(), horizon, axis=0),
-            index=fut_index,
-            columns=exog_train.columns,
-        )
-    elif strategy == "hod-mean":
-        if freq == "H":
-            means = exog_train.groupby(exog_train.index.hour).mean(numeric_only=True)
-            fut_vals = pd.DataFrame(index=fut_index, columns=exog_train.columns, dtype=float)
-            fut_vals.loc[:] = [means.loc[h].values for h in fut_index.hour]
-        else:
-            means = exog_train.groupby(exog_train.index.dayofweek).mean(numeric_only=True)
-            fut_vals = pd.DataFrame(index=fut_index, columns=exog_train.columns, dtype=float)
-            fut_vals.loc[:] = [means.loc[d].values for d in fut_index.dayofweek]
-    else:
-        fut_vals = pd.DataFrame(
-            np.repeat(exog_train.iloc[[-1]].to_numpy(), horizon, axis=0),
-            index=fut_index,
-            columns=exog_train.columns,
-        )
-
-    # final cleanup
-    fut_vals = fut_vals.astype(float)
-    fut_vals = fut_vals.interpolate(limit=6).bfill().ffill()
-    return fut_vals
-
-
-
-
-# Backtesting helpers
-def _mae(y_true: pd.Series, y_pred: pd.Series) -> float:
-    a = (y_true - y_pred).abs().dropna()
-    return float(a.mean()) if len(a) else float("nan")
-
-
-def _rmse(y_true: pd.Series, y_pred: pd.Series) -> float:
-    a = (y_true - y_pred).dropna()
-    if not len(a):
-        return float("nan")
-    return float(np.sqrt(np.mean(a.to_numpy() ** 2)))
-
-
-def _mase(y_true: pd.Series, y_pred: pd.Series, y_train: pd.Series, m: int) -> float:
-    y_train = y_train.dropna()
-    if len(y_train) < 3:
-        return float("nan")
-
-    # scale = mean abs seasonal naive error on training
-    if len(y_train) <= m:
-        scale = float(y_train.diff().abs().dropna().mean())  # fallback
-    else:
-        scale = float(np.mean(np.abs(y_train.iloc[m:].to_numpy() - y_train.iloc[:-m].to_numpy())))
-
-    if not np.isfinite(scale) or scale == 0:
-        return float("nan")
-
-    return _mae(y_true, y_pred) / scale
-
-
-
-def _seasonal_naive_forecast(y_train: pd.Series, horizon: int, m: int, freq: str) -> pd.Series:
-    y_train = y_train.dropna()
-    if len(y_train) == 0:
-        return pd.Series(dtype=float)
-
-    m_eff = max(1, min(int(m), len(y_train)))
-    last_season = y_train.iloc[-m_eff:].to_numpy()
-    reps = int(math.ceil(horizon / m_eff))
-    vals = np.tile(last_season, reps)[:horizon]
-
-    idx = pd.date_range(y_train.index[-1] + pd.tseries.frequencies.to_offset(freq), periods=horizon, freq=freq, tz="UTC")
-    return pd.Series(vals, index=idx)
-
+    return load_weather_span_df(load_openmeteo_era5=load_openmeteo_era5, area=area, start=start, end=end)
 
 
 @st.cache_data(ttl=900, show_spinner=False, max_entries=32)
@@ -287,138 +87,20 @@ def rolling_backtest_cached(
     seasonal_order: tuple[int, int, int, int],
     eval_no_exog: bool,
 ) -> tuple[pd.DataFrame, dict]:
-    """
-    Rolling-origin backtest inside the available y_values span.
-
-    Returns:
-      - summary table: mean/std by model for MAE/RMSE/MASE
-      - artifacts for plotting last fold: y_test, baseline, sarimax_best, sarimax_no_exog, sarimax_exog
-    """
-    y = y_values.dropna().copy()
-    if len(y) < (horizon + max(60, 2 * max(1, m_seasonal))):
-        return pd.DataFrame(), {}
-
-    X = None
-    if X_values is not None and not X_values.empty:
-        X = X_values.reindex(y.index).copy().astype(float)
-        X = X.interpolate(limit=6).bfill().ffill()
-
-    min_train = max(60, 2 * max(1, m_seasonal), 5 * (order[0] + order[2] + seasonal_order[0] + seasonal_order[2] + 1))
-    last_cutoff_pos = len(y) - horizon - 1
-    cut_positions = [last_cutoff_pos - step_size * k for k in range(int(folds))][::-1]
-    cut_positions = [p for p in cut_positions if p >= min_train]
-    if not cut_positions:
-        return pd.DataFrame(), {}
-
-    def fit_forecast(y_train: pd.Series, X_train: Optional[pd.DataFrame], X_test: Optional[pd.DataFrame]) -> Optional[pd.Series]:
-        try:
-            model = SARIMAX(
-                endog=y_train,
-                exog=X_train,
-                order=order,
-                seasonal_order=seasonal_order,
-                enforce_stationarity=False,
-                enforce_invertibility=False,
-                freq=freq,
-            )
-            res = model.fit(disp=False)
-            fc = res.get_forecast(steps=int(horizon), exog=X_test)
-            return fc.predicted_mean
-        except Exception:
-            return None
-
-    rows = []
-    artifacts: dict = {}
-
-    for pos in cut_positions:
-        y_train = y.iloc[: pos + 1]
-        y_test = y.iloc[pos + 1 : pos + 1 + horizon]
-
-        # baseline
-        y_base = _seasonal_naive_forecast(y_train, horizon=int(horizon), m=int(m_seasonal), freq=freq)
-        rows.append(
-            {
-                "model": "Seasonal naive",
-                "fold": int(pos),
-                "MAE": _mae(y_test, y_base),
-                "RMSE": _rmse(y_test, y_base),
-                "MASE": _mase(y_test, y_base, y_train, m=int(m_seasonal)),
-            }
-        )
-
-        # SARIMAX no exog
-        y_hat_no = None
-        if eval_no_exog or X is None:
-            y_hat_no = fit_forecast(y_train, None, None)
-            if y_hat_no is not None:
-                rows.append(
-                    {
-                        "model": "SARIMAX (no exog)",
-                        "fold": int(pos),
-                        "MAE": _mae(y_test, y_hat_no),
-                        "RMSE": _rmse(y_test, y_hat_no),
-                        "MASE": _mase(y_test, y_hat_no, y_train, m=int(m_seasonal)),
-                    }
-                )
-
-        # SARIMAX with exog
-        y_hat_ex = None
-        if X is not None:
-            X_train = X.iloc[: pos + 1]
-            X_test = X.iloc[pos + 1 : pos + 1 + horizon]
-            y_hat_ex = fit_forecast(y_train, X_train, X_test)
-            if y_hat_ex is not None:
-                rows.append(
-                    {
-                        "model": "SARIMAX (+exog)",
-                        "fold": int(pos),
-                        "MAE": _mae(y_test, y_hat_ex),
-                        "RMSE": _rmse(y_test, y_hat_ex),
-                        "MASE": _mase(y_test, y_hat_ex, y_train, m=int(m_seasonal)),
-                    }
-                )
-
-        # keep last fold artifacts for plotting
-        if pos == cut_positions[-1]:
-            artifacts = {
-                "y_test": y_test,
-                "baseline": y_base,
-                "sarimax_no_exog": y_hat_no,
-                "sarimax_exog": y_hat_ex,
-            }
-            artifacts["sarimax_best"] = y_hat_ex if y_hat_ex is not None else y_hat_no
-
-    df_folds = pd.DataFrame(rows)
-
-    summary = (
-        df_folds.groupby("model")[["MAE", "RMSE", "MASE"]]
-        .agg(["mean", "std"])
-        .reset_index()
+    return rolling_origin_backtest_sarimax(
+        y_values=y_values,
+        X_values=X_values,
+        freq=freq,
+        horizon=horizon,
+        step_size=step_size,
+        folds=folds,
+        m_seasonal=m_seasonal,
+        order=order,
+        seasonal_order=seasonal_order,
+        eval_no_exog=eval_no_exog,
     )
 
-    # Flatten columns for display
-    cols = []
-    for c in summary.columns:
-        if isinstance(c, tuple):
-            if c[1] == "":
-                cols.append(c[0])
-            else:
-                cols.append(f"{c[0]}_{c[1]}")
-        else:
-            cols.append(str(c))
-    summary.columns = cols
 
-    # sort models in a nice order
-    order_models = ["Seasonal naive", "SARIMAX (no exog)", "SARIMAX (+exog)"]
-    summary["__ord"] = summary["model"].apply(lambda x: order_models.index(x) if x in order_models else 999)
-    summary = summary.sort_values("__ord").drop(columns="__ord").reset_index(drop=True)
-
-    return summary, artifacts
-
-
-
-
-# UI (Sidebar)
 with st.sidebar:
     st.header("Controls")
 
@@ -431,7 +113,6 @@ with st.sidebar:
     freq_label = st.selectbox("Frequency", ["Hourly", "Daily"], index=0)
     FREQ = "H" if freq_label == "Hourly" else "D"
 
-    # Training window
     st.markdown("**Training period**")
     def_year_start = datetime(YEAR, 1, 1)
     def_year_end = datetime(YEAR, 12, 31, 23, 59, 59)
@@ -535,8 +216,6 @@ with st.sidebar:
     st.caption("Tip: if the model fails to converge, try smaller orders or disable seasonality.")
 
 
-
-# Load & Prepare
 with st.status("Loading energy + weather…", expanded=False) as status:
     dfE_hourly = load_energy_span_cached(AREA, kind, group, TRAIN_START.isoformat(), TRAIN_END.isoformat())
     if dfE_hourly.empty:
@@ -547,7 +226,6 @@ with st.status("Loading energy + weather…", expanded=False) as status:
     dfW_hourly = load_weather_span_cached(AREA, TRAIN_START.isoformat(), TRAIN_END.isoformat())
     e, w = aggregate_freq(dfE_hourly, dfW_hourly, FREQ)
 
-    # Build endog/exog
     y = e["quantity_kwh"].astype(float).copy().asfreq(FREQ)
 
     X = None
@@ -560,26 +238,19 @@ with st.status("Loading energy + weather…", expanded=False) as status:
             X = w[use_cols].astype(float).reindex(y.index).copy()
             X = X.interpolate(limit=6).bfill().ffill()
 
-    if y.dropna().shape[0] < max(40, (int(p) + int(q) + int(P) + int(Q) + 1) * 5):
-        st.warning("Very short training set; consider expanding the training window.")
-
     status.update(label="Data loaded", state="complete")
 
 
-
-# Fit & Forecast (single fit on full training span)
-# dynamic start index
 if dynamic_toggle:
     dyn_idx = int(len(y) * (dyn_pct / 100))
     dyn_idx = min(max(dyn_idx, 0), len(y) - 1)
     dyn_start = y.index[dyn_idx]
 else:
-    dyn_start = 0  # statsmodels: 0/False means no dynamic part
+    dyn_start = 0
 
 order = (int(p), int(d), int(q))
 seasonal_order = (int(P), int(D), int(Q), int(s)) if seasonal else (0, 0, 0, 0)
 
-# future exog
 X_future = build_exog_future(X, int(horizon), FREQ, exog_future_strategy) if X is not None else None
 
 with st.spinner("Fitting SARIMAX…"):
@@ -599,7 +270,6 @@ with st.spinner("Fitting SARIMAX…"):
         st.exception(exc)
         st.stop()
 
-# in-sample predictions (with/without dynamic)
 try:
     pred_insample = res.get_prediction(
         start=y.index[0], end=y.index[-1], dynamic=(dyn_start if dynamic_toggle else False), exog=X
@@ -608,68 +278,42 @@ try:
 except Exception:
     insample_mean = None
 
-# out-of-sample forecast
 with st.spinner("Forecasting…"):
     try:
         fc = res.get_forecast(steps=int(horizon), exog=X_future)
         fc_mean = fc.predicted_mean
-        fc_ci = fc.conf_int(alpha=0.05)  # 95%
+        fc_ci = fc.conf_int(alpha=0.05)
     except Exception as exc:
         st.exception(exc)
         st.stop()
 
 
-
-
-# Plot (main)
 st.subheader("Forecast")
 
 fig = go.Figure()
 fig.add_trace(go.Scatter(x=y.index, y=y, mode="lines", name="Actual", line=dict(width=1.5)))
 
 if insample_mean is not None:
-    fig.add_trace(
-        go.Scatter(
-            x=insample_mean.index,
-            y=insample_mean,
-            mode="lines",
-            name="Fitted (in-sample)",
-            line=dict(width=1),
-        )
-    )
+    fig.add_trace(go.Scatter(x=insample_mean.index, y=insample_mean, mode="lines", name="Fitted (in-sample)", line=dict(width=1)))
 
 fig.add_trace(go.Scatter(x=fc_mean.index, y=fc_mean, mode="lines", name="Forecast", line=dict(width=2)))
 
-# confidence band
-fig.add_trace(
-    go.Scatter(
-        x=fc_ci.index.tolist() + fc_ci.index[::-1].tolist(),
-        y=fc_ci.iloc[:, 0].tolist() + fc_ci.iloc[:, 1][::-1].tolist(),
-        fill="toself",
-        fillcolor="rgba(99, 110, 250, 0.15)",
-        line=dict(color="rgba(255,255,255,0)"),
-        hoverinfo="skip",
-        name="95% CI",
-    )
-)
+fig.add_trace(go.Scatter(
+    x=fc_ci.index.tolist() + fc_ci.index[::-1].tolist(),
+    y=fc_ci.iloc[:, 0].tolist() + fc_ci.iloc[:, 1][::-1].tolist(),
+    fill="toself",
+    fillcolor="rgba(99, 110, 250, 0.15)",
+    line=dict(color="rgba(255,255,255,0)"),
+    hoverinfo="skip",
+    name="95% CI",
+))
 
-# vertical line at training end
 fig.add_vline(x=y.index[-1], line_width=1, line_dash="dot", line_color="gray")
 
-# dynamic-start marker
 if dynamic_toggle:
     xline = pd.to_datetime(dyn_start)
     fig.add_vline(x=xline, line_width=1, line_dash="dash", line_color="orange")
-    fig.add_annotation(
-        x=xline,
-        y=1,
-        yref="paper",
-        text="dynamic start",
-        showarrow=False,
-        xanchor="left",
-        yanchor="top",
-        font=dict(color="orange"),
-    )
+    fig.add_annotation(x=xline, y=1, yref="paper", text="dynamic start", showarrow=False, xanchor="left", yanchor="top", font=dict(color="orange"))
 
 fig.update_layout(
     margin=dict(t=30, r=10, b=10, l=10),
@@ -681,9 +325,6 @@ fig.update_xaxes(title_text="Time (UTC)")
 st.plotly_chart(fig, use_container_width=True)
 
 
-
-
-# Backtesting & baselines
 st.subheader("Backtesting & baselines")
 
 if do_backtest:
@@ -713,7 +354,6 @@ if do_backtest:
 
         if isinstance(y_test, pd.Series) and isinstance(y_base, pd.Series):
             st.markdown("**Last fold preview**")
-
             fig_bt = go.Figure()
             fig_bt.add_trace(go.Scatter(x=y_test.index, y=y_test, mode="lines", name="Actual (test)", line=dict(width=2)))
             fig_bt.add_trace(go.Scatter(x=y_base.index, y=y_base, mode="lines", name="Seasonal naive", line=dict(width=1)))
@@ -727,16 +367,10 @@ if do_backtest:
             fig_bt.update_yaxes(title_text=f"{'kWh' if FREQ == 'H' else 'kWh/day'}")
             st.plotly_chart(fig_bt, use_container_width=True)
 
-        st.caption(
-            "MASE < 1 means the model beats the seasonal-naive baseline on average. "
-            "Increase the date span to get more valid folds."
-        )
+        st.caption("MASE < 1 means the model beats the seasonal-naive baseline on average.")
 else:
     st.info("Enable **Run rolling backtest** in the sidebar to compare SARIMAX vs the seasonal-naive baseline.")
 
-
-
-# Details & Notes
 
 with st.expander("Model details"):
     st.markdown(
