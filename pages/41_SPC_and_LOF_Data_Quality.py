@@ -1,19 +1,50 @@
-
 # pages/41_SPC_and_LOF_Data_Quality.py
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from scipy.fftpack import dct, idct
-from sklearn.neighbors import LocalOutlierFactor
-
 from app_core.loaders.weather import load_openmeteo_era5
+from app_core.analysis.data_quality import spc_outliers_dct, lof_precip_anomalies
 
 
 st.title("Data Quality — SPC (Outliers) & LOF (Anomalies)")
+
+st.markdown(
+    """
+**What this page shows**
+
+This page helps you **check data quality** in the hourly ERA5 weather series for the selected **price area** and **year**.
+
+### 1) SPC-style outliers (Temperature)
+- Builds a **smooth trend** using a **DCT low-pass filter** (keeps only the lowest-frequency coefficients).
+- Computes residuals (*actual − trend*) and estimates a **robust σ** using **MAD** (median absolute deviation).
+- Creates **control limits**: `trend ± k·σᵣ` and flags points outside the band as **outliers**.
+- Also reports **SATV** (*standardized actual-to-trend value*):  
+  `SATV = (actual − trend) / σᵣ`  
+  Large `|SATV|` means a point is far from the trend in “robust standard deviations”.
+
+**Controls**
+- *Keep low-frequency fraction (DCT)*: smaller → smoother trend (captures only slow changes).  
+- *SPC width (k·σᵣ)*: larger → wider band → fewer outliers.
+
+### 2) LOF anomalies (Precipitation)
+- Uses **Local Outlier Factor (LOF)** to find unusual precipitation behavior.
+- Builds a simple 2D feature space:
+  - current precipitation value `p(t)`
+  - **24h rolling mean** `mean₍24h₎(t)`
+- LOF marks points that are **locally rare** compared to their neighborhood as **anomalies**.
+
+**Controls**
+- *Contamination*: expected fraction of anomalies (higher → more flagged).
+- *n_neighbors*: neighborhood size (smaller → more local sensitivity; larger → more global / smoother scores).
+
+**How to interpret**
+- Outliers/anomalies don’t always mean “bad data” — they can also represent real extremes (storms, cold snaps).
+- Use the plots + sample tables to inspect *when* and *how* the flagged points happen.
+"""
+)
 
 # global selection (comes from 02_Price_Area_Selector)
 AREA = st.session_state.get("selected_area", "NO1")
@@ -67,61 +98,28 @@ with tabs[0]:
     with c3:
         st.caption("SPC-based outlier detection: trend via DCT low-pass; bounds = trend ± k·σ₍robust₎.")
 
-    # Make a time-indexed, hourly series before interpolation
+    # Make a time-indexed series (function will regularize to hourly + interpolate)
     ts = df.copy()
     ts["time"] = pd.to_datetime(ts["time"], utc=True)
     ts = ts.set_index("time").sort_index()
 
-    # Regular hourly grid → time-weighted interpolation now valid
-    s = pd.to_numeric(ts[COL_TEMP], errors="coerce").asfreq("H")
-    s = s.interpolate(method="time", limit=6)
+    out_df, summ = spc_outliers_dct(
+        ts[COL_TEMP],
+        keep_frac=float(keep_frac),
+        k_sigma=float(k_sigma),
+        interp_limit=6,
+    )
 
-    n = int(s.notna().sum())
-    if n < 24:
+    if out_df.empty or summ.n_points < 24:
         st.info("Not enough data points to analyze.")
         st.stop()
 
-    # DCT low-pass trend
-    y = s.fillna(method="ffill").fillna(method="bfill").to_numpy()
-    coeff = dct(y, norm="ortho")
-    k = max(1, int(len(y) * keep_frac))
-    coeff_lp = np.zeros_like(coeff)
-    coeff_lp[:k] = coeff[:k]
-    trend = idct(coeff_lp, norm="ortho")
-
-    # robust σ using MAD
-    resid = y - trend
-    mad = np.median(np.abs(resid - np.median(resid)))
-    sigma_robust = 1.4826 * mad if mad > 0 else (np.std(resid) or 1.0)
-
-    band_hi = trend + k_sigma * sigma_robust
-    band_lo = trend - k_sigma * sigma_robust
-    is_out = (y > band_hi) | (y < band_lo)
-
-    # SATV (standardized actual-to-trend value)
-    if sigma_robust:
-        satv = resid / sigma_robust
-        max_abs_satv = float(np.max(np.abs(satv)))
-    else:
-        satv = np.zeros_like(resid)
-        max_abs_satv = 0.0
-
-    out_df = pd.DataFrame({
-        "time": s.index.to_pydatetime(),
-        "value": y,
-        "trend": trend,
-        "lo": band_lo,
-        "hi": band_hi,
-        "satv": satv,
-        "is_outlier": is_out,
-    })
-
     # summary
-    n_out = int(is_out.sum())
+    pct = (100 * summ.n_outliers / summ.n_points) if summ.n_points else 0.0
     st.caption(
-        f"Points: **{len(out_df):,}** • Outliers: **{n_out:,}** "
-        f"({(100*n_out/len(out_df)):.2f}%) • σᵣ ≈ {sigma_robust:.3g} • "
-        f"max |SATV| ≈ {max_abs_satv:.2f}"
+        f"Points: **{summ.n_points:,}** • Outliers: **{summ.n_outliers:,}** "
+        f"({pct:.2f}%) • σᵣ ≈ {summ.sigma_robust:.3g} • "
+        f"max |SATV| ≈ {summ.max_abs_satv:.2f}"
     )
 
     # plotly figure
@@ -143,11 +141,13 @@ with tabs[0]:
         x=out_df["time"], y=out_df["value"], mode="lines",
         line=dict(width=1.2), name=COL_TEMP
     ))
-    if n_out:
+
+    if summ.n_outliers:
         fig.add_trace(go.Scatter(
             x=out_df.loc[out_df["is_outlier"], "time"],
             y=out_df.loc[out_df["is_outlier"], "value"],
-            mode="markers", marker=dict(size=6, color="#E15759"),
+            mode="markers",
+            marker=dict(size=6, color="#E15759"),
             name="Outliers",
         ))
 
@@ -180,38 +180,34 @@ with tabs[1]:
             help="Approximate fraction of anomalies."
         )
     with c2:
-        n_neighbors = st.slider("LOF n_neighbors", 
-                                min_value=10,
-                                max_value=120,
-                                value=60,
-                                step=5,
-                                help="Size of the local neighbourhood used by LOF. Larger values give smoother, more global anomaly scores; "
-                                "smaller values focus on very local deviations."
-    )
+        n_neighbors = st.slider(
+            "LOF n_neighbors",
+            min_value=10,
+            max_value=120,
+            value=60,
+            step=5,
+            help="Size of the local neighbourhood used by LOF. Larger values give smoother, more global anomaly scores; "
+                 "smaller values focus on very local deviations."
+        )
 
     s = pd.to_numeric(df[COL_PREC], errors="coerce").fillna(0.0)
-    nonzero = (s > 0).sum()
+    nonzero = int((s > 0).sum())
     if nonzero < 10:
         st.info("Precipitation is mostly zero — not enough variation for LOF.")
         st.stop()
 
-    # simple 2D context: current value + 24h rolling mean
-    roll = s.rolling(24, min_periods=1).mean()
-    X = np.column_stack([s.values, roll.values])
+    a_df, n_eff = lof_precip_anomalies(
+        df,
+        time_col="time",
+        precip_col=COL_PREC,
+        contamination=float(contamination),
+        n_neighbors=int(n_neighbors),
+        roll_hours=24,
+    )
 
-    # clamp neighbors to dataset size
-    n_eff = min(int(n_neighbors), max(10, len(s) - 1))
-    lof = LocalOutlierFactor(n_neighbors=n_eff, contamination=float(contamination))
-    labels = lof.fit_predict(X)        # -1 = outlier
-    scores = -lof.negative_outlier_factor_
-
-    a_df = pd.DataFrame({
-        "time": df["time"],
-        "precip": s,
-        "roll24": roll,
-        "lof_score": scores,
-        "is_anom": labels == -1,
-    })
+    if a_df.empty:
+        st.info("Could not compute LOF anomalies for this selection.")
+        st.stop()
 
     n_anom = int(a_df["is_anom"].sum())
     st.caption(
