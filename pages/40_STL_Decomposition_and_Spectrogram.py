@@ -15,6 +15,46 @@ from app_core.analysis.spectrogram import production_spectrogram
 
 st.title("Time-Series Analysis — STL Decomposition & Spectrogram")
 
+st.markdown(
+    """
+**What this page does**
+
+- Loads one full year of **hourly energy** for the selected **price area** and **group** (production or consumption).
+- Lets you explore the time-series using two complementary tools:
+  - **STL decomposition** (trend/seasonality/residual)
+  - **Spectrogram** (how periodic patterns change over time)
+
+**STL (Seasonal-Trend decomposition using LOESS)**
+
+- Splits the series into:
+  - **Observed** (the original signal)
+  - **Seasonal** (repeating pattern with the chosen period)
+  - **Trend** (slow-moving long-term changes)
+  - **Residual** (what remains: noise + anomalies not explained by trend/seasonality)
+- Key controls:
+  - **Period (hours):** the expected repeating cycle (e.g. 24 for daily, 168 for weekly).
+  - **Seasonal / Trend (odd):** smoothing window sizes (must be odd; the UI enforces this).
+  - **Robust:** reduces influence of outliers when fitting (often a good default).
+
+**Spectrogram (frequency content over time)**
+
+- Computes a time–frequency heatmap using a sliding window:
+  - Brighter areas = stronger repeating behavior at that frequency.
+  - Helps reveal shifts like “daily pattern stronger in summer” or “weekly rhythm fades”.
+- Key controls:
+  - **Window length (hours):** longer = better frequency resolution but less time detail.
+  - **Overlap (hours):** more overlap = smoother spectrogram but heavier computation.
+
+**How to read it**
+
+- If **Trend** moves but **Seasonal** stays stable → long-term shift with same rhythm.
+- If **Seasonal** changes shape/amplitude → changing daily/weekly behavior.
+- Large spikes in **Residual** or isolated hot spots in the spectrogram can hint at unusual events.
+
+Check the controls above to switch dataset/group and tune STL/spectrogram parameters.
+"""
+)
+
 
 # Global selection (from page 02) + tiny link to change it
 AREA = st.session_state.get("selected_area", "NO1")
