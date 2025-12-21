@@ -56,5 +56,6 @@ streamlit run app.py
 ## Run tests
 ```bash
 pytest -q
+```
 
 > Tip: run commands from the repo root; restart/refresh Streamlit if the UI looks stale.
