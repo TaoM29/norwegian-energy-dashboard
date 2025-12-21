@@ -1,5 +1,6 @@
 
-[![CI - Tests](https://github.com/TaoM29/data-to-descision-dashboard/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/TaoM29/data-to-descision-dashboard/actions/workflows/tests.yml)
+[![CI - Tests](https://github.com/TaoM29/data-to-descision-dashboard/actions/workflows/tests.yml/badge.svg)](https://github.com/TaoM29/data-to-descision-dashboard/actions/workflows/tests.yml)
+
 
 # Dashboards & Data Pipeline
 
