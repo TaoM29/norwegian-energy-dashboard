@@ -49,12 +49,12 @@ A well-documented **“Data → Decision”** Streamlit dashboard for exploring 
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
+```
 
 ---
 
-## Run locally
+## Run tests
 ```bash
 pytest -q
 
-
-"Tip: run commands from the repo root; restart/refresh Streamlit if the UI looks stale." 
+> Tip: run commands from the repo root; restart/refresh Streamlit if the UI looks stale.
