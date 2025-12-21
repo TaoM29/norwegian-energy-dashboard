@@ -1,3 +1,6 @@
+
+[![CI - Tests](https://github.com/TaoM29/data-to-descision-dashboard/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/TaoM29/data-to-descision-dashboard/actions/workflows/tests.yml)
+
 # Dashboards & Data Pipeline
 
 A well-documented **“Data → Decision”** Streamlit dashboard for exploring Norwegian energy (Elhub) and weather (ERA5), with analysis + forecasting modules.
