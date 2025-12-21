@@ -50,7 +50,7 @@ with st.sidebar:
     kind = st.radio("Energy kind", ["Production", "Consumption"], horizontal=False)
 
     prod_groups = ["hydro", "wind", "solar", "thermal", "nuclear", "other"]
-    cons_groups = ["household", "cabin", "primary", "secondary", "tertiary", "industry", "private", "business"]
+    cons_groups = ["household", "cabin", "primary", "secondary", "tertiary"]
     group = st.selectbox("Energy group", prod_groups if kind == "Production" else cons_groups)
 
     wx_vars = [
