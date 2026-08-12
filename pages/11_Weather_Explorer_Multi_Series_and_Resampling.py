@@ -63,7 +63,7 @@ with c2:
                                help="0 disables smoothing.")
 with c3:
     resample_choice = st.selectbox("Resample", ["Hourly", "Daily", "Weekly"], index=0)
-    rule = {"Hourly": "H", "Daily": "D", "Weekly": "W"}[resample_choice]
+    rule = {"Hourly": "h", "Daily": "D", "Weekly": "W"}[resample_choice]
 with c4:
     opacity = st.slider("Line opacity", 0.1, 1.0, 0.9, 0.05)
 
@@ -85,7 +85,7 @@ if df_rng.empty:
 long = df_rng.melt(id_vars="time", var_name="variable", value_name="value")
 
 # resample (per variable) 
-if rule != "H":
+if rule != "h":
     # precipitation is an accumulation; most others are averages
     def agg_for(var: str) -> str:
         return "sum" if "precipitation" in var.lower() else "mean"
@@ -103,7 +103,7 @@ if smooth_h and smooth_h > 0:
     long = (
         long.set_index("time")
             .groupby("variable")["value"]
-            .rolling(f"{smooth_h}H").mean()
+            .rolling(f"{smooth_h}h").mean()
             .reset_index()
     )
 
