@@ -102,7 +102,7 @@ wx = (
     df_wx[(df_wx["time"] >= month_start) & (df_wx["time"] <= month_end)]
     .set_index("time")[wx_var]
     .astype(float)
-    .resample("H")
+    .resample("h")
     .mean()
 )
 
