@@ -113,6 +113,8 @@ with st.sidebar:
     freq_label = st.selectbox("Frequency", ["Hourly", "Daily"], index=0)
     FREQ = "H" if freq_label == "Hourly" else "D"
 
+    PANDAS_FREQ = "h" if FREQ == "H" else FREQ
+
     st.markdown("**Training period**")
     def_year_start = datetime(YEAR, 1, 1)
     def_year_end = datetime(YEAR, 12, 31, 23, 59, 59)
@@ -224,9 +226,9 @@ with st.status("Loading energy + weather…", expanded=False) as status:
         st.stop()
 
     dfW_hourly = load_weather_span_cached(AREA, TRAIN_START.isoformat(), TRAIN_END.isoformat())
-    e, w = aggregate_freq(dfE_hourly, dfW_hourly, FREQ)
+    e, w = aggregate_freq(dfE_hourly, dfW_hourly, PANDAS_FREQ)
 
-    y = e["quantity_kwh"].astype(float).copy().asfreq(FREQ)
+    y = e["quantity_kwh"].astype(float).copy().asfreq(PANDAS_FREQ)
 
     X = None
     if exog_vars:
@@ -251,7 +253,13 @@ else:
 order = (int(p), int(d), int(q))
 seasonal_order = (int(P), int(D), int(Q), int(s)) if seasonal else (0, 0, 0, 0)
 
-X_future = build_exog_future(X, int(horizon), FREQ, exog_future_strategy) if X is not None else None
+X_future = build_exog_future(
+    X,
+    int(horizon),
+    PANDAS_FREQ,
+    exog_future_strategy,
+) if X is not None else None
+
 
 with st.spinner("Fitting SARIMAX…"):
     try:
@@ -262,7 +270,7 @@ with st.spinner("Fitting SARIMAX…"):
             seasonal_order=seasonal_order,
             enforce_stationarity=False,
             enforce_invertibility=False,
-            freq=FREQ,
+            freq=PANDAS_FREQ,
         )
         res = model.fit(disp=False)
         aic = float(res.aic)
@@ -332,7 +340,7 @@ if do_backtest:
         summary_bt, artifacts = rolling_backtest_cached(
             y_values=y,
             X_values=X,
-            freq=FREQ,
+            freq=PANDAS_FREQ,
             horizon=int(bt_horizon),
             step_size=int(step_size),
             folds=int(folds),
