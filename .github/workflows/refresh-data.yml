@@ -1,0 +1,58 @@
+name: Refresh public data
+
+on:
+  schedule:
+    - cron: '37 19 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-data-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - name: Restore last successful snapshot
+        id: snapshot
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/energy.sqlite
+            data/weather
+          key: public-data-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: public-data-v1-
+      - name: Refresh or rebuild from public sources
+        env:
+          CACHE_MATCH: ${{ steps.snapshot.outputs.cache-matched-key }}
+        run: |
+          if [ -n "$CACHE_MATCH" ]; then
+            python scripts/refresh_data.py refresh
+          else
+            python scripts/refresh_data.py backfill
+          fi
+      - name: Retain successful snapshot for the next refresh
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/energy.sqlite
+            data/weather
+          key: public-data-v1-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Publish downloadable validated data
+        uses: actions/upload-artifact@v4
+        with:
+          name: validated-public-data
+          path: |
+            data/energy.sqlite
+            data/weather
+          retention-days: 3
