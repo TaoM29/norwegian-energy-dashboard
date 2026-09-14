@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -57,6 +57,34 @@ export default function Page() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [retry, setRetry] = useState(0);
+  const mainRef = useRef<HTMLElement>(null);
+  const updateStarted = useRef(0);
+  const firstViewRecorded = useRef(false);
+
+  // Local performance evidence: navigation/filter start through a painted result.
+  // Two frames include a paint opportunity; no telemetry leaves the browser.
+  useEffect(() => {
+    if (loading || error || !overview) return;
+    let paintedFrame = 0;
+    const frame = requestAnimationFrame(() => {
+      paintedFrame = requestAnimationFrame(() => {
+        const now = performance.now();
+        const main = mainRef.current;
+        if (!main) return;
+        if (!firstViewRecorded.current) {
+          main.dataset.firstViewMs = now.toFixed(1);
+          firstViewRecorded.current = true;
+        }
+        main.dataset.updateMs = (now - updateStarted.current).toFixed(1);
+        main.dataset.paintedQuery = `${overview.query.area}/${overview.query.start}/${overview.query.end}`;
+        updateStarted.current = 0;
+      });
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      cancelAnimationFrame(paintedFrame);
+    };
+  }, [overview, loading, error]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -87,6 +115,7 @@ export default function Page() {
   useEffect(() => {
     if (!coverage) return;
     const restore = () => {
+      updateStarted.current = performance.now();
       const params = new URLSearchParams(window.location.search);
       const next = {
         area: params.get("area") || "NO1",
@@ -102,6 +131,7 @@ export default function Page() {
 
   useEffect(() => {
     if (!filters) return;
+    if (!updateStarted.current) updateStarted.current = performance.now();
     const controller = new AbortController();
     setLoading(true);
     setError("");
@@ -126,6 +156,7 @@ export default function Page() {
   }, [filters]);
 
   function apply(next: Filters) {
+    updateStarted.current = performance.now();
     setDraft(next);
     setFilters(next);
     window.history.pushState(null, "", `?${new URLSearchParams(next)}`);
@@ -230,7 +261,7 @@ export default function Page() {
             <span /> Observed energy data
           </span>
         </header>
-        <main id="main" tabIndex={-1}>
+        <main id="main" ref={mainRef} tabIndex={-1}>
           <div className="page-heading">
             <div>
               <div className="eyebrow">THE ENERGY PICTURE</div>
