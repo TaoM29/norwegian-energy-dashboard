@@ -2,7 +2,7 @@
 
 ## Project scope
 
-Work in `/Users/taom/Projects/norwegian-energy-dashboard`. This repository is an independent continuation of the IND320 project; implementation and pushes belong to `TaoM29/norwegian-energy-dashboard`. Use `codex/` feature branches.
+Work in `/Users/taom/Projects/norwegian-energy-dashboard`. This repository is an independent continuation of the IND320 project; implementation and pushes belong to `TaoM29/norwegian-energy-dashboard`. Work directly on `main`; commits and pushes for this project target `origin/main`. Create a separate branch only when the user explicitly requests one.
 
 The runnable application currently uses Streamlit. Next.js/React and a Python backend are planned. Consult [the implementation plan](docs/IMPLEMENTATION_PLAN.md) for architecture decisions, migration milestones, feature parity, or analytical acceptance criteria relevant to the change. Keep the Streamlit application runnable until replacement features pass their acceptance checks.
 
