@@ -1,0 +1,9 @@
+Command: .venv/bin/python -m pytest -q
+Date: 2026-09-14
+Application/test source: 70801b81f38348755602c4b3215c267ade176203
+Environment: CPython 3.11.13; macOS 26.6.2; arm64
+Dependency snapshot: requirements-py311-macos.txt
+Exit code: 0
+
+.................................................                        [100%]
+49 passed in 49.16s

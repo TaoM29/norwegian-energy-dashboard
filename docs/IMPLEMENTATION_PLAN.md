@@ -1,6 +1,6 @@
 # Norwegian Energy Dashboard — Implementation Plan
 
-Prepared 2026-09-14. This document describes planned work, not completed dashboard functionality.
+Prepared 2026-09-14. This document describes planned work; explicitly checked Phase 0 items below record completed baseline work, not replacement dashboard functionality.
 
 ## 1. Outcome and scope
 
@@ -88,11 +88,11 @@ Files above live in `pages/`. Keep notebooks as research provenance; their prese
 
 ### Phase 0 — Repository and baseline
 
-- Preserve original Git history and application files; configure only the new repository as `origin`.
-- Publish this plan and distinguish the current Streamlit implementation from the planned new application in the README.
-- Run the existing tests in a reproducible environment at the start of implementation; record baseline failures separately from regressions.
-- Inventory controls, exports, edge cases and page-embedded calculations beyond the initial feature map.
-- Capture representative original outputs and timings using known inputs for later comparisons.
+- [x] Preserve original Git history and application files; configure only the new repository as `origin`. Verified against the sanitized baseline; see [repository evidence](BASELINE.md#repository-provenance).
+- [x] Publish this plan and distinguish the current Streamlit implementation from the planned new application in the README.
+- [x] Run the existing tests in a reproducible environment at the start of implementation; record baseline failures separately from regressions. [Python 3.11 baseline](BASELINE.md): 49 passed, no baseline failures; exact installed versions captured.
+- [x] Inventory controls, exports, edge cases and page-embedded calculations beyond the initial feature map. See the [source-reviewed control inventory](FEATURE_CONTROL_INVENTORY.md); runtime verification remains pending.
+- [ ] Capture representative original outputs and timings using known inputs for later comparisons.
 
 Gate: independent repository and documented baseline; no feature deletion yet.
 

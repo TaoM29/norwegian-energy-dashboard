@@ -2,7 +2,7 @@
 
 A Norwegian energy and weather analysis project evolving into a **Next.js / React frontend with a Python backend**.
 
-**Status:** Repository established and implementation planned. The code currently runs the original Streamlit application. The new frontend, API, automated data updates, and additional models have not been implemented yet.
+**Status:** Phase 0 baseline work has started. The original Streamlit application's Python baseline is recorded: 49 tests pass in the captured Python 3.11 environment. The new frontend, API, automated data updates, and additional models have not been implemented yet.
 
 ## Implementation plan
 
@@ -33,6 +33,8 @@ Run the existing Python tests from the repository root:
 ```bash
 python -m pytest -q
 ```
+
+For the exact tested dependencies, setup commands, results and limitations, see the [Phase 0 baseline](docs/BASELINE.md). The [feature-control inventory](docs/FEATURE_CONTROL_INVENTORY.md) records existing controls, exports and page calculations for migration. Representative page outputs and performance measurements remain pending.
 
 ## Current structure
 
