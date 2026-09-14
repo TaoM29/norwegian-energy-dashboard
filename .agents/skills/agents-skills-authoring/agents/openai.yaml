@@ -1,0 +1,4 @@
+interface:
+  display_name: "AGENTS and Skills Authoring"
+  short_description: "Create and refine concise agent guidance"
+  default_prompt: "Use $agents-skills-authoring to create or rework the requested AGENTS.md or skill files using the six authoring checks."
