@@ -12,7 +12,7 @@ The public experience should answer three questions: What is happening? What mig
 - Independent development repository: https://github.com/TaoM29/norwegian-energy-dashboard
 - Local development root: `/Users/taom/Projects/norwegian-energy-dashboard`
 - Baseline commit: `b3dd41d626153cebce2f2945ad1efc0a195d7bd7`
-- The original commit history and tracked files are retained. GitHub issues, settings, releases, and ignored local credentials are not copied by a Git clone.
+- The project history and tracked application files are retained, with credentials scrubbed by the 2026-09-14 history rewrite; affected commit IDs changed and the historical secrets file was removed. GitHub issues, settings, releases, and ignored local credentials are not copied by a Git clone.
 - All implementation happens in the new repository, on `codex/` feature branches. Do not push implementation changes to the original project.
 
 ## 2. Architecture decisions

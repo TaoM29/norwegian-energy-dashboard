@@ -54,3 +54,11 @@ This is an independent continuation of [TaoM29/data-to-descision-dashboard](http
 Development and future pushes belong to [TaoM29/norwegian-energy-dashboard](https://github.com/TaoM29/norwegian-energy-dashboard). The original Streamlit deployment is a reference to the earlier project, not a deployment of the planned Next.js dashboard.
 
 Data sources: [Elhub](https://api.elhub.no/) and [Open-Meteo](https://open-meteo.com/). Dataset attribution and source/model provenance will remain visible in the new application.
+
+## Credential handling and sanitized history
+
+On 2026-09-14, this repository's history was rewritten to remove exposed MongoDB credentials and the previously committed `.streamlit/secrets.toml`. Commit IDs differ from the original repository, whose history was not modified. The baseline hash above identifies the original project's source commit.
+
+The connection cell in `notebooks/part-2.ipynb` now requires `MONGO_URI` in the environment. Streamlit continues to use the ignored local secrets file. Never commit either source of credentials. Run `python scripts/check_secrets.py --history` before pushing; CI runs the same targeted check.
+
+Credential removal does not revoke exposed passwords or remove copies in other repositories. Rotate affected database-user passwords in MongoDB Atlas and update applications using them. After this rewrite, use a fresh clone or carefully reset local branches; do not merge old history back into this repository.
