@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 import math
-from datetime import date, datetime
+from datetime import date
 from typing import List, Dict, Tuple
 
 import numpy as np
 import pandas as pd
-import requests
 import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
+
+from app_core.loaders.weather import era5_available_end, load_openmeteo_point
 
 
 # Page setup
@@ -109,41 +110,19 @@ def load_era5_point(lat: float, lon: float, start_date: date, end_date: date) ->
     """
     Pull ERA5 hourly data from Open-Meteo for a single point, UTC.
     """
-    url = "https://archive-api.open-meteo.com/v1/era5"
-    params = {
-        "latitude": lat,
-        "longitude": lon,
-        "start_date": start_date.isoformat(),
-        "end_date": end_date.isoformat(),
-        "hourly": ",".join([
-            "temperature_2m",
-            "precipitation",
-            "wind_speed_10m",
-            "wind_direction_10m"
-        ]),
-        "timezone": "UTC",
-    }
-    r = requests.get(url, params=params, timeout=60)
-    r.raise_for_status()
-    js = r.json()
-
-    h = js.get("hourly", {})
-    if not h or "time" not in h:
-        raise RuntimeError("Open-Meteo returned no hourly data for this time period.")
-
-    df = pd.DataFrame(h)
-    df.rename(
-        columns={
-            "time": "time",
-            "temperature_2m": "temperature_2m (°C)",
-            "precipitation": "precipitation (mm)",
-            "wind_speed_10m": "wind_speed_10m (m/s)",
-            "wind_direction_10m": "wind_direction_10m (°)",
-        },
-        inplace=True,
+    df = load_openmeteo_point(
+        lat,
+        lon,
+        start_date,
+        end_date,
+        location_key=f"snow-drift:{lat:.6f},{lon:.6f}",
     )
-    df["time"] = pd.to_datetime(df["time"], utc=True)
-    df = df.sort_values("time").reset_index(drop=True)
+    if df.empty:
+        detail = df.attrs.get("provenance", {}).get("error", "weather is unavailable")
+        raise RuntimeError(detail)
+    if not df.attrs.get("coverage_complete", False):
+        available_end = df.attrs.get("available_end", "unknown")
+        raise RuntimeError(f"weather coverage is incomplete; validated data ends at {available_end}")
 
     # Season label: Jul–Jun → season = year if month>=7 else year-1
     df["season"] = df["time"].dt.year.where(df["time"].dt.month >= 7, df["time"].dt.year - 1)
@@ -153,10 +132,10 @@ def load_era5_point(lat: float, lon: float, start_date: date, end_date: date) ->
 def season_span(start_season: int, end_season: int) -> Tuple[date, date]:
     """
     Convert season range (e.g. 2021..2024) to absolute date range:
-      [start=YYYY-07-01, end=(end+1)-06-30]
+      [start=YYYY-07-01, end=(end+1)-07-01), with an exclusive end.
     """
     start = date(start_season, 7, 1)
-    end = date(end_season + 1, 6, 30)
+    end = date(end_season + 1, 7, 1)
     return start, end
 
 
@@ -175,8 +154,10 @@ with st.expander("Advanced Tabler parameters", expanded=False):
 
 # load a wide span first time, then let the user choose seasons to analyze
 st.subheader("Select seasons (Jul → Jun)")
-min_default, max_default = 2021, 2024  
-y1, y2 = st.slider("Season range", min_value=2000, max_value=2024,
+available_through = (era5_available_end() - pd.Timedelta(days=1)).date()
+latest_complete_season = available_through.year - (1 if available_through.month >= 7 else 2)
+min_default, max_default = 2021, latest_complete_season
+y1, y2 = st.slider("Season range", min_value=2000, max_value=latest_complete_season,
                    value=(min_default, max_default), step=1)
 
 start_date, end_date = season_span(y1, y2)
@@ -464,5 +445,3 @@ else:
             pivot.round(2).reset_index().rename(columns={"season": "Season"}),
             use_container_width=True, hide_index=True
         )
-
-

@@ -242,3 +242,8 @@ ENV/
 
 # Local environment variables
 .env
+# Rebuildable validated source snapshots and refresh logs
+data/energy.sqlite*
+data/.energy*
+data/weather/
+data/refresh*.log
