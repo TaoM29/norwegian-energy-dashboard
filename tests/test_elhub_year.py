@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import pandas as pd
 from pandas import DatetimeTZDtype
 
@@ -26,8 +26,8 @@ def test_collection_name_for():
 
 def test_year_range_utc():
     start, end = year_range_utc(2024)
-    assert start == datetime(2024, 1, 1)
-    assert end == datetime(2025, 1, 1)
+    assert start == datetime(2024, 1, 1, tzinfo=timezone.utc)
+    assert end == datetime(2025, 1, 1, tzinfo=timezone.utc)
 
 
 def test_load_elhub_year_df_empty():

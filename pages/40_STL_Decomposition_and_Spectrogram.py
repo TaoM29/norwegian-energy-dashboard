@@ -2,12 +2,11 @@
 # pages/40_STL_Decomposition_and_Spectrogram.py
 from __future__ import annotations
 
-from datetime import datetime
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from app_core.loaders.mongo_utils import get_db
+from app_core.loaders.mongo_utils import available_years_from_coverage, get_energy_status
 from app_core.analysis.stl import stl_decompose_elhub
 from app_core.loaders.elhub_year import load_elhub_year_df
 from app_core.analysis.spectrogram import production_spectrogram  
@@ -57,8 +56,14 @@ Check the controls below to switch dataset/group and tune STL/spectrogram parame
 
 # Global selection (from page 02) + tiny link to change it
 AREA = st.session_state.get("selected_area", "NO1")
-YEAR = int(st.session_state.get("selected_year", 2024))
-st.caption(f"Active selection → **Area:** {AREA} • **Year:** {YEAR}")
+STATUS = get_energy_status()
+available_years = available_years_from_coverage(STATUS["coverage"], area=AREA)
+if not available_years:
+    st.error("No validated common energy coverage is available.")
+    st.stop()
+YEAR = int(st.session_state.get("selected_year", available_years[-1]))
+YEAR = YEAR if YEAR in available_years else available_years[-1]
+st.caption(f"Active selection → **Area:** {AREA} • **Year:** {YEAR} · **{STATUS['source']}**")
 st.page_link("pages/02_Price_Area_Selector.py", label="Change area/year", icon=":material/settings:")
 
 # Dataset kind + group pickers
@@ -67,15 +72,20 @@ with colA:
     KIND = st.radio("Dataset", ["Production", "Consumption"], horizontal=True)
 
 with colB:
+    groups = sorted({
+        row["group"] for row in STATUS["coverage"]
+        if row["area"] == AREA and row["kind"] == KIND.lower()
+        and row["group"] not in {"*", "industry", "private", "business"}
+        and pd.Timestamp(row["start"]) < pd.Timestamp(f"{YEAR + 1}-01-01", tz="UTC")
+        and pd.Timestamp(row["end"]) > pd.Timestamp(f"{YEAR}-01-01", tz="UTC")
+    })
     if KIND == "Production":
-        groups = ["hydro", "wind", "solar", "thermal", "nuclear", "other"]
         group_key = "stl_group_prod"
-        default_index = 2  # solar
+        default_index = groups.index("solar") if "solar" in groups else 0
         group_col = "production_group"
     else:
-        groups = ["household", "cabin", "primary", "secondary", "tertiary"]
         group_key = "stl_group_cons"
-        default_index = 0  # household
+        default_index = groups.index("household") if "household" in groups else 0
         group_col = "consumption_group"
 
     GROUP = st.selectbox(f"{KIND} group", groups,
@@ -106,9 +116,8 @@ with q2:
 # Data loader
 @st.cache_data(ttl=900, show_spinner=False)
 def load_year_df_cached(kind: str, area: str, group: str, year: int, group_col: str) -> pd.DataFrame:
-    db = get_db()
     return load_elhub_year_df(
-        db=db,
+        db=None,
         kind=kind,
         area=area,
         group=group,
@@ -149,6 +158,9 @@ with tabs[0]:
         robust=bool(robust),
         group_col=group_col,
     )
+    if "error" in details:
+        st.warning(details["error"])
+        st.stop()
 
     # give the plots more internal bottom space + tidy x-axis 
     for k in ("observed", "seasonal", "trend", "resid"):
@@ -181,5 +193,7 @@ with tabs[1]:
         overlap=int(ovl),
         group_col=group_col,
     )
-    st.plotly_chart(fig_sp, use_container_width=True, theme=None)
-
+    if fig_sp is None:
+        st.warning("The selected series has missing or duplicate hours. Spectrograms require complete hourly data.")
+    else:
+        st.plotly_chart(fig_sp, use_container_width=True, theme=None)

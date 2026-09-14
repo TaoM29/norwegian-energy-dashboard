@@ -6,7 +6,7 @@ st.title("About this app")
 
 st.markdown(
     """
-This app explores **Norwegian energy production & consumption** (Elhub) together with **weather** (ERA5 via Open-Meteo).  
+This app explores **Norwegian energy production & consumption** (Elhub) together with **weather** (ERA5-Seamless via Open-Meteo).
 It uses a shared selection of **Price Area** and **Year** (set on *Price Area Selector*) and interactive Plotly visuals throughout.
 The app is built with Streamlit + Plotly. All times are shown in UTC.
 """
@@ -63,9 +63,9 @@ st.divider()
 st.subheader("Data sources")
 st.markdown(
     """
-- **Elhub**: hourly production (*PRODUCTION_PER_GROUP_MBA_HOUR*) for 2021–2024 and hourly consumption (*CONSUMPTION_PER_GROUP_MBA_HOUR*) for 2021–2024.  
-  Data are curated in the notebooks and stored in **MongoDB** for the app.
-- **Open-Meteo ERA5**: hourly weather (temperature, precipitation, wind speed/gust/direction). Requested on-demand and cached in the app.
+- **Elhub**: hourly production (*PRODUCTION_PER_GROUP_MBA_HOUR*) and consumption (*CONSUMPTION_PER_GROUP_MBA_HOUR*) from 2021 onward.
+  The app prefers an atomically published, validated local snapshot and retains MongoDB as a compatibility fallback.
+- **Open-Meteo ERA5-Seamless**: hourly weather (temperature, precipitation, wind speed/gust/direction). The expected publication lag is about five days; pages show actual loaded coverage and whether a stale last-known-good snapshot is in use.
 
 > Tip: If a view looks stale after changing inputs, use **Rerun** (⌘/Ctrl-R).
 """
@@ -76,9 +76,8 @@ st.markdown(
 st.subheader("Project links")
 st.markdown(
     """
-- 🧑‍💻 **GitHub repo:** https://github.com/TaoM29/data-to-descision-dashboard
+- 🧑‍💻 **GitHub repo:** https://github.com/TaoM29/norwegian-energy-dashboard
 """
 )
 
 st.caption("Design & implementation by **Taofik Muhriz**.")
-

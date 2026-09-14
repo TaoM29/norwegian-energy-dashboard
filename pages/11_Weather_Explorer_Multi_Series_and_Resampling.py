@@ -5,13 +5,20 @@ import plotly.express as px
 import streamlit as st
 
 from app_core.loaders.weather import load_openmeteo_era5
+from app_core.loaders.mongo_utils import available_years_from_coverage, get_energy_status
 
 st.title("Weather Explorer — Multi-Series & Resampling")
 st.caption("Pick variables, resample/smooth, and a month range. Data comes from Open-Meteo and is cached.")
 
 # global selection (from 02_Price_Area_Selector.py) 
 area = st.session_state.get("selected_area", "NO1")
-year = int(st.session_state.get("selected_year", 2024))
+energy_status = get_energy_status()
+available_years = available_years_from_coverage(energy_status["coverage"], area=area)
+if not available_years:
+    st.error("No validated energy coverage is available for the shared year selection.")
+    st.stop()
+year = int(st.session_state.get("selected_year", available_years[-1]))
+year = year if year in available_years else available_years[-1]
 st.caption(f"Active selection → **Area:** {area} • **Year:** {year}")
 st.page_link("pages/02_Price_Area_Selector.py", label="Change area/year", icon=":material/settings:")
 
@@ -23,6 +30,23 @@ def get_weather(a: str, y: int) -> pd.DataFrame:
     return df.sort_values("time").reset_index(drop=True)
 
 df = get_weather(area, year)
+if df.empty:
+    st.info(f"No ERA5-Seamless observations are available for {area} in {year}.")
+    st.stop()
+provenance = df.attrs.get("provenance", {})
+cache_status = provenance.get("cache_status", "unknown")
+model_label = "ERA5-Seamless" if provenance.get("model") == "era5_seamless" else provenance.get("model", "ERA5-Seamless")
+retrieved_text = (
+    f" · retrieved **{pd.Timestamp(provenance['retrieved_at']):%Y-%m-%d %H:%M UTC}**"
+    if provenance.get("retrieved_at") else ""
+)
+st.caption(
+    f"Weather source: **{provenance.get('source', 'Open-Meteo')} / {model_label}** · "
+    f"actual coverage through **{(pd.Timestamp(provenance['available_end']) - pd.Timedelta(hours=1)) if provenance.get('available_end') else df['time'].max():%Y-%m-%d %H:%M UTC}**"
+    f"{retrieved_text}"
+)
+if cache_status == "stale_snapshot":
+    st.warning("The source refresh failed, so this page is using the last-known-good weather snapshot.")
 
 # available variables (keep only those present)
 VARS_ALL = [
@@ -73,8 +97,8 @@ if not sel_vars:
 
 # filter to selected months
 start_ts = pd.Period(start_lbl, freq="M").start_time.tz_localize("UTC")
-end_ts   = (pd.Period(end_lbl,   freq="M").end_time.tz_localize("UTC"))
-mask = (df["time"] >= start_ts) & (df["time"] <= end_ts)
+end_ts = (pd.Period(end_lbl, freq="M") + 1).start_time.tz_localize("UTC")
+mask = (df["time"] >= start_ts) & (df["time"] < end_ts)
 df_rng = df.loc[mask, ["time", *sel_vars]].copy()
 
 if df_rng.empty:
@@ -86,17 +110,14 @@ long = df_rng.melt(id_vars="time", var_name="variable", value_name="value")
 
 # resample (per variable) 
 if rule != "h":
-    # precipitation is an accumulation; most others are averages
-    def agg_for(var: str) -> str:
-        return "sum" if "precipitation" in var.lower() else "mean"
-    # resample per variable
-    long = (
-        long.set_index("time")
-            .groupby("variable")
-            .resample(rule)["value"]
-            .agg(lambda x: x.sum() if agg_for(x.name) == "sum" else x.mean())
-            .reset_index()
-    )
+    resampled = []
+    for variable, values in long.groupby("variable"):
+        hourly = values.set_index("time")["value"]
+        aggregated = (hourly.resample(rule).sum(min_count=1)
+                      if "precipitation" in variable.lower()
+                      else hourly.resample(rule).mean())
+        resampled.append(aggregated.rename("value").reset_index().assign(variable=variable))
+    long = pd.concat(resampled, ignore_index=True)
 
 # smoothing (rolling mean in hours) 
 if smooth_h and smooth_h > 0:
@@ -151,5 +172,3 @@ with st.expander("Notes"):
 - Try clicking legend items to hide/show series; double-click isolates one series.
         """
     )
-
-

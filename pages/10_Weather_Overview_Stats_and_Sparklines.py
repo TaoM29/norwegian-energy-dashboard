@@ -7,13 +7,20 @@ import plotly.express as px
 import streamlit as st
 
 from app_core.loaders.weather import load_openmeteo_era5
+from app_core.loaders.mongo_utils import available_years_from_coverage, get_energy_status
 
 st.title("Weather Overview — Stats & Sparklines")
-st.caption("Quick statistical overview of ERA5 weather for the selected area & year.")
+st.caption("Quick statistical overview of ERA5-Seamless weather for the selected area & year.")
 
 # Global selection (shared across app)
 area = st.session_state.get("selected_area", "NO1")
-year = int(st.session_state.get("selected_year", 2024))
+energy_status = get_energy_status()
+available_years = available_years_from_coverage(energy_status["coverage"], area=area)
+if not available_years:
+    st.error("No validated energy coverage is available for the shared year selection.")
+    st.stop()
+year = int(st.session_state.get("selected_year", available_years[-1]))
+year = year if year in available_years else available_years[-1]
 st.caption(f"Active selection → **Area:** {area} • **Year:** {year}")
 st.page_link("pages/02_Price_Area_Selector.py", label="Change area/year", icon=":material/settings:")
 
@@ -31,6 +38,26 @@ def first_month_span(df: pd.DataFrame) -> tuple[pd.Timestamp, pd.Timestamp]:
     return start, end
 
 df = get_weather(area, year)
+if df.empty:
+    st.info(f"No ERA5-Seamless observations are available for {area} in {year}.")
+    st.stop()
+provenance = df.attrs.get("provenance", {})
+available_end = provenance.get("available_end") or df["time"].max()
+available_last = pd.Timestamp(available_end) - pd.Timedelta(hours=1) if provenance.get("available_end") else df["time"].max()
+partial = available_last.year == year and available_last.date() < pd.Timestamp(f"{year}-12-31").date()
+cache_status = provenance.get("cache_status", "unknown")
+model_label = "ERA5-Seamless" if provenance.get("model") == "era5_seamless" else provenance.get("model", "ERA5-Seamless")
+retrieved_text = (
+    f" · retrieved **{pd.Timestamp(provenance['retrieved_at']):%Y-%m-%d %H:%M UTC}**"
+    if provenance.get("retrieved_at") else ""
+)
+st.caption(
+    f"Weather source: **{provenance.get('source', 'Open-Meteo')} / {model_label}** · "
+    f"actual coverage through **{available_last:%Y-%m-%d %H:%M UTC}**{retrieved_text}"
+    + (" *(partial year)*" if partial else "")
+)
+if cache_status == "stale_snapshot":
+    st.warning("The source refresh failed, so this page is using the last-known-good weather snapshot.")
 
 # Variable meta (display names & units)
 VARS_UNITS = [
@@ -44,7 +71,7 @@ VARS_UNITS = [(v, u) for (v, u) in VARS_UNITS if v in df.columns]
 
 
 # Summary table + first-month sparkline
-st.subheader("Summary of whole year + first-month sparkline")
+st.subheader(f"Summary of {'available period' if partial else 'whole year'} + first-month sparkline")
 
 first_start, first_end = first_month_span(df)
 df_first = df[(df["time"] >= first_start) & (df["time"] <= first_end)].copy()
@@ -148,5 +175,3 @@ with st.expander("Notes"):
 - All times are **UTC**.
         """
     )
-
-

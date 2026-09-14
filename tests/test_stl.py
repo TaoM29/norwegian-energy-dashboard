@@ -74,3 +74,9 @@ def test_stl_components_lengths_match_observed():
         trace = figs[k].data[0]
         assert len(trace.x) == n
         assert len(trace.y) == n
+
+
+def test_stl_rejects_missing_hours_instead_of_inventing_zero():
+    figs, details, _ = stl_decompose_elhub(_make_df().drop(index=12))
+    assert not figs
+    assert "complete" in details["error"]

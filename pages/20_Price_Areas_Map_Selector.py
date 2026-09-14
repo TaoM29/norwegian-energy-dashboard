@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 import glob
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List, Tuple
 
 import pandas as pd
@@ -23,7 +23,7 @@ except Exception:
     )
     st.stop()
 
-from app_core.loaders.mongo_utils import get_db
+from app_core.loaders.mongo_utils import get_energy_status, load_energy_records
 
 
 
@@ -38,12 +38,16 @@ if st.session_state.get("_map_toast"):
 
 
 
-# DB as a cached resource (prevents reconnect on reruns)
-@st.cache_resource
-def _db():
-    return get_db()
+@st.cache_data(ttl=600, show_spinner=False)
+def energy_status() -> dict:
+    return get_energy_status()
 
-db = _db()
+
+STATUS = energy_status()
+COMMON_WINDOW = STATUS.get("common_complete_window")
+if not COMMON_WINDOW:
+    st.error("No validated common energy window is available for the map.")
+    st.stop()
 
 
 
@@ -140,48 +144,33 @@ with colA:
     kind = st.radio("Data source", ["Production", "Consumption"], horizontal=True)
 
 with colB:
-    if kind == "Production":
-        groups = ["hydro", "wind", "solar", "thermal", "nuclear", "other"]
-        grp = st.selectbox("Group", groups, index=2)
-    else:
-        groups = ["household", "cabin", "primary", "secondary", "tertiary"]
-        grp = st.selectbox("Group", groups, index=0)
+    kind_groups = sorted({
+        row["group"] for row in STATUS["coverage"]
+        if row["kind"] == kind.lower() and row["group"] not in {"*", "industry", "private", "business"}
+        and pd.Timestamp(row["start"]) <= pd.Timestamp(COMMON_WINDOW["start"])
+        and pd.Timestamp(row["end"]) >= pd.Timestamp(COMMON_WINDOW["end"])
+    })
+    default_group = "solar" if kind == "Production" else "household"
+    grp = st.selectbox(
+        "Group", kind_groups,
+        index=kind_groups.index(default_group) if default_group in kind_groups else 0,
+    )
 
 with colC:
     days = st.slider("Interval (days)", 1, 365, 30)
 
 with colD:
-    end_default = datetime(2024, 12, 31, 23, 59, 59)
-    end_date = st.date_input("End date (UTC)", value=end_default.date())
-    end_dt = datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59)
-    start_dt = end_dt - timedelta(days=days - 1)
-    st.caption(f"Period: **{start_dt:%Y-%m-%d} → {end_dt:%Y-%m-%d}**")
+    common_start = pd.Timestamp(COMMON_WINDOW["start"]).tz_convert("UTC")
+    common_last = pd.Timestamp(COMMON_WINDOW["last_observation"]).tz_convert("UTC")
+    end_date = st.date_input(
+        "End date (UTC)", value=common_last.date(),
+        min_value=common_start.date(), max_value=common_last.date(),
+    )
+    end_dt = datetime(end_date.year, end_date.month, end_date.day, tzinfo=timezone.utc) + timedelta(days=1)
+    start_dt = max(end_dt - timedelta(days=days), common_start.to_pydatetime())
+    st.caption(f"Period: **{start_dt:%Y-%m-%d} → {end_date:%Y-%m-%d}** (inclusive dates)")
 
 
-
-
-# Mongo aggregation (cached)
-def _agg_mean(
-    coll_name: str,
-    group_field: str,
-    group_value: str,
-    start: datetime,
-    end: datetime,
-    areas: List[str],
-) -> pd.DataFrame:
-    pipe = [
-        {
-            "$match": {
-                "price_area": {"$in": areas},
-                group_field: group_value,
-                "start_time": {"$gte": start, "$lte": end},
-            }
-        },
-        {"$group": {"_id": "$price_area", "mean_kwh": {"$avg": "$quantity_kwh"}}},
-        {"$project": {"_id": 0, "price_area": "$_id", "mean_kwh": 1}},
-    ]
-    rows = list(db[coll_name].aggregate(pipe, allowDiskUse=True))
-    return pd.DataFrame(rows) if rows else pd.DataFrame(columns=["price_area", "mean_kwh"])
 
 
 def _mean_by_area_uncached(
@@ -191,13 +180,13 @@ def _mean_by_area_uncached(
     end: datetime,
     areas: List[str],
 ) -> pd.DataFrame:
-    if kind_ == "Production":
-        df21 = _agg_mean("prod_hour", "production_group", group_, start, end, areas)
-        df24 = _agg_mean("elhub_production_mba_hour", "production_group", group_, start, end, areas)
-        df = pd.concat([df21, df24], ignore_index=True)
-        return df.groupby("price_area", as_index=False)["mean_kwh"].mean() if not df.empty else df
-
-    return _agg_mean("elhub_consumption_mba_hour", "consumption_group", group_, start, end, areas)
+    records = load_energy_records(
+        start=start, end=end, areas=areas, kinds=[kind_], groups=[group_],
+    )
+    if records.empty:
+        return pd.DataFrame(columns=["price_area", "mean_kwh"])
+    return (records.groupby("area", as_index=False)["value"].mean()
+            .rename(columns={"area": "price_area", "value": "mean_kwh"}))
 
 
 @st.cache_data(ttl=900, show_spinner=False, max_entries=128)
@@ -209,14 +198,14 @@ def mean_by_area_cached(
     areas_tuple: tuple[str, ...],
 ) -> pd.DataFrame:
     """Cache the aggregation keyed by params to keep the map snappy."""
-    start = datetime.fromisoformat(start_iso)
-    end = datetime.fromisoformat(end_iso)
+    start = pd.Timestamp(start_iso).to_pydatetime()
+    end = pd.Timestamp(end_iso).to_pydatetime()
     areas = list(areas_tuple)
     df = _mean_by_area_uncached(kind_, group_, start, end, areas)
     return df.copy()
 
 
-with st.spinner("Querying MongoDB for mean kWh…"):
+with st.spinner("Loading mean hourly energy…"):
     df_mean = mean_by_area_cached(
         kind_=kind,
         group_=grp,
@@ -228,6 +217,11 @@ with st.spinner("Querying MongoDB for mean kWh…"):
 if df_mean.empty:
     st.info("No rows for the chosen interval/group. Try another period or group.")
     st.stop()
+
+st.caption(
+    f"Source: **{STATUS['source']}** · common complete through "
+    f"**{pd.Timestamp(COMMON_WINDOW['last_observation']):%Y-%m-%d %H:%M UTC}**"
+)
 
 
 
@@ -333,5 +327,3 @@ st.dataframe(
     hide_index=True,
     use_container_width=True,
 )
-
-

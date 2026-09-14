@@ -26,11 +26,12 @@ def production_spectrogram(
 
     y = (
         d[value_col].astype(float)
-        .resample("h").sum()
+        .resample("h").sum(min_count=1)
         .asfreq("h")
-        .interpolate("time", limit=3)
-        .fillna(0.0)
     )
+
+    if y.isna().any() or d.index.has_duplicates:
+        return None, None, None, None
 
     fs = 1.0  # 1 sample per hour
     f, t, Sxx = spectrogram(

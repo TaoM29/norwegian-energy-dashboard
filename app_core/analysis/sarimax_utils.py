@@ -25,25 +25,30 @@ def aggregate_freq(df_energy: pd.DataFrame, df_weather: pd.DataFrame, freq: str)
     if df_energy.empty:
         return pd.DataFrame(columns=["quantity_kwh"]), pd.DataFrame()
 
+    for frame in (df_energy, df_weather):
+        if not frame.empty:
+            times = pd.DatetimeIndex(pd.to_datetime(frame["time"], utc=True))
+            if times.has_duplicates or not times.equals(times.floor("h")):
+                raise ValueError("Aggregation requires unique hourly timestamps.")
     freq = _pandas_freq(freq)
 
     if freq == "h":
         e = df_energy.set_index("time").asfreq("h")
-        e["quantity_kwh"] = pd.to_numeric(e["quantity_kwh"], errors="coerce").fillna(0.0)
+        e["quantity_kwh"] = pd.to_numeric(e["quantity_kwh"], errors="coerce")
 
         w = df_weather.set_index("time").asfreq("h") if not df_weather.empty else pd.DataFrame(index=e.index)
         for col in w.columns:
             if col == "precipitation (mm)":
-                w[col] = pd.to_numeric(w[col], errors="coerce").fillna(0.0)
+                w[col] = pd.to_numeric(w[col], errors="coerce")
             else:
-                w[col] = pd.to_numeric(w[col], errors="coerce").interpolate(limit=6)
+                w[col] = pd.to_numeric(w[col], errors="coerce")
         return e, w
 
     # Daily
     e = (
         df_energy.set_index("time")
         .resample("D")["quantity_kwh"]
-        .sum()
+        .sum(min_count=24)
         .to_frame()
     )
 
@@ -56,7 +61,9 @@ def aggregate_freq(df_energy: pd.DataFrame, df_weather: pd.DataFrame, freq: str)
             continue
         agg[c] = "sum" if "precipitation" in c else "mean"
 
-    w = df_weather.set_index("time").resample("D").agg(agg)
+    weather = df_weather.set_index("time")
+    w = weather.resample("D").agg(agg)
+    w = w.where(weather.resample("D").count() == 24)
     return e, w
 
 

@@ -80,3 +80,11 @@ def test_lof_precip_anomalies_handles_missing_cols():
     a_df, n_eff = lof_precip_anomalies(df, time_col="time", precip_col="precipitation (mm)")
     assert a_df.empty
     assert n_eff == 0
+
+
+def test_lof_does_not_treat_unknown_precipitation_as_dry():
+    import pytest
+    from app_core.analysis.data_quality import lof_precip_anomalies
+    frame = pd.DataFrame({"time": pd.date_range("2026-01-01", periods=48, freq="h", tz="UTC"), "precipitation (mm)": [float("nan")] + [0.0] * 47})
+    with pytest.raises(ValueError, match="missing rainfall"):
+        lof_precip_anomalies(frame)

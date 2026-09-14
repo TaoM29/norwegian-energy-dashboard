@@ -1,6 +1,6 @@
 # Streamlit feature and control inventory
 
-Prepared 2026-09-14 for Phase 0. This is a static inventory of the retained Streamlit application at the current checkout. It supplements the higher-level feature map in `docs/IMPLEMENTATION_PLAN.md`; it does not claim that the listed outputs were produced successfully against live MongoDB or Open-Meteo data.
+Prepared 2026-09-14 for Phase 0. This is a historical inventory of the retained Streamlit application at the Phase 0 baseline. Phase 1 changes to data loading, dates and missingness are described in [the data pipeline](DATA_PIPELINE.md). It supplements the higher-level feature map in `docs/IMPLEMENTATION_PLAN.md`; it does not claim that the listed outputs were produced successfully against live MongoDB or Open-Meteo data.
 
 All replacement work is **migration pending**. The Streamlit application remains the reference implementation until each replacement passes the acceptance checks in the implementation plan.
 

@@ -1,11 +1,26 @@
 
 # pages/01_Home.py
 import os
+import pandas as pd
 import streamlit as st
+
+from app_core.loaders.mongo_utils import get_energy_status
 
 
 st.title("Energy & Weather Dashboard")
-st.caption("Interactive exploration of Elhub production/consumption (2021–2024) and Open-Meteo ERA5 weather.")
+st.caption("Interactive exploration of validated Elhub production/consumption and Open-Meteo ERA5-Seamless weather.")
+
+try:
+    energy_status = get_energy_status()
+    common = energy_status.get("common_complete_window")
+    if common:
+        st.caption(
+            f"Energy source: **{energy_status['source']}** · latest source observation: "
+            f"**{pd.Timestamp(energy_status['source_latest_observation']):%Y-%m-%d %H:%M UTC}** · "
+            f"common complete through **{pd.Timestamp(common['last_observation']):%Y-%m-%d %H:%M UTC}**"
+        )
+except Exception:
+    pass
 
 
 # Primary CTA
@@ -87,10 +102,10 @@ safe_link(first_existing("pages/99_About.py", "pages/90_About.py"), "About", ico
 st.markdown(
     """
 ### Data & assumptions
-- **Energy:** Elhub hourly **production/consumption** by group, NO1–NO5, **2021–2024** (stored in MongoDB).
-- **Weather:** ERA5 hourly (Open-Meteo API), fetched on demand; **UTC** timestamps.
+- **Energy:** Elhub hourly **production/consumption** by group, NO1–NO5, from the validated local snapshot when available.
+- **Weather:** ERA5-Seamless hourly (Open-Meteo API), expected about five days after observation; pages show actual coverage and **UTC** timestamps.
 - **Resampling:** Means by default; precipitation often uses **sum** (see page-specific notes).
-- **Missing values:** Small gaps are occasionally interpolated (time-based) for analysis stability and spectrogram/STL windows.
+- **Missing values:** Missing energy is kept missing. Analyses that require a complete hourly series report gaps instead of replacing them with zero.
 - **Shared selection:** Area & year set on the **Price Area Selector** page; most pages read these from `st.session_state`.
 """
 )
@@ -100,7 +115,7 @@ with st.expander("Under the hood / performance", expanded=False):
         """
 - **Plotting:** Plotly throughout; Folium for mapping.
 - **Analysis:** Statsmodels (STL, SARIMAX), scikit-learn (LOF), SciPy (spectrogram).
-- **DB:** MongoDB collections for 2021 and 2022–2024 harmonized in loaders.
+- **Storage:** The local validated SQLite snapshot is preferred; MongoDB remains a compatibility fallback.
 - **Caching:** `st.cache_data` keeps API/DB calls snappy; clear with the page’s *Reset cache* button where available.
 - **Repro tips:** When changing area/year or parameters, use **Rerun** (⌘/Ctrl-R) if something looks stale.
         """

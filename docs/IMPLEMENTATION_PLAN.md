@@ -1,6 +1,6 @@
 # Norwegian Energy Dashboard — Implementation Plan
 
-Prepared 2026-09-14. This document describes planned work; explicitly checked Phase 0 items below record completed baseline work, not replacement dashboard functionality.
+Prepared 2026-09-14. This document describes planned work; checked phase items record completed work; the Next.js replacement remains planned.
 
 ## 1. Outcome and scope
 
@@ -30,7 +30,7 @@ The public experience should answer three questions: What is happening? What mig
 - FastAPI for validated query endpoints and an OpenAPI contract. Generate or validate matching TypeScript response types.
 - A shared Python analysis package extracted from `app_core` and page-embedded calculations. Remove Streamlit imports, caching decorators, and secrets access from this package.
 - Separate commands/jobs for backfill, refresh, training, backtesting, and artifact publication. Browser visits read results rather than fitting models.
-- Retain MongoDB initially behind a storage interface. Evaluate Parquet snapshots and DuckDB for analytical reads using representative queries before changing the database.
+- Retain MongoDB behind a storage interface. Phase 1 adds a rebuildable SQLite snapshot for public source data so the app runs without private database access; it does not overwrite MongoDB. Evaluate Parquet/DuckDB with representative analytical queries before selecting the eventual backend.
 - Versioned, immutable analysis/forecast artifacts plus a manifest identifying the latest successful release.
 - Explicit environment configuration and a redacted `.env.example`; a fixture mode for local setup without credentials.
 - Lock dependencies when scaffolding and record supported Python/Node versions. Do not assume the existing minimum versions are a reproducible environment.
@@ -98,29 +98,28 @@ Gate: **complete 2026-09-14** — independent repository and documented recorded
 
 ### Phase 1 — Data correctness and freshness
 
-- Inspect current Elhub response schemas, pagination/date limits, units and latest complete timestamps for each area/group. Verify actual 2026 records before claiming availability in the app.
-- Backfill missing 2025 and available 2026 observations; reconcile overlap with 2021–2024 history.
-- Normalize the legacy production collection split into a stable analytical schema.
-- Make ingestion idempotent: keys include timestamp, area, kind, and group; weather keys also include location, model and variable.
-- Refresh recent windows to capture revisions; preserve retrieval time, source/model, units, publication availability and quality flags.
-- Use UTC timestamps and explicit half-open intervals `[start, end)` internally; display Europe/Oslo time with DST-safe conversion.
-- Explicitly select the weather model and requested units. The current loader name says ERA5 but does not specify a model, and wind labels need verification against API defaults.
-- Request only available date ranges. Distinguish source-specific last observation from the common complete analysis window.
-- Validate duplicates, gaps, unexpected categories, impossible values, aggregation and partial-day completeness. Missing data must not silently become zero.
-- Derive available dates from validated coverage; compare 2026 YTD with matching prior-year periods, accounting for leap days and incomplete periods.
-- Add daily refresh scheduling, bounded retries, refresh logs and atomic publication of a last-known-good snapshot. A failed refresh must not overwrite usable data.
+- [x] Inspect current Elhub response schemas, pagination/date limits, units and latest complete timestamps for each area/group. Verify actual 2026 records before claiming availability in the app.
+- [x] Backfill missing 2025 and available 2026 observations; reconcile overlap with 2021–2024 history.
+- [x] Normalize the legacy production collection split into a stable analytical schema.
+- [x] Make ingestion idempotent: keys include timestamp, area, kind, and group; weather keys also include location, model and variable.
+- [x] Refresh recent windows to capture revisions; preserve retrieval time, source/model, units, publication availability and quality flags.
+- [x] Use UTC timestamps and explicit half-open intervals `[start, end)` internally; display Europe/Oslo time with DST-safe conversion.
+- [x] Explicitly select ERA5-Seamless, UTC and requested units; validate returned metadata before using wind labeled m/s.
+- [x] Request only available date ranges. Distinguish source-specific last observation from the common complete analysis window.
+- [x] Validate duplicates, gaps, unexpected categories, impossible values, aggregation and partial-day completeness. Missing data must not silently become zero.
+- [x] Derive available dates from validated coverage; compare 2026 YTD with matching prior-year periods, accounting for leap days and incomplete periods.
+- [x] Add daily refresh scheduling, bounded retries, refresh logs and atomic publication of a last-known-good snapshot. A failed refresh must not overwrite usable data.
 
-Initial source inspection — 2026-09-14:
+Verification — 2026-09-14:
 
-- Public Elhub requests to `/energy-data/v0/price-areas` with `dataset=PRODUCTION_PER_GROUP_MBA_HOUR` or `CONSUMPTION_PER_GROUP_MBA_HOUR`, `startDate=2026-09-13`, `endDate=2026-09-14` returned 24 non-null hourly quantities per returned group in NO1–NO5. Production groups were hydro, other, solar, thermal and wind; NO2 also returned `*`. Consumption groups were cabin, household, primary, secondary and tertiary. This verifies a recent source sample, not database backfill or full-year coverage.
-- Records are nested under `data[].attributes.productionPerGroupMbaHour` / `consumptionPerGroupMbaHour`, with `startTime`, `endTime`, area/group, `quantityKwh` and `lastUpdatedTime`. Sample intervals span midnight to midnight Europe/Oslo, ending `2026-09-13T22:00:00Z` in UTC. Retain revisions and offsets; do not assume request strings establish UTC boundaries.
-- The [current Elhub specification](https://api.elhub.no/energy-data/v0/openapi.yaml) limits requests to one month and exposes an area path `/price-areas/{id}`. The old notebook's `priceArea` query is rejected; `pageSize` is not a documented parameter. Sample responses had only a `self` link. The specification calls the end inclusive, while the sampled rows end at the requested midnight; verify boundary/DST behavior before implementing half-open ingestion.
-- [Consumption group metadata](https://api.elhub.no/energy-data/v0/consumption-groups) defines `industry` as primary + secondary, `private` as household + cabin, and `business` as tertiary. Do not sum aliases or `*` alongside their component groups. Metadata categories alone do not establish observed coverage (for example, nuclear was not returned in the sample).
-- [Open-Meteo documentation](https://open-meteo.com/en/docs/historical-weather-api) confirms default wind units are km/h and timezone selection changes returned timestamps. Existing loaders label wind m/s and do not explicitly select ERA5. Correct these request contracts before using fetched weather for scientific comparisons; retain the historical baseline as evidence of original behavior.
+- Public-source backfill published **2,501,664** unique energy observations, from local 2021-01-01 (`2020-12-31T23:00Z`) through local 2026-09-13 (exclusive end `2026-09-13T22:00Z`). A seven-day repeat refresh fetched 8,568 rows and retained exactly 2,501,664 keys.
+- All **215,353** tracked 2021 production CSV records match the re-fetched source exactly, including values; there are no unmatched keys in that local-year overlap. Public 2022–2024 records were re-fetched too. Private MongoDB overlap is unavailable without local configuration and was not modified.
+- The 50 base-series common interval starts `2021-06-01T22:00Z`; NO5 wind starts later than the other series. Absent history is unavailable, not zero. Three additional `*` series remain separate, including one with historical gaps.
+- Live daylight-saving samples contain 23 hourly observations on 2026-03-29 and 25 on 2025-10-26. Source requests use Oslo dates, normalized queries use UTC half-open intervals. Elhub requests are bounded to 28 days and do not use unsupported pagination parameters.
+- All five weather locations have complete 2021–2025 data and 6,024 observed 2026 hours each, through 2026-09-08 23:00 UTC. Trailing unpublished hours are excluded; internal gaps fail validation. The common energy/weather end is `2026-09-09T00:00Z`.
+- See [data pipeline](DATA_PIPELINE.md) for schema, commands, scheduling, weather model/units, stale-data behavior and validation. Original scientific inputs and the Phase 0 evidence remain preserved.
 
-Next: verify latest complete coverage and date boundaries, then implement bounded ingestion and explicit weather model/unit/UTC contracts. No database writes or date-selector expansion have been performed.
-
-Gate: real 2026 coverage is verified, repeat ingestion produces no duplicates, DST/unit tests pass, and a source outage preserves the last successful snapshot.
+Gate: **complete 2026-09-14** — 98 tests pass, including DST/units, idempotent refresh and outage preservation. Real source backfill and the tracked-data reconciliation passed; representative Streamlit pages ran against the published snapshots. Daily refresh is defined in `.github/workflows/refresh-data.yml`.
 
 ### Phase 2 — First complete frontend/backend slice
 

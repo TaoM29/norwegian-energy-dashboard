@@ -26,7 +26,10 @@ def stl_decompose_elhub(
 
     y = d[value_col].astype(float)
     if y.index.inferred_freq is None:
-        y = y.resample("h").sum()
+        y = y.resample("h").sum(min_count=1)
+
+    if y.isna().any() or d.index.has_duplicates:
+        return {}, {"error": "STL requires complete, unique hourly observations; select a complete interval."}, d
 
     if seasonal % 2 == 0:
         seasonal += 1

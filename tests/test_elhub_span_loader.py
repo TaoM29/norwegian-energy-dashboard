@@ -8,7 +8,7 @@ class FakeCollection:
     def __init__(self, rows):
         self._rows = rows
 
-    def aggregate(self, pipe, allowDiskUse=False):
+    def find(self, query, projection):
         return self._rows
 
 
@@ -22,9 +22,9 @@ def test_load_energy_span_df_stitches_and_utc():
     end = datetime(2024, 1, 1, 2, 0, 0)
 
     rows = [
-        {"start_time": datetime(2024, 1, 1, 0), "quantity_kwh": 1.0},
-        {"start_time": datetime(2024, 1, 1, 1), "quantity_kwh": 2.0},
-        {"start_time": datetime(2024, 1, 1, 2), "quantity_kwh": 3.0},
+        {"price_area": "NO1", "production_group": "solar", "start_time": datetime(2024, 1, 1, 0), "quantity_kwh": 1.0},
+        {"price_area": "NO1", "production_group": "solar", "start_time": datetime(2024, 1, 1, 1), "quantity_kwh": 2.0},
+        {"price_area": "NO1", "production_group": "solar", "start_time": datetime(2024, 1, 1, 2), "quantity_kwh": 3.0},
     ]
 
     db = FakeDB({
@@ -33,6 +33,7 @@ def test_load_energy_span_df_stitches_and_utc():
 
     df = load_energy_span_df(db=db, area="NO1", kind="Production", group="solar", start=start, end=end)
     assert list(df.columns) == ["time", "quantity_kwh"]
-    assert len(df) == 3
+    assert len(df) == 2
+    assert df["quantity_kwh"].tolist() == [1.0, 2.0]
     assert isinstance(df["time"].dtype, pd.DatetimeTZDtype)
     assert str(df["time"].dtype.tz) == "UTC"

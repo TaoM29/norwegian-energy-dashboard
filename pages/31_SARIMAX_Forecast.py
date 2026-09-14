@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Tuple, Optional
 
 import numpy as np
@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 import streamlit as st
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
-from app_core.loaders.mongo_utils import get_db
+from app_core.loaders.mongo_utils import available_years_from_coverage, get_energy_status
 from app_core.loaders.weather import load_openmeteo_era5
 from app_core.loaders.elhub_span import load_energy_span_df
 from app_core.loaders.weather_span import load_weather_span_df
@@ -42,29 +42,28 @@ st.markdown(
 - Reports average performance across folds using:
   - **MAE** (Mean Absolute Error) — lower is better  
   - **RMSE** (Root Mean Squared Error) — penalizes large errors  
-  - **MASE** (Mean Absolute Scaled Error) — **< 1 means better than the seasonal-naive baseline**
+- **MASE** (Mean Absolute Scaled Error) — scaled by seasonal error in each training fold
 """
 )
 
 AREA = st.session_state.get("selected_area", "NO1")
-YEAR = int(st.session_state.get("selected_year", 2024))
 st.page_link("pages/02_Price_Area_Selector.py", label="Change area / year", icon=":material/settings:")
-st.caption(f"Active selection → **Area:** {AREA} • **Year:** {YEAR}")
-
-
-@st.cache_resource
-def _db():
-    return get_db()
-
-
-db = _db()
+STATUS = get_energy_status()
+WINDOW = STATUS.get("common_complete_window")
+available_years = available_years_from_coverage(STATUS["coverage"], area=AREA)
+if not available_years:
+    st.error(f"No validated energy coverage is available for {AREA}.")
+    st.stop()
+YEAR = int(st.session_state.get("selected_year", available_years[-1]))
+YEAR = YEAR if YEAR in available_years else available_years[-1]
+st.caption(f"Active selection → **Area:** {AREA} • **Year:** {YEAR} · **{STATUS['source']}**")
 
 
 @st.cache_data(ttl=900, show_spinner=False, max_entries=128)
 def load_energy_span_cached(area: str, kind: str, group: str, start_iso: str, end_iso: str) -> pd.DataFrame:
     start = datetime.fromisoformat(start_iso)
     end = datetime.fromisoformat(end_iso)
-    return load_energy_span_df(db=db, area=area, kind=kind, group=group, start=start, end=end)
+    return load_energy_span_df(db=None, area=area, kind=kind, group=group, start=start, end=end)
 
 
 @st.cache_data(ttl=1800, show_spinner=False, max_entries=64)
@@ -105,25 +104,31 @@ with st.sidebar:
     st.header("Controls")
 
     kind = st.radio("Energy kind", ["Production", "Consumption"], horizontal=False)
-    groups = (["hydro", "wind", "solar", "thermal", "nuclear", "other"]
-              if kind == "Production"
-              else ["household", "cabin", "primary", "secondary", "tertiary"])
+    groups = sorted({
+        row["group"] for row in STATUS["coverage"]
+        if row["area"] == AREA and row["kind"] == kind.lower()
+        and row["group"] not in {"*", "industry", "private", "business"}
+        and pd.Timestamp(row["start"]) < pd.Timestamp(f"{YEAR + 1}-01-01", tz="UTC")
+        and pd.Timestamp(row["end"]) > pd.Timestamp(f"{YEAR}-01-01", tz="UTC")
+    })
     group = st.selectbox("Energy group", groups, index=0)
+    group_coverage = [
+        row for row in STATUS["coverage"]
+        if row["area"] == AREA and row["kind"] == kind.lower() and row["group"] == group
+    ]
+    group_start = max(
+        pd.Timestamp(f"{YEAR}-01-01", tz="UTC"),
+        min(pd.Timestamp(row["start"]) for row in group_coverage),
+    )
+    group_end = min(
+        pd.Timestamp(f"{YEAR + 1}-01-01", tz="UTC"),
+        max(pd.Timestamp(row["end"]) for row in group_coverage),
+    )
 
     freq_label = st.selectbox("Frequency", ["Hourly", "Daily"], index=0)
     FREQ = "H" if freq_label == "Hourly" else "D"
 
     PANDAS_FREQ = "h" if FREQ == "H" else FREQ
-
-    st.markdown("**Training period**")
-    def_year_start = datetime(YEAR, 1, 1)
-    def_year_end = datetime(YEAR, 12, 31, 23, 59, 59)
-    train_start, train_end = st.date_input("Start / End (UTC)", (def_year_start.date(), def_year_end.date()))
-    TRAIN_START = datetime(train_start.year, train_start.month, train_start.day)
-    TRAIN_END = datetime(train_end.year, train_end.month, train_end.day, 23, 59, 59)
-
-    horizon = st.number_input("Forecast horizon", min_value=1, max_value=2000,
-                              value=168 if FREQ == "H" else 30, step=1)
 
     st.markdown("---")
     st.markdown("**Exogenous weather**")
@@ -141,6 +146,45 @@ with st.sidebar:
         index=0,
         help="How to create exogenous values during the forecast horizon.",
     )
+
+    training_start_bound = group_start
+    training_end_bound = group_end
+    if exog_vars:
+        weather_probe = load_weather_span_cached(
+            AREA, group_start.isoformat(), group_end.isoformat(),
+        )
+        probe_metadata = weather_probe.attrs.get("provenance", {})
+        if weather_probe.empty or not probe_metadata.get("available_end"):
+            st.error(
+                "Selected weather regressors are unavailable for this energy period. "
+                "Remove them or choose another year."
+            )
+            st.stop()
+        training_start_bound = max(group_start, pd.Timestamp(probe_metadata["available_start"]))
+        training_end_bound = min(group_end, pd.Timestamp(probe_metadata["available_end"]))
+        if training_start_bound >= training_end_bound:
+            st.error("Energy and weather have no common observed interval for the selected year.")
+            st.stop()
+        st.caption(
+            f"Actual common energy/weather coverage ends "
+            f"{(training_end_bound - pd.Timedelta(hours=1)):%Y-%m-%d %H:%M UTC}."
+        )
+
+    st.markdown("**Training period**")
+    def_year_start = training_start_bound.date()
+    group_last = training_end_bound - pd.Timedelta(hours=1)
+    def_year_end = group_last.date()
+    train_start, train_end = st.date_input(
+        "Start / End (UTC, inclusive dates)",
+        (def_year_start, def_year_end),
+        min_value=training_start_bound.date(), max_value=group_last.date(),
+    )
+    TRAIN_START = datetime(train_start.year, train_start.month, train_start.day, tzinfo=timezone.utc)
+    TRAIN_END = datetime(train_end.year, train_end.month, train_end.day, tzinfo=timezone.utc) + timedelta(days=1)
+    TRAIN_END = min(TRAIN_END, training_end_bound.to_pydatetime())
+
+    horizon = st.number_input("Forecast horizon", min_value=1, max_value=2000,
+                              value=168 if FREQ == "H" else 30, step=1)
 
     st.markdown("---")
     st.markdown("**SARIMA orders**")
@@ -226,21 +270,92 @@ with st.status("Loading energy + weather…", expanded=False) as status:
         st.stop()
 
     dfW_hourly = load_weather_span_cached(AREA, TRAIN_START.isoformat(), TRAIN_END.isoformat())
-    e, w = aggregate_freq(dfE_hourly, dfW_hourly, PANDAS_FREQ)
+    weather_provenance = dfW_hourly.attrs.get("provenance", {})
+    weather_cache = weather_provenance.get("cache_status", "unavailable")
+    weather_retrieved_at = weather_provenance.get("retrieved_at") or max(
+        (
+            item.get("retrieved_at")
+            for item in weather_provenance.get("annual_provenance", [])
+            if item.get("retrieved_at")
+        ),
+        default="",
+    )
+    weather_start = (
+        pd.Timestamp(weather_provenance["available_start"])
+        if weather_provenance.get("available_start") else None
+    )
+    weather_end = (
+        pd.Timestamp(weather_provenance["available_end"])
+        if weather_provenance.get("available_end") else None
+    )
+    actual_common_end = min(pd.Timestamp(TRAIN_END), weather_end) if weather_end is not None else None
+
+    if exog_vars and (
+        dfW_hourly.empty
+        or weather_cache == "unavailable"
+        or not weather_provenance.get("coverage_complete", False)
+        or weather_start is None
+        or weather_start > pd.Timestamp(TRAIN_START)
+        or actual_common_end is None
+        or actual_common_end < pd.Timestamp(TRAIN_END)
+    ):
+        status.update(label="Selected weather regressors are unavailable for the full interval.", state="error")
+        available_text = (
+            f"{weather_start:%Y-%m-%d %H:%M} → {(weather_end - pd.Timedelta(hours=1)):%Y-%m-%d %H:%M UTC}"
+            if weather_start is not None and weather_end is not None else "unavailable"
+        )
+        st.warning(
+            "SARIMAX was not fitted because selected weather regressors do not cover the full "
+            f"training interval. Actual weather coverage: {available_text}. "
+            "Choose an end date within that coverage or remove the weather regressors."
+        )
+        st.stop()
+
+    try:
+        e, w = aggregate_freq(dfE_hourly, dfW_hourly, PANDAS_FREQ)
+    except ValueError as exc:
+        status.update(label="The selected interval is incomplete.", state="error")
+        st.warning(str(exc))
+        st.stop()
 
     y = e["quantity_kwh"].astype(float).copy().asfreq(PANDAS_FREQ)
+    if y.isna().any():
+        status.update(label="Energy data contains gaps.", state="error")
+        st.warning("The selected interval contains missing energy periods. Choose a complete interval before fitting.")
+        st.stop()
 
     X = None
     if exog_vars:
         missing = [v for v in exog_vars if v not in w.columns]
         if missing:
-            st.warning(f"These weather variables are missing and will be ignored: {missing}")
-        use_cols = [v for v in exog_vars if v in w.columns]
-        if use_cols:
-            X = w[use_cols].astype(float).reindex(y.index).copy()
-            X = X.interpolate(limit=6).bfill().ffill()
+            status.update(label="Selected weather regressors are missing.", state="error")
+            st.warning(f"SARIMAX was not fitted because these selected weather variables are missing: {missing}")
+            st.stop()
+        X = w[exog_vars].astype(float).reindex(y.index).copy()
+        if X.isna().any().any():
+            status.update(label="Weather regressors contain gaps.", state="error")
+            st.warning("Selected weather regressors contain missing periods. Choose another interval or remove them.")
+            st.stop()
 
     status.update(label="Data loaded", state="complete")
+
+if not dfW_hourly.empty and weather_start is not None and weather_end is not None:
+    weather_model = (
+        "ERA5-Seamless" if weather_provenance.get("model") == "era5_seamless"
+        else weather_provenance.get("model", "ERA5-Seamless")
+    )
+    weather_retrieved = (
+        f" · retrieved **{pd.Timestamp(weather_retrieved_at):%Y-%m-%d %H:%M UTC}**"
+        if weather_retrieved_at else ""
+    )
+    st.caption(
+        f"Weather: **{weather_provenance.get('source', 'Open-Meteo')} / "
+        f"{weather_model}** · actual coverage loaded: "
+        f"**{weather_start:%Y-%m-%d %H:%M} → "
+        f"{(weather_end - pd.Timedelta(hours=1)):%Y-%m-%d %H:%M UTC}**{weather_retrieved}"
+    )
+    if weather_cache == "stale_snapshot":
+        st.warning("The source refresh failed, so this run uses the last-known-good weather snapshot.")
 
 
 if dynamic_toggle:
@@ -375,7 +490,10 @@ if do_backtest:
             fig_bt.update_yaxes(title_text=f"{'kWh' if FREQ == 'H' else 'kWh/day'}")
             st.plotly_chart(fig_bt, use_container_width=True)
 
-        st.caption("MASE < 1 means the model beats the seasonal-naive baseline on average.")
+        st.caption(
+            "MASE uses the training fold's seasonal error as its scale. "
+            "Use the held-out MAE and RMSE rows to compare models with the displayed seasonal-naive baseline."
+        )
 else:
     st.info("Enable **Run rolling backtest** in the sidebar to compare SARIMAX vs the seasonal-naive baseline.")
 

@@ -2,7 +2,7 @@
 
 A Norwegian energy and weather analysis project evolving into a **Next.js / React frontend with a Python backend**.
 
-**Status:** Phase 0 is complete: the original Streamlit application has a recorded test baseline, control inventory, and representative outputs and timings from tracked inputs. All 49 existing tests pass in the captured Python 3.11 environment. Phase 1 has started with live source-contract inspection. The new frontend, API, automated data updates, and additional models have not been implemented yet.
+**Status:** Phase 1 data loading and correctness are implemented. Public energy data has been backfilled from 2021 through available 2026 observations, with validated UTC intervals, coverage-aware controls and atomic refreshes. The current application remains Streamlit; the Next.js frontend and Python API are subsequent phases.
 
 ## Implementation plan
 
@@ -19,14 +19,14 @@ The planned dashboard will combine:
 
 ## Current application
 
-The inherited application uses Streamlit, Plotly, MongoDB, Open-Meteo, statsmodels, SciPy and scikit-learn. Its existing date selectors target 2021–2024; newer coverage is planned and is not yet loaded by this migration.
+The inherited application uses Streamlit, Plotly, MongoDB, Open-Meteo, statsmodels, SciPy and scikit-learn. Date selectors use validated observed coverage, including available 2026 data.
 
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Energy pages require local MongoDB configuration in `.streamlit/secrets.toml` (`MONGO_URI`, optionally `MONGO_DB`). Credentials are not included in this repository. Weather requests require network access. See the [preserved original README](docs/LEGACY_README.md) for the inherited project's documentation and original deployment links.
+Run `python scripts/refresh_data.py backfill` once to create the ignored local public-data snapshots; no credentials are needed. Energy pages use this snapshot, with optional MongoDB fallback via `.streamlit/secrets.toml` (`MONGO_URI`, optionally `MONGO_DB`). Weather retains the last validated snapshot during an outage. See [data pipeline commands and contracts](docs/DATA_PIPELINE.md). See the [preserved original README](docs/LEGACY_README.md) for the inherited project's documentation and original deployment links.
 
 Run the existing Python tests from the repository root:
 

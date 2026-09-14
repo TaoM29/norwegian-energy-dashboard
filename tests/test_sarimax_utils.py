@@ -96,3 +96,15 @@ def test_rolling_backtest_monkeypatched_sarimax_runs():
     assert "Seasonal naive" in summary["model"].tolist()
     assert "SARIMAX (no exog)" in summary["model"].tolist()
     assert "y_test" in artifacts and "baseline" in artifacts
+
+
+def test_aggregation_preserves_missing_hours_and_partial_days():
+    t = pd.date_range("2026-01-01", periods=48, freq="h", tz="UTC")
+    energy = pd.DataFrame({"time": t, "quantity_kwh": 1.0}).drop(index=6)
+    weather = pd.DataFrame({"time": t, "precipitation (mm)": 1.0}).drop(index=6)
+    hourly, rain = su.aggregate_freq(energy, weather, "h")
+    assert pd.isna(hourly.loc[t[6], "quantity_kwh"])
+    assert pd.isna(rain.loc[t[6], "precipitation (mm)"])
+    daily, rain_daily = su.aggregate_freq(energy, weather, "D")
+    assert pd.isna(daily.iloc[0, 0]) and pd.isna(rain_daily.iloc[0, 0])
+    assert daily.iloc[1, 0] == rain_daily.iloc[1, 0] == 24

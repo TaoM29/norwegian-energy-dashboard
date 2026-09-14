@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app_core.loaders.weather import load_openmeteo_era5
+from app_core.loaders.mongo_utils import available_years_from_coverage, get_energy_status
 from app_core.analysis.data_quality import spc_outliers_dct, lof_precip_anomalies
 
 
@@ -15,7 +16,7 @@ st.markdown(
     """
 **What this page shows**
 
-This page helps you **check data quality** in the hourly ERA5 weather series for the selected **price area** and **year**.
+This page helps you **check data quality** in the hourly ERA5-Seamless weather series for the selected **price area** and **year**.
 
 ### 1) SPC-style outliers (Temperature)
 - Builds a **smooth trend** using a **DCT low-pass filter** (keeps only the lowest-frequency coefficients).
@@ -48,7 +49,13 @@ This page helps you **check data quality** in the hourly ERA5 weather series for
 
 # global selection (comes from 02_Price_Area_Selector)
 AREA = st.session_state.get("selected_area", "NO1")
-YEAR = int(st.session_state.get("selected_year", 2024))
+energy_status = get_energy_status()
+available_years = available_years_from_coverage(energy_status["coverage"], area=AREA)
+if not available_years:
+    st.error("No validated energy coverage is available for the shared year selection.")
+    st.stop()
+YEAR = int(st.session_state.get("selected_year", available_years[-1]))
+YEAR = YEAR if YEAR in available_years else available_years[-1]
 st.caption(f"Active selection → **Area:** {AREA} • **Year:** {YEAR}")
 st.page_link("pages/02_Price_Area_Selector.py", label="Change area/year", icon=":material/settings:")
 
@@ -60,6 +67,30 @@ def get_weather(area: str, year: int) -> pd.DataFrame:
     return df.sort_values("time").reset_index(drop=True)
 
 df = get_weather(AREA, YEAR)
+if df.empty:
+    st.info(f"No ERA5-Seamless observations are available for {AREA} in {YEAR}.")
+    st.stop()
+weather_provenance = df.attrs.get("provenance", {})
+weather_last = (
+    pd.Timestamp(weather_provenance["available_end"]) - pd.Timedelta(hours=1)
+    if weather_provenance.get("available_end") else df["time"].max()
+)
+weather_cache = weather_provenance.get("cache_status", "unknown")
+weather_model = (
+    "ERA5-Seamless" if weather_provenance.get("model") == "era5_seamless"
+    else weather_provenance.get("model", "ERA5-Seamless")
+)
+weather_retrieved = (
+    f" · retrieved **{pd.Timestamp(weather_provenance['retrieved_at']):%Y-%m-%d %H:%M UTC}**"
+    if weather_provenance.get("retrieved_at") else ""
+)
+st.caption(
+    f"Weather: **{weather_provenance.get('source', 'Open-Meteo')} / "
+    f"{weather_model}** · actual coverage through "
+    f"**{weather_last:%Y-%m-%d %H:%M UTC}**{weather_retrieved}"
+)
+if weather_cache == "stale_snapshot":
+    st.warning("The source refresh failed, so these checks use the last-known-good weather snapshot.")
 
 # column names used by the loader
 COL_TEMP = "temperature_2m (°C)"
@@ -190,20 +221,27 @@ with tabs[1]:
                  "smaller values focus on very local deviations."
         )
 
-    s = pd.to_numeric(df[COL_PREC], errors="coerce").fillna(0.0)
+    s = pd.to_numeric(df[COL_PREC], errors="coerce")
+    if s.isna().any():
+        st.info("Precipitation contains missing observations. LOF is not run because missing rainfall is not zero.")
+        st.stop()
     nonzero = int((s > 0).sum())
     if nonzero < 10:
         st.info("Precipitation is mostly zero — not enough variation for LOF.")
         st.stop()
 
-    a_df, n_eff = lof_precip_anomalies(
-        df,
-        time_col="time",
-        precip_col=COL_PREC,
-        contamination=float(contamination),
-        n_neighbors=int(n_neighbors),
-        roll_hours=24,
-    )
+    try:
+        a_df, n_eff = lof_precip_anomalies(
+            df,
+            time_col="time",
+            precip_col=COL_PREC,
+            contamination=float(contamination),
+            n_neighbors=int(n_neighbors),
+            roll_hours=24,
+        )
+    except ValueError as exc:
+        st.info(str(exc))
+        st.stop()
 
     if a_df.empty:
         st.info("Could not compute LOF anomalies for this selection.")

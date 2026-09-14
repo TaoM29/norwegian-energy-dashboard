@@ -8,6 +8,7 @@ import streamlit as st
 
 from app_core.loaders.weather import load_openmeteo_era5
 from app_core.loaders.energy_series import load_energy_series_hourly
+from app_core.loaders.mongo_utils import available_years_from_coverage, get_energy_status
 from app_core.analysis.stats_utils import zscore
 from app_core.analysis.sliding_correlation import (
     apply_lag_hours,
@@ -41,8 +42,15 @@ with row[0]:
 
 # global selection (from page 02)
 AREA = st.session_state.get("selected_area", "NO1")
-YEAR = int(st.session_state.get("selected_year", 2024))
-st.caption(f"Active selection → **Area:** {AREA} • **Year:** {YEAR}")
+STATUS = get_energy_status()
+WINDOW = STATUS.get("common_complete_window")
+available_years = available_years_from_coverage(STATUS["coverage"], area=AREA)
+if not available_years:
+    st.error(f"No validated energy coverage is available for {AREA}.")
+    st.stop()
+YEAR = int(st.session_state.get("selected_year", available_years[-1]))
+YEAR = YEAR if YEAR in available_years else available_years[-1]
+st.caption(f"Active selection → **Area:** {AREA} • **Year:** {YEAR} · **{STATUS['source']}**")
 
 # Controls
 with st.sidebar:
@@ -50,9 +58,26 @@ with st.sidebar:
 
     kind = st.radio("Energy kind", ["Production", "Consumption"], horizontal=False)
 
-    prod_groups = ["hydro", "wind", "solar", "thermal", "nuclear", "other"]
-    cons_groups = ["household", "cabin", "primary", "secondary", "tertiary"]
-    group = st.selectbox("Energy group", prod_groups if kind == "Production" else cons_groups)
+    groups = sorted({
+        row["group"] for row in STATUS["coverage"]
+        if row["area"] == AREA and row["kind"] == kind.lower()
+        and row["group"] not in {"*", "industry", "private", "business"}
+        and pd.Timestamp(row["start"]) < pd.Timestamp(f"{YEAR + 1}-01-01", tz="UTC")
+        and pd.Timestamp(row["end"]) > pd.Timestamp(f"{YEAR}-01-01", tz="UTC")
+    })
+    group = st.selectbox("Energy group", groups)
+    group_coverage = [
+        row for row in STATUS["coverage"]
+        if row["area"] == AREA and row["kind"] == kind.lower() and row["group"] == group
+    ]
+    group_start = max(
+        pd.Timestamp(f"{YEAR}-01-01", tz="UTC"),
+        min(pd.Timestamp(row["start"]) for row in group_coverage),
+    )
+    group_end = min(
+        pd.Timestamp(f"{YEAR + 1}-01-01", tz="UTC"),
+        max(pd.Timestamp(row["end"]) for row in group_coverage),
+    )
 
     wx_vars = [
         "temperature_2m (°C)",
@@ -72,34 +97,55 @@ with st.sidebar:
     normalize_plot = st.toggle("Normalize series for plotting (z-score)", value=True)
 
     st.caption("Date range is limited to the selected **year** for both series.")
-    m = st.selectbox("Month", [f"{m:02d}" for m in range(1, 13)], index=0)
+    last_month = (group_end - pd.Timedelta(nanoseconds=1)).month
+    first_month = group_start.month
+    months = [f"{value:02d}" for value in range(first_month, last_month + 1)]
+    m = st.selectbox("Month", months, index=len(months) - 1 if YEAR == pd.Timestamp.now(tz="UTC").year else 0)
 
     month_start = pd.Timestamp(f"{YEAR}-{m}-01 00:00:00", tz="UTC")
-    month_end = (month_start + pd.offsets.MonthEnd(1)).replace(hour=23, minute=59, second=59)
+    month_end = month_start + pd.offsets.MonthBegin(1)
+    month_start = max(month_start, group_start)
+    month_end = min(month_end, group_end)
 
 # Data loaders (Streamlit caching stays in the page)
 @st.cache_data(ttl=1800, show_spinner=False)
 def load_weather(area: str, year: int) -> pd.DataFrame:
-    """Open-Meteo ERA5 for area/year, hourly, UTC."""
+    """Open-Meteo ERA5-Seamless for area/year, hourly, UTC."""
     df = load_openmeteo_era5(area, year).copy()
     df["time"] = pd.to_datetime(df["time"], utc=True)
     return df.sort_values("time").reset_index(drop=True)
 
 @st.cache_data(ttl=900, show_spinner=False)
 def load_energy(area: str, kind: str, group: str, year: int, start: pd.Timestamp, end: pd.Timestamp) -> pd.Series:
-    """Hourly energy (production/consumption) for [start,end]."""
+    """Hourly energy (production/consumption) for UTC ``[start, end)``."""
     return load_energy_series_hourly(area=area, kind=kind, group=group, year=year, start=start, end=end)
 
 # Data fetching
 with st.spinner("Loading weather…"):
     df_wx = load_weather(AREA, YEAR)
 
+if df_wx.empty:
+    st.info(f"No ERA5-Seamless observations are available for {AREA} in {YEAR}.")
+    st.stop()
+weather_provenance = df_wx.attrs.get("provenance", {})
+weather_cache = weather_provenance.get("cache_status", "unknown")
+weather_model = (
+    "ERA5-Seamless" if weather_provenance.get("model") == "era5_seamless"
+    else weather_provenance.get("model", "ERA5-Seamless")
+)
+weather_retrieved = (
+    f" · retrieved **{pd.Timestamp(weather_provenance['retrieved_at']):%Y-%m-%d %H:%M UTC}**"
+    if weather_provenance.get("retrieved_at") else ""
+)
+if weather_cache == "stale_snapshot":
+    st.warning("The source refresh failed, so the correlation uses the last-known-good weather snapshot.")
+
 if wx_var not in df_wx.columns:
     st.error(f"Weather variable **{wx_var}** not in weather dataset.")
     st.stop()
 
 wx = (
-    df_wx[(df_wx["time"] >= month_start) & (df_wx["time"] <= month_end)]
+    df_wx[(df_wx["time"] >= month_start) & (df_wx["time"] < month_end)]
     .set_index("time")[wx_var]
     .astype(float)
     .resample("h")
@@ -126,6 +172,12 @@ if len(wx_l) < max(12, int(window_hours)):
     st.stop()
 
 xy = pd.DataFrame({"wx": wx_l.astype(float), "en": en_l.astype(float)})
+st.caption(
+    f"Actual analyzed overlap: **{xy.index.min():%Y-%m-%d %H:%M} → "
+    f"{xy.index.max():%Y-%m-%d %H:%M UTC}** · weather: "
+    f"**{weather_provenance.get('source', 'Open-Meteo')} / "
+    f"{weather_model}**{weather_retrieved}"
+)
 
 win = int(window_hours)
 rho = rolling_pearson_corr(xy["wx"], xy["en"], window=win, center=True, min_periods=win)

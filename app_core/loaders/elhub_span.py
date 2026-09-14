@@ -5,13 +5,18 @@ from typing import List, Tuple
 
 import pandas as pd
 
+from app_core.loaders.mongo_utils import load_energy_records
+
 
 def energy_collections_for_span(kind: str, start: datetime, end: datetime) -> List[Tuple[str, str]]:
     """
     Return list of (collection_name, group_field) across the year span.
-    Handles production collection split: 2021 vs 2022–2024.
+    Handles the legacy production collection split: 2021 vs 2022 onward.
     """
-    years = range(start.year, end.year + 1)
+    if pd.Timestamp(start) >= pd.Timestamp(end):
+        return []
+    final_instant = pd.Timestamp(end) - pd.Timedelta(nanoseconds=1)
+    years = range(start.year, final_instant.year + 1)
     out: List[Tuple[str, str]] = []
 
     if kind == "Production":
@@ -44,34 +49,25 @@ def load_energy_span_df(
     end: datetime,
 ) -> pd.DataFrame:
     """
-    Load hourly energy rows for [start,end] (inclusive) across collections.
+    Load hourly energy rows for the UTC half-open interval ``[start, end)``.
+
+    The normalized local snapshot is preferred. Passing ``db`` explicitly uses
+    the legacy Mongo collections through the same stable record schema.
     Returns DataFrame with columns: time (UTC), quantity_kwh.
     """
-    colls = energy_collections_for_span(kind, start, end)
-
-    frames: list[pd.DataFrame] = []
-    for coll_name, group_field in colls:
-        pipe = [
-            {
-                "$match": {
-                    "price_area": area,
-                    group_field: group,
-                    "start_time": {"$gte": start, "$lte": end},
-                }
-            },
-            {"$project": {"_id": 0, "start_time": 1, "quantity_kwh": 1}},
-        ]
-        rows = list(db[coll_name].aggregate(pipe, allowDiskUse=True))
-        if rows:
-            frames.append(pd.DataFrame(rows))
-
-    if not frames:
+    normalized = load_energy_records(
+        start=start,
+        end=end,
+        areas=[area],
+        kinds=[kind],
+        groups=[group],
+        db=db,
+    )
+    if normalized.empty:
         return pd.DataFrame(columns=["time", "quantity_kwh"])
-
-    df = pd.concat(frames, ignore_index=True)
-    df["time"] = pd.to_datetime(df["start_time"], utc=True)
-    df = df[["time", "quantity_kwh"]].sort_values("time").reset_index(drop=True)
-
-    start_ts = pd.Timestamp(start, tz="UTC")
-    end_ts = pd.Timestamp(end, tz="UTC")
-    return df[(df["time"] >= start_ts) & (df["time"] <= end_ts)]
+    return (
+        normalized.rename(columns={"timestamp": "time", "value": "quantity_kwh"})
+        [["time", "quantity_kwh"]]
+        .sort_values("time")
+        .reset_index(drop=True)
+    )

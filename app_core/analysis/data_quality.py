@@ -135,7 +135,9 @@ def lof_precip_anomalies(
     if df is None or df.empty or time_col not in df.columns or precip_col not in df.columns:
         return pd.DataFrame(columns=["time", "precip", "roll24", "lof_score", "is_anom"]), 0
 
-    s = pd.to_numeric(df[precip_col], errors="coerce").fillna(0.0)
+    s = pd.to_numeric(df[precip_col], errors="coerce")
+    if s.isna().any():
+        raise ValueError("LOF requires observed precipitation; missing rainfall is not zero.")
     roll = s.rolling(int(roll_hours), min_periods=1).mean()
 
     X = np.column_stack([s.to_numpy(dtype=float), roll.to_numpy(dtype=float)])

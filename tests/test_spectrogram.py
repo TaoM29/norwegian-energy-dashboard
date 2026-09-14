@@ -68,3 +68,7 @@ def test_production_spectrogram_shapes_are_consistent():
     fig, f, t_idx, Sxx = production_spectrogram(df, window_len=48, overlap=24, freq_units="cph")
     assert fig is not None
     assert Sxx.shape == (len(f), len(t_idx))
+
+
+def test_spectrogram_rejects_missing_hours_instead_of_inventing_zero():
+    assert production_spectrogram(_make_df().drop(index=12)) == (None, None, None, None)

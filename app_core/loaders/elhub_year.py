@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal, Optional
 
 import pandas as pd
+
+from app_core.loaders.mongo_utils import load_energy_records
 
 Kind = Literal["Production", "Consumption"]
 
@@ -19,9 +21,9 @@ def collection_name_for(kind: Kind, year: int) -> str:
 
 def year_range_utc(year: int) -> tuple[datetime, datetime]:
     """
-    [start, end) range for a full calendar year in naive datetime (Mongo stores naive datetimes).
+    UTC-aware half-open ``[start, end)`` range for a full calendar year.
     """
-    return datetime(year, 1, 1), datetime(year + 1, 1, 1)
+    return datetime(year, 1, 1, tzinfo=timezone.utc), datetime(year + 1, 1, 1, tzinfo=timezone.utc)
 
 
 def load_elhub_year_df(
@@ -37,23 +39,26 @@ def load_elhub_year_df(
     time_col: str = "start_time",
 ) -> pd.DataFrame:
     """
-    Fetch one full year's worth of hourly rows for (kind, area, group, year).
-    db is a pymongo database handle (or a fake in unit tests).
+    Fetch one calendar year's available hourly rows using UTC half-open bounds.
+
+    Passing ``db`` explicitly selects the legacy Mongo fallback.
     """
     start, end = year_range_utc(year)
-    coll_name = collection_name_for(kind, year)
-
-    query = {
-        price_area_col: area,
-        group_col: group,
-        time_col: {"$gte": start, "$lt": end},
-    }
-    proj = {"_id": 0, price_area_col: 1, group_col: 1, time_col: 1, value_col: 1}
-
-    rows = list(db[coll_name].find(query, proj))
-    if not rows:
+    normalized = load_energy_records(
+        start=start,
+        end=end,
+        areas=[area],
+        kinds=[kind],
+        groups=[group],
+        db=db,
+    )
+    if normalized.empty:
         return pd.DataFrame(columns=[price_area_col, group_col, time_col, value_col])
-
-    df = pd.DataFrame(rows)
+    df = normalized.rename(columns={
+        "area": price_area_col,
+        "group": group_col,
+        "timestamp": time_col,
+        "value": value_col,
+    })[[price_area_col, group_col, time_col, value_col]]
     df[time_col] = pd.to_datetime(df[time_col], utc=True)
     return df.sort_values(time_col).reset_index(drop=True)
