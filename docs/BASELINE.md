@@ -36,6 +36,6 @@ There are **no baseline test failures to carry forward** in this environment. La
 
 Coverage includes CSV parsing, mocked energy/weather loaders, collection selection, UTC conversion, aggregation, correlations, STL, spectrograms, SPC/LOF, z-scores, forecast helpers and credential detection. It does not cover the full Streamlit page interactions or every page-embedded calculation. The inventory identifies those gaps; passing tests are not evidence that they are already correct.
 
-## Remaining Phase 0 work
+## Representative output capture — completed
 
-Capture representative original page outputs and timings with recorded input hashes, area/date selections, controls, environment and cache state. Unit-test elapsed time is not dashboard latency. Live MongoDB/weather coverage, browser journeys and page numerical parity have not been validated by this baseline. Phase 0's full completion gate remains open until those comparison artifacts are captured.
+The [reference output report](REFERENCE_OUTPUTS.md) now records original-page screenshots, complete charts/tables, numerical results, input/source hashes, controls, cache conditions and timing samples. Five page cases and seven measured numerical/data-loading operations reproduce; all 49 existing tests still pass. Phase 0 is complete for this representative recorded-input set. Unit-test and server-side execution times are not browser latency; live MongoDB/weather coverage, full browser journeys and exhaustive numerical parity remain unverified.

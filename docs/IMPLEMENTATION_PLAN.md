@@ -91,10 +91,10 @@ Files above live in `pages/`. Keep notebooks as research provenance; their prese
 - [x] Preserve original Git history and application files; configure only the new repository as `origin`. Verified against the sanitized baseline; see [repository evidence](BASELINE.md#repository-provenance).
 - [x] Publish this plan and distinguish the current Streamlit implementation from the planned new application in the README.
 - [x] Run the existing tests in a reproducible environment at the start of implementation; record baseline failures separately from regressions. [Python 3.11 baseline](BASELINE.md): 49 passed, no baseline failures; exact installed versions captured.
-- [x] Inventory controls, exports, edge cases and page-embedded calculations beyond the initial feature map. See the [source-reviewed control inventory](FEATURE_CONTROL_INVENTORY.md); runtime verification remains pending.
-- [ ] Capture representative original outputs and timings using known inputs for later comparisons.
+- [x] Inventory controls, exports, edge cases and page-embedded calculations beyond the initial feature map. See the [control inventory](FEATURE_CONTROL_INVENTORY.md), including corrections from representative runtime checks.
+- [x] Capture representative original outputs and timings using known inputs for later comparisons. See [reference outputs and timings](REFERENCE_OUTPUTS.md): tracked-input hashes, five original-page cases, screenshots, numerical artifacts, repeat checks and explicit scope limits.
 
-Gate: independent repository and documented baseline; no feature deletion yet.
+Gate: **complete 2026-09-14** — independent repository and documented recorded-input baseline; no feature deletion. Live coverage/data correctness and exhaustive replacement parity remain later gates.
 
 ### Phase 1 — Data correctness and freshness
 

@@ -7,7 +7,7 @@ All replacement work is **migration pending**. The Streamlit application remains
 ## Verification status and boundaries
 
 - **Statically inspected:** `app.py`, every file in `pages/`, the page-facing helpers in `app_core/analysis/` and `app_core/loaders/`, and the current tests in `tests/`.
-- **Runtime outputs:** no rendered page outputs were captured or timed as part of this document. The separate [Phase 0 baseline](BASELINE.md) records 49 passing tests on Python 3.11.13/macOS arm64; those unit tests do not verify live data or rendered UI output.
+- **Runtime outputs:** the separate [reference output report](REFERENCE_OUTPUTS.md) captures five page cases plus representative numerical results and timings from tracked inputs. It records which interactions remain unverified. The [Phase 0 baseline](BASELINE.md) records 49 passing unit tests on Python 3.11.13/macOS arm64; those tests alone do not verify live data or rendered UI output.
 - **External contracts:** collection contents, current Open-Meteo response units/model identity, full-year completeness, live map interaction, model convergence, and page timings remain unverified here.
 - **Credentials:** MongoDB access is server-side through `st.secrets["MONGO_URI"]`, with database name defaulting to `ind320`. No credential value is recorded here. Sources: `app_core/loaders/mongo_utils.py`, `AGENTS.md`.
 
@@ -182,7 +182,7 @@ Additional migration checks include zero-filling missing energy, whole-span back
 
 The page loads exactly the final selected calendar year and chosen group, previews 30 rows, then shows four STL components and a spectrogram. STL converts timestamps to UTC, sums to hourly bins only when pandas cannot infer frequency, coerces even smoother values to the next odd integer, and fits observed/seasonal/trend/residual in kWh. The spectrogram always resamples hourly by sum, interpolates gaps of up to three hours, fills all remaining gaps with zero, uses a Hann window, linear detrending, density scaling, magnitude mode, and displays 0–12 cycles/day.
 
-Empty source data stops the page. Parameter compatibility is not validated in the UI: overlap may equal or exceed window length, a window may exceed available observations, and STL constraints/sample requirements may be violated. Analysis exceptions are not caught. The setup JSON records the effective STL parameters, but neither tab provides data export.
+Empty source data stops the page. Parameter compatibility is not validated in the UI: overlap may equal or exceed window length, a window may exceed available observations, and STL constraints/sample requirements may be violated. Analysis exceptions are not caught. The setup JSON records the effective STL parameters; there is no dedicated export of the component arrays or spectral matrix with provenance.
 
 ### SPC and LOF
 
@@ -199,7 +199,7 @@ LOF replaces nonnumeric or missing precipitation with zero and creates two unsca
 
 ## Export inventory
 
-There are **no application download or export controls**. No page calls Streamlit's download widget or serializes displayed data for a user. Tables and Plotly/Folium interactions are display-only. Adding downloads of the displayed values plus area, interval, aggregation, units, provenance, and missing-data metadata is migration pending under Phase 3.
+There are **no custom application export controls or provenance-aware export contracts**: no page calls Streamlit's download widget. Runtime inspection of the pinned environment did reveal framework-provided **Download as CSV** on dataframes and **Download plot as a PNG** in Plotly toolbars. These were missed by the original source-only inventory. Preserve these existing conveniences during migration; adding exports of all displayed analysis values with area, interval, aggregation, units, provenance, and missing-data metadata remains pending under Phase 3. Framework toolbar visibility does not establish that exported content is complete or scientifically labeled.
 
 ## Data access, time, aggregation, and caching contracts
 
@@ -222,13 +222,13 @@ The test suite was inspected for this inventory. The separate [Phase 0 baseline]
 Important gaps for parity work:
 
 1. No Streamlit page/navigation/control test exercises defaults, session-state handoff, stop/error states, charts, map clicks, or display tables.
-2. No representative output snapshots or timings exist for the Phase 0 comparison set.
+2. Representative [output snapshots and timings](REFERENCE_OUTPUTS.md) now exist; additional cases are still needed before migrating features outside that recorded-input set.
 3. No tests cover selector range consumption or URL persistence; current pages do not implement either behavior.
 4. No tests cover Weather Overview/Explorer calculations, circular wind handling, empty/full-year responses, DST conversion, API unit metadata, or actual model identity.
 5. No tests cover annual energy totals, the legacy 2021 totals branch, group discovery, clear-all group semantics, map aggregation/GeoJSON detection, or cross-collection weighting.
-6. Snow Drift and fence calculations are embedded in the page and have no numerical fixtures, coverage/completeness checks, unit assertions, or scientific-assumption tests.
-7. No live or fixture test fits the actual statsmodels SARIMAX path. `hod-mean`, confidence interval behavior, dynamic prediction, fold failure reporting, matched-fold metrics, and MASE interpretation are unverified.
+6. Snow Drift and fence calculations are embedded in the page. The reference capture now includes partial-season transport and sector fixtures from unchanged page functions; fence heights, monthly outputs, coverage/completeness checks, unit assertions and scientific-assumption tests remain unverified.
+7. The reference capture now fits real statsmodels SARIMAX without exogenous inputs over three matched folds and reconciles their metrics. The forecast page itself, `hod-mean`, confidence interval behavior, dynamic prediction, fold failure reporting, exogenous evaluation and MASE interpretation still need focused acceptance checks.
 8. STL/spectrogram invalid parameter combinations and missing-data choices are not tested. SPC edge filling and LOF's zero imputation, neighbor limits, feature scaling, and time ordering lack focused coverage.
-9. There is no export contract or test because the application currently exposes no exports.
+9. Framework-provided CSV/PNG downloads exist, but their contents and completeness have no tests; no custom metadata/provenance export contract exists.
 
 These gaps are baseline facts and migration work items. They should not be resolved by deleting or silently changing Streamlit behavior before replacement acceptance checks are defined and passed.

@@ -1,0 +1,64 @@
+{
+  "weather-overview": {
+    "first_after_cache_clear_seconds": 0.08147470800031442,
+    "unchanged_rerun_seconds": [
+      0.07152987500012387,
+      0.07075825000356417,
+      0.07124658399698092,
+      0.09464604200184112,
+      0.07424725000601029
+    ],
+    "rerun_median_seconds": 0.07152987500012387,
+    "rerun_min_seconds": 0.07075825000356417,
+    "rerun_max_seconds": 0.09464604200184112
+  },
+  "weather-explorer": {
+    "first_after_cache_clear_seconds": 0.0752298340012203,
+    "unchanged_rerun_seconds": [
+      0.10035608299949672,
+      0.06362337500468129,
+      0.06282841700158315,
+      0.06355120799707947,
+      0.0672060419965419
+    ],
+    "rerun_median_seconds": 0.06362337500468129,
+    "rerun_min_seconds": 0.06282841700158315,
+    "rerun_max_seconds": 0.10035608299949672
+  },
+  "weather-explorer-daily": {
+    "hourly_to_daily_seconds": [
+      0.07563958299579099,
+      0.07396341700223275,
+      0.07265458400070202,
+      0.07332204100384843,
+      0.07610966599895619
+    ],
+    "transition_median_seconds": 0.07396341700223275
+  },
+  "stl-spectrogram": {
+    "first_after_cache_clear_seconds": 4.798589250000077,
+    "unchanged_rerun_seconds": [
+      3.7390921249971143,
+      3.6675877919988125,
+      3.6730455409997376,
+      3.7213720420040772,
+      3.659097791998647
+    ],
+    "rerun_median_seconds": 3.6730455409997376,
+    "rerun_min_seconds": 3.659097791998647,
+    "rerun_max_seconds": 3.7390921249971143
+  },
+  "spc-lof": {
+    "first_after_cache_clear_seconds": 0.4656437919984455,
+    "unchanged_rerun_seconds": [
+      0.11520483300409978,
+      0.11345554199942853,
+      0.11211320899747079,
+      0.167761958000483,
+      0.1148356249977951
+    ],
+    "rerun_median_seconds": 0.1148356249977951,
+    "rerun_min_seconds": 0.11211320899747079,
+    "rerun_max_seconds": 0.167761958000483
+  }
+}

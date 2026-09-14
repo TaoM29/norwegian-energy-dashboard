@@ -1,0 +1,26 @@
+{
+  "cache_state": "first_call is the first invocation after imports/input preparation; repeats 1-5 are immediate warm-process calls; OS filesystem cache was not flushed",
+  "executable": "/Users/taom/Projects/norwegian-energy-dashboard/.venv/bin/python",
+  "machine": "arm64",
+  "packages": {
+    "numpy": "2.4.6",
+    "pandas": "3.0.5",
+    "scikit-learn": "1.9.1",
+    "scipy": "1.17.1",
+    "statsmodels": "0.15.0"
+  },
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "python": "3.11.13 (main, Jun  3 2025, 18:38:25) [Clang 17.0.0 (clang-1700.0.13.3)]",
+  "thread_environment": {
+    "MKL_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  },
+  "timing_method": "time.perf_counter_ns around each helper call in one sequential process; excludes input preparation and artifact serialization unless the method is load_tracked_csvs",
+  "timings_are_not": [
+    "browser latency",
+    "network latency",
+    "live source latency",
+    "an operational forecast benchmark"
+  ]
+}
