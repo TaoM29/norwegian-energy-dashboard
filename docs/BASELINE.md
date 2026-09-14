@@ -1,41 +1,48 @@
 # Phase 0 baseline
 
-Captured on 2026-09-14 before changes to application code or existing tests. The control inventory is in [FEATURE_CONTROL_INVENTORY.md](FEATURE_CONTROL_INVENTORY.md). All replacement features remain pending.
+Recorded 2026-09-14 before application changes, at `70801b81f38348755602c4b3215c267ade176203`. The [control inventory](FEATURE_CONTROL_INVENTORY.md) records existing behavior and migration gaps.
 
 ## Repository provenance
 
-- Starting checkout: `70801b81f38348755602c4b3215c267ade176203`, on `main`, with a clean working tree.
-- The only remote is `origin`, with both fetch and push pointing to `git@github.com:TaoM29/norwegian-energy-dashboard.git`.
-- The local checkout contains 152 commits reachable from the starting commit. The sanitized application baseline is `978d7c05a67f495302e6eaab2f8424ca77a2e233`; the original pre-sanitization source identifier is recorded in the implementation plan and must not be merged back in.
-- Comparing the sanitized application baseline with the starting checkout shows no changes to `app.py`, `pages/`, `app_core/`, `requirements.txt`, or `data/`. The notebook connection cell was sanitized and credential-scanner tests were added.
-- `.streamlit/secrets.toml` is ignored and untracked. The targeted MongoDB credential scan passed, including all local history. No credentials or live database access were needed for this baseline.
+Work is on `main`; the only remote is `origin`, pointing to `TaoM29/norwegian-energy-dashboard` for fetch and push. Application files match sanitized baseline `978d7c05a67f495302e6eaab2f8424ca77a2e233`. The inherited notebooks and input data are retained. Credential cleanup is documented in the README; do not restore pre-sanitization history.
 
-## Reproduce the Python environment
+## Test environment
 
-The baseline uses CPython **3.11.13**, **macOS 26.6.2**, **arm64**, in an isolated `.venv`. The machine's default `python` is 3.9.16, outside the project's CI matrix, so it was not used for the baseline. CI declares Python 3.11 and 3.12 on Ubuntu; this local run does not establish the result on Python 3.12 or Linux.
+**49 tests passed; no baseline failures.** The initial run took 49.16 seconds; a later warm run took 2.69 seconds. These are test-suite times, not application latency. Tests use synthetic data and mocked external services; they do not establish live data correctness or full page parity.
 
-The initial environment was installed from the unchanged `requirements.txt`. All installed versions, including pip and setuptools, are captured in [baseline/requirements-py311-macos.txt](baseline/requirements-py311-macos.txt). This is a platform-specific version snapshot, not a hash-verified cross-platform lock or a claim that the latest dependencies preserve all page behavior. `pip check` reports no broken requirements.
+Environment: CPython 3.11.13, macOS 26.6.2, arm64. The [exact installed versions](baseline/requirements-py311-macos.txt) reproduce this environment, not a cross-platform lock. CI also declares Python 3.12 on Ubuntu; it was not run locally for this baseline.
 
-From the repository root, with Python 3.11.13 available:
+From the repository root, using Python 3.11.13:
 
 ```bash
 python3.11 -m venv .venv
 .venv/bin/python -m pip install -r docs/baseline/requirements-py311-macos.txt
 .venv/bin/python -m pip check
 .venv/bin/python -m pytest -q
-.venv/bin/python scripts/check_secrets.py --history
 ```
 
-Use a fresh virtual environment when reproducing this snapshot. Package installation needs network access; the existing tests use fake collections, patched HTTP calls, temporary CSVs and synthetic series. The SARIMAX backtest test substitutes a dummy model, so its result does not validate real model fitting.
+The MongoDB credential scan, including local history, passed. Credentials were not needed for baseline tests or captures.
 
-## Test result and regression boundary
+## Representative observations
 
-**49 passed in 49.16 seconds; exit code 0.** There were no reported failures, errors, skips, expected failures or warnings. The [captured test output](baseline/pytest-py311-macos.txt) identifies the source revision and environment.
+Original page calculations were exercised with the two tracked CSVs:
 
-There are **no baseline test failures to carry forward** in this environment. Later failures against this source and dependency snapshot should be investigated as regressions; failures after dependency or platform changes need a separate compatibility comparison. No application functions, existing tests or dependency ranges were changed to achieve this result.
+- `data/open-meteo-subset.csv`: 8,760 hourly rows, 2020-01-01 through 2020-12-30. Location/model/timezone and authoritative unit metadata are absent. Original pages label its naive timestamps UTC; this is inherited behavior, not verified provenance. SHA-256: `d2943315cc7a25711e8dfdfecb27834d237c3de1fd29d30a43b0153348075649`.
+- `data/elhub_prod_by_group_hour_2021.csv`: 215,353 rows across areas/groups. The NO1 solar 2021 UTC slice has 8,759 hours, missing the final hour. January has 744 complete hours. SHA-256: `9038fe7981b1df9d5aa340b0f1aaf1d3ab5f2f05c866e4cd2ec7b819731eb611`.
 
-Coverage includes CSV parsing, mocked energy/weather loaders, collection selection, UTC conversion, aggregation, correlations, STL, spectrograms, SPC/LOF, z-scores, forecast helpers and credential detection. It does not cover the full Streamlit page interactions or every page-embedded calculation. The inventory identifies those gaps; passing tests are not evidence that they are already correct.
+Five page cases reproduced: Weather Overview, hourly/daily Weather Explorer, STL/spectrogram and SPC/LOF. With default page controls, recorded weather produced 56 SPC flags and 88 LOF flags; these are statistical flags, not verified faults. January solar STL/spectrogram, partial-season Snow Drift functions and a bounded three-fold real SARIMAX run also reproduced. Weather and energy were not joined because their recorded years differ.
 
-## Representative output capture — completed
+| Page | First run after application-cache clear | Median of five unchanged reruns |
+| --- | ---: | ---: |
+| Weather Overview | 81 ms | 72 ms |
+| Weather Explorer | 75 ms | 64 ms |
+| Full-year STL & Spectrogram | 4,799 ms | 3,673 ms |
+| SPC & LOF | 466 ms | 115 ms |
 
-The [reference output report](REFERENCE_OUTPUTS.md) now records original-page screenshots, complete charts/tables, numerical results, input/source hashes, controls, cache conditions and timing samples. Five page cases and seven measured numerical/data-loading operations reproduce; all 49 existing tests still pass. Phase 0 is complete for this representative recorded-input set. Unit-test and server-side execution times are not browser latency; live MongoDB/weather coverage, full browser journeys and exhaustive numerical parity remain unverified.
+Hourly → Daily transitions had a 74 ms median. These measurements wrapped Streamlit `AppTest.run()`, including calculations and element serialization but excluding browser/network/database time. Imports and OS caches were warm; machine load was uncontrolled. They are descriptive samples, not p95 estimates or deployment targets.
+
+## Historical capture evidence
+
+Commit **`f15c95d`** retains the complete source/input hashes, parameters, numerical outputs, screenshots, timings and capture code. For example, `git show f15c95d:docs/REFERENCE_OUTPUTS.md` retrieves the original report. This preserves auditability without maintaining a second application runner, generated result collections or a benchmark framework in the working tree. The raw test log was redundant with this record and was removed too.
+
+Phase 0 established a representative baseline, not exhaustive acceptance. Live coverage, DST, model/units, missing-data semantics and untested page paths remain work for Phase 1 and feature migration. Original datasets, notebooks, application features and correctness tests remain available.

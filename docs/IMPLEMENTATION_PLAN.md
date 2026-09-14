@@ -92,7 +92,7 @@ Files above live in `pages/`. Keep notebooks as research provenance; their prese
 - [x] Publish this plan and distinguish the current Streamlit implementation from the planned new application in the README.
 - [x] Run the existing tests in a reproducible environment at the start of implementation; record baseline failures separately from regressions. [Python 3.11 baseline](BASELINE.md): 49 passed, no baseline failures; exact installed versions captured.
 - [x] Inventory controls, exports, edge cases and page-embedded calculations beyond the initial feature map. See the [control inventory](FEATURE_CONTROL_INVENTORY.md), including corrections from representative runtime checks.
-- [x] Capture representative original outputs and timings using known inputs for later comparisons. See [reference outputs and timings](REFERENCE_OUTPUTS.md): tracked-input hashes, five original-page cases, screenshots, numerical artifacts, repeat checks and explicit scope limits.
+- [x] Capture representative original outputs and timings using known inputs for later comparisons. The [baseline record](BASELINE.md) retains the useful results and identifies the Git commit containing the detailed historical captures.
 
 Gate: **complete 2026-09-14** — independent repository and documented recorded-input baseline; no feature deletion. Live coverage/data correctness and exhaustive replacement parity remain later gates.
 
@@ -109,6 +109,16 @@ Gate: **complete 2026-09-14** — independent repository and documented recorded
 - Validate duplicates, gaps, unexpected categories, impossible values, aggregation and partial-day completeness. Missing data must not silently become zero.
 - Derive available dates from validated coverage; compare 2026 YTD with matching prior-year periods, accounting for leap days and incomplete periods.
 - Add daily refresh scheduling, bounded retries, refresh logs and atomic publication of a last-known-good snapshot. A failed refresh must not overwrite usable data.
+
+Initial source inspection — 2026-09-14:
+
+- Public Elhub requests to `/energy-data/v0/price-areas` with `dataset=PRODUCTION_PER_GROUP_MBA_HOUR` or `CONSUMPTION_PER_GROUP_MBA_HOUR`, `startDate=2026-09-13`, `endDate=2026-09-14` returned 24 non-null hourly quantities per returned group in NO1–NO5. Production groups were hydro, other, solar, thermal and wind; NO2 also returned `*`. Consumption groups were cabin, household, primary, secondary and tertiary. This verifies a recent source sample, not database backfill or full-year coverage.
+- Records are nested under `data[].attributes.productionPerGroupMbaHour` / `consumptionPerGroupMbaHour`, with `startTime`, `endTime`, area/group, `quantityKwh` and `lastUpdatedTime`. Sample intervals span midnight to midnight Europe/Oslo, ending `2026-09-13T22:00:00Z` in UTC. Retain revisions and offsets; do not assume request strings establish UTC boundaries.
+- The [current Elhub specification](https://api.elhub.no/energy-data/v0/openapi.yaml) limits requests to one month and exposes an area path `/price-areas/{id}`. The old notebook's `priceArea` query is rejected; `pageSize` is not a documented parameter. Sample responses had only a `self` link. The specification calls the end inclusive, while the sampled rows end at the requested midnight; verify boundary/DST behavior before implementing half-open ingestion.
+- [Consumption group metadata](https://api.elhub.no/energy-data/v0/consumption-groups) defines `industry` as primary + secondary, `private` as household + cabin, and `business` as tertiary. Do not sum aliases or `*` alongside their component groups. Metadata categories alone do not establish observed coverage (for example, nuclear was not returned in the sample).
+- [Open-Meteo documentation](https://open-meteo.com/en/docs/historical-weather-api) confirms default wind units are km/h and timezone selection changes returned timestamps. Existing loaders label wind m/s and do not explicitly select ERA5. Correct these request contracts before using fetched weather for scientific comparisons; retain the historical baseline as evidence of original behavior.
+
+Next: verify latest complete coverage and date boundaries, then implement bounded ingestion and explicit weather model/unit/UTC contracts. No database writes or date-selector expansion have been performed.
 
 Gate: real 2026 coverage is verified, repeat ingestion produces no duplicates, DST/unit tests pass, and a source outage preserves the last successful snapshot.
 

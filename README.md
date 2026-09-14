@@ -2,7 +2,7 @@
 
 A Norwegian energy and weather analysis project evolving into a **Next.js / React frontend with a Python backend**.
 
-**Status:** Phase 0 is complete: the original Streamlit application has a recorded test baseline, control inventory, and representative outputs and timings from tracked inputs. All 49 existing tests pass in the captured Python 3.11 environment. The new frontend, API, automated data updates, and additional models have not been implemented yet.
+**Status:** Phase 0 is complete: the original Streamlit application has a recorded test baseline, control inventory, and representative outputs and timings from tracked inputs. All 49 existing tests pass in the captured Python 3.11 environment. Phase 1 has started with live source-contract inspection. The new frontend, API, automated data updates, and additional models have not been implemented yet.
 
 ## Implementation plan
 
@@ -34,7 +34,7 @@ Run the existing Python tests from the repository root:
 python -m pytest -q
 ```
 
-For the exact tested dependencies, setup commands, results and limitations, see the [Phase 0 baseline](docs/BASELINE.md). The [feature-control inventory](docs/FEATURE_CONTROL_INVENTORY.md) records existing controls, exports and page calculations for migration. The [representative output report](docs/REFERENCE_OUTPUTS.md) includes screenshots, complete chart/table snapshots, numerical references and local execution timings; it does not establish live-source coverage or browser latency.
+See the [Phase 0 baseline](docs/BASELINE.md) for the tested environment, representative timings and historical capture evidence. The [feature-control inventory](docs/FEATURE_CONTROL_INVENTORY.md) records controls, exports and calculations that must be considered during migration.
 
 ## Current structure
 

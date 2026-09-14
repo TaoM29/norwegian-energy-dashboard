@@ -7,7 +7,7 @@ All replacement work is **migration pending**. The Streamlit application remains
 ## Verification status and boundaries
 
 - **Statically inspected:** `app.py`, every file in `pages/`, the page-facing helpers in `app_core/analysis/` and `app_core/loaders/`, and the current tests in `tests/`.
-- **Runtime outputs:** the separate [reference output report](REFERENCE_OUTPUTS.md) captures five page cases plus representative numerical results and timings from tracked inputs. It records which interactions remain unverified. The [Phase 0 baseline](BASELINE.md) records 49 passing unit tests on Python 3.11.13/macOS arm64; those tests alone do not verify live data or rendered UI output.
+- **Runtime evidence:** the [baseline record](BASELINE.md) summarizes representative page/numerical checks and points to the complete historical captures in Git. These checks do not establish live data correctness or full feature parity.
 - **External contracts:** collection contents, current Open-Meteo response units/model identity, full-year completeness, live map interaction, model convergence, and page timings remain unverified here.
 - **Credentials:** MongoDB access is server-side through `st.secrets["MONGO_URI"]`, with database name defaulting to `ind320`. No credential value is recorded here. Sources: `app_core/loaders/mongo_utils.py`, `AGENTS.md`.
 
@@ -222,7 +222,7 @@ The test suite was inspected for this inventory. The separate [Phase 0 baseline]
 Important gaps for parity work:
 
 1. No Streamlit page/navigation/control test exercises defaults, session-state handoff, stop/error states, charts, map clicks, or display tables.
-2. Representative [output snapshots and timings](REFERENCE_OUTPUTS.md) now exist; additional cases are still needed before migrating features outside that recorded-input set.
+2. [Representative results and timings](BASELINE.md) are recorded; migration checks must cover the behavior being replaced rather than require a separate snapshot framework.
 3. No tests cover selector range consumption or URL persistence; current pages do not implement either behavior.
 4. No tests cover Weather Overview/Explorer calculations, circular wind handling, empty/full-year responses, DST conversion, API unit metadata, or actual model identity.
 5. No tests cover annual energy totals, the legacy 2021 totals branch, group discovery, clear-all group semantics, map aggregation/GeoJSON detection, or cross-collection weighting.
