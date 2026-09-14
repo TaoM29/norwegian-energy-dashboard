@@ -1,65 +1,56 @@
+# Norwegian Energy Dashboard
 
-[![CI - Tests](https://github.com/TaoM29/data-to-descision-dashboard/actions/workflows/tests.yml/badge.svg)](https://github.com/TaoM29/data-to-descision-dashboard/actions/workflows/tests.yml) [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://data-to-descision-dashboard-nonewthing.streamlit.app)
+A Norwegian energy and weather analysis project evolving into a **Next.js / React frontend with a Python backend**.
 
+**Status:** Repository established and implementation planned. The code currently runs the original Streamlit application. The new frontend, API, automated data updates, and additional models have not been implemented yet.
 
-# Dashboards & Data Pipeline
+## Implementation plan
 
-A well-documented **“Data → Decision”** Streamlit dashboard for exploring Norwegian energy (Elhub) and weather (ERA5), with analysis + forecasting modules.
+Read the [implementation plan](docs/IMPLEMENTATION_PLAN.md) for the architecture, feature parity inventory, phased milestones, acceptance criteria, and statistical/ML research backlog.
 
-- **Live app:** https://data-to-descision-dashboard-nonewthing.streamlit.app  
-- **Repo:** https://github.com/TaoM29/data-to-descision-dashboard  
+The planned dashboard will combine:
 
----
+- Energy production and consumption exploration across NO1–NO5.
+- Weather exploration, regional maps, and snow-drift analysis.
+- Correlations, decomposition, spectral analysis, and anomaly detection.
+- Forecasting with realistic backtests, baseline comparisons, and uncertainty.
+- Automated updates through the latest validated data, including available 2026 coverage.
+- A responsive, accessible public interface with transparent methods and data freshness.
 
-## What this app does
-- Interactive exploration of **hourly energy production/consumption (NO1–NO5, 2021–2024)**
-- Weather enrichment from **Open-Meteo ERA5**
-- Regional **price-area map** (click-to-select coordinates → used by downstream pages)
-- Time-series analytics: **STL decomposition** + **spectrogram**
-- Data quality: **SPC-style outliers** + **LOF anomalies**
-- Forecasting: **SARIMAX** with optional weather exogenous variables
-- Model evaluation: **seasonal-naive baseline + rolling-origin backtesting** (MAE/RMSE/MASE)
+## Current application
 
----
+The inherited application uses Streamlit, Plotly, MongoDB, Open-Meteo, statsmodels, SciPy and scikit-learn. Its existing date selectors target 2021–2024; newer coverage is planned and is not yet loaded by this migration.
 
-## Tech stack
-- **App/UI:** Streamlit, Plotly, Folium (streamlit-folium)
-- **Data:** MongoDB (energy), Open-Meteo ERA5 (weather)
-- **Modeling/analysis:** statsmodels (STL/SARIMAX), SciPy (spectrogram, DCT), scikit-learn (LOF)
-- **Quality:** pytest (unit tests)
-
----
-
-## Data sources & conventions
-- **Energy:** Elhub hourly production/consumption by group and price area (NO1–NO5), 2021–2024 (stored in MongoDB).
-- **Weather:** ERA5 hourly data via Open-Meteo Archive API (loaded/cached on demand).
-- **Time handling:** weather is requested in `Europe/Oslo`; most analysis pages align series in **UTC** for consistency.
-- **Aggregation:** hourly → daily uses **sum** for energy; weather uses **mean** (temp/wind) and **sum** (precipitation).
-
----
-
-## Repository structure
-- `app.py` — Streamlit entry point (multi-page app)
-- `pages/` — Streamlit pages (exploration, map, modelling, diagnostics)
-- `app_core/` — reusable loaders + analysis utilities (keeps pages thin)
-- `data/` — project data used by notebooks and the app
-- `notebooks/` — Jupyter notebooks for each project part
-- `tests/` — unit tests for key analysis/loader functions
-- `requirements.txt` — Python dependencies
-
----
-
-## Run locally
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
----
+Energy pages require local MongoDB configuration in `.streamlit/secrets.toml` (`MONGO_URI`, optionally `MONGO_DB`). Credentials are not included in this repository. Weather requests require network access. See the [preserved original README](docs/LEGACY_README.md) for the inherited project's documentation and original deployment links.
 
-## Run tests
+Run the existing Python tests from the repository root:
+
 ```bash
-pytest -q
+python -m pytest -q
 ```
 
-> Tip: run commands from the repo root; restart/refresh Streamlit if the UI looks stale.
+## Current structure
+
+| Path | Purpose |
+| --- | --- |
+| `app.py`, `pages/` | Existing Streamlit application, retained during migration |
+| `app_core/` | Data loading and reusable statistical functions |
+| `tests/` | Existing Python tests |
+| `data/` | Tracked sample data and geographical boundaries |
+| `notebooks/` | Original exploratory research |
+| `docs/` | Migration plan and historical documentation |
+
+The frontend and backend directories will be introduced during implementation. Existing features will be replaced in verified stages before obsolete UI code is removed.
+
+## Repository provenance
+
+This is an independent continuation of [TaoM29/data-to-descision-dashboard](https://github.com/TaoM29/data-to-descision-dashboard), preserving its Git history from baseline commit `b3dd41d626153cebce2f2945ad1efc0a195d7bd7`. The original repository remains separate.
+
+Development and future pushes belong to [TaoM29/norwegian-energy-dashboard](https://github.com/TaoM29/norwegian-energy-dashboard). The original Streamlit deployment is a reference to the earlier project, not a deployment of the planned Next.js dashboard.
+
+Data sources: [Elhub](https://api.elhub.no/) and [Open-Meteo](https://open-meteo.com/). Dataset attribution and source/model provenance will remain visible in the new application.
