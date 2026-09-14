@@ -31,7 +31,9 @@ source_latest = pd.Timestamp(status["source_latest_observation"]).tz_convert("UT
 if window:
     common_start = pd.Timestamp(window["start"]).tz_convert("UTC")
     common_end = pd.Timestamp(window["end"]).tz_convert("UTC")
-    common_text = f"{common_start:%Y-%m-%d %H:%M} → {common_end:%Y-%m-%d %H:%M UTC}"
+    local_start = common_start.tz_convert("Europe/Oslo")
+    local_end = common_end.tz_convert("Europe/Oslo")
+    common_text = f"{local_start:%Y-%m-%d %H:%M %Z} → {local_end:%Y-%m-%d %H:%M %Z}"
 else:
     common_start = common_end = None
     common_text = "not available across every base series"
@@ -101,7 +103,7 @@ st.session_state["energy_latest_observation"] = source_latest.isoformat()
 partial = year_end < dt.date(year_list[-1], 12, 31)
 st.caption(
     f"Source: **{status['source']}** · latest source observation: "
-    f"**{source_latest:%Y-%m-%d %H:%M UTC}** · all-series common complete window: "
+    f"**{source_latest.tz_convert('Europe/Oslo'):%Y-%m-%d %H:%M %Z}** (Norwegian local time) · all-series common complete window: "
     f"**{common_text}**"
 )
 st.success(
@@ -115,7 +117,7 @@ with st.expander("What uses this?"):
     st.markdown(
         """
 - Pages read the shared area and validated date span set here.
-- Date inputs shown in the app are inclusive. Loaders convert their final date to
+- Date inputs and analysis axes use UTC; dates shown in the app are inclusive. Loaders convert their final date to
   the next UTC midnight so internal queries consistently use `[start, end)`.
 - A current year appears only after validated observations exist in the published snapshot.
 """

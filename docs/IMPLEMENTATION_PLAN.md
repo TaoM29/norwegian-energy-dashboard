@@ -103,7 +103,7 @@ Gate: **complete 2026-09-14** — independent repository and documented recorded
 - [x] Normalize the legacy production collection split into a stable analytical schema.
 - [x] Make ingestion idempotent: keys include timestamp, area, kind, and group; weather keys also include location, model and variable.
 - [x] Refresh recent windows to capture revisions; preserve retrieval time, source/model, units, publication availability and quality flags.
-- [x] Use UTC timestamps and explicit half-open intervals `[start, end)` internally; display Europe/Oslo time with DST-safe conversion.
+- [x] Use UTC timestamps and explicit half-open intervals `[start, end)` internally; display coverage in Europe/Oslo with DST-safe conversion, retaining explicitly labeled UTC analytical axes.
 - [x] Explicitly select ERA5-Seamless, UTC and requested units; validate returned metadata before using wind labeled m/s.
 - [x] Request only available date ranges. Distinguish source-specific last observation from the common complete analysis window.
 - [x] Validate duplicates, gaps, unexpected categories, impossible values, aggregation and partial-day completeness. Missing data must not silently become zero.
