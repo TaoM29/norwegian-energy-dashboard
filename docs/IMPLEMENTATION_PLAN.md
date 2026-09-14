@@ -123,16 +123,18 @@ Gate: **complete 2026-09-14** — 98 tests pass, including DST/units, idempotent
 
 ### Phase 2 — First complete frontend/backend slice
 
-- Establish a restrained visual system: consistent type scale, spacing, semantic colors, chart axes, tooltips and number/unit formatting.
-- Build responsive navigation, global area/date filters, URL persistence, loading, empty and error states.
-- Implement coverage, overview, time-series and region-summary API contracts with bounded query ranges.
-- Connect one overview page to a real, versioned data snapshot through the Python API. Label fixture mode explicitly.
-- Include a few useful KPIs, a dominant energy trend, regional map/ranking and a short evidence-based observation.
-- Use a documented chart-library trial for time-series zoom, uncertainty bands, heatmaps, wind roses and map interaction before standardizing.
-- Measure the original and new overview on the same dataset and environment. Initial targets: useful first view within 2.5 seconds and warm filter response within 500 ms at p95, with network/device conditions recorded. These are targets, not current measurements.
-- Provide keyboard navigation, readable contrast, reduced-motion behavior and non-chart access to important values.
+- [x] Establish a restrained visual system: consistent type scale, spacing, semantic colors, chart axes, tooltips and number/unit formatting.
+- [x] Build responsive navigation, global area/date filters, URL persistence, loading, empty and error states.
+- [x] Implement coverage, overview, time-series and region-summary API contracts with bounded query ranges.
+- [x] Connect one overview page to a real, versioned data snapshot through the Python API. Label fixture mode explicitly.
+- [x] Include a few useful KPIs, a dominant energy trend, regional map/ranking and a short evidence-based observation.
+- [ ] Use a documented chart-library trial for time-series zoom, uncertainty bands, heatmaps, wind roses and map interaction before standardizing.
+- [ ] Measure the original and new overview on the same dataset and environment. Initial targets: useful first view within 2.5 seconds and warm filter response within 500 ms at p95, with network/device conditions recorded. These are targets, not current measurements.
+- [x] Provide keyboard navigation, readable contrast, reduced-motion behavior and non-chart access to important values.
 
-Gate: the overview works with real data, filters agree across views, mobile/desktop layouts are checked, and latency is measured.
+Implementation note (2026-09-14): the overview API returns daily series and regional summaries in one response to keep filters and snapshot provenance aligned. Desktop and 390px mobile layouts, area/date controls, URL restoration and keyboard access were checked. Recharts remains a candidate pending the broader trial.
+
+Gate (not yet complete): the overview works with real data, filters agree across views, mobile/desktop layouts are checked, and latency is measured.
 
 ### Phase 3 — Exploration and diagnostics parity
 

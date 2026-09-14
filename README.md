@@ -2,7 +2,7 @@
 
 A Norwegian energy and weather analysis project evolving into a **Next.js / React frontend with a Python backend**.
 
-**Status:** Phase 1 data loading and correctness are implemented. Public energy data has been backfilled from 2021 through available 2026 observations, with validated UTC intervals, coverage-aware controls and atomic refreshes. The current application remains Streamlit; the Next.js frontend and Python API are subsequent phases.
+**Status:** Phase 1 data loading and correctness are implemented. Public energy data has been backfilled from 2021 through available 2026 observations, with validated UTC intervals, coverage-aware controls and atomic refreshes. The first Phase 2 overview now runs in Next.js with a Python API. Streamlit retains the broader analytical features during migration.
 
 ## Implementation plan
 
@@ -36,18 +36,42 @@ python -m pytest -q
 
 See the [Phase 0 baseline](docs/BASELINE.md) for the tested environment, representative timings and historical capture evidence. The [feature-control inventory](docs/FEATURE_CONTROL_INVENTORY.md) records controls, exports and calculations that must be considered during migration.
 
+## New overview
+
+With the public-data snapshot above available, start the API from the repository root:
+
+```bash
+python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+```
+
+In a second terminal (Node.js 20.9+):
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+Open http://localhost:3000. The overview includes area/date filters, daily production and consumption, production mix, regional consumption, and an accessible values table. Filters persist in the URL. UI dates include both endpoints; the API uses UTC `[start, end)` ranges of at most 366 days and returns MWh. Charts display GWh and leave incomplete days as gaps.
+
+`GET /api/coverage` returns the shared date envelope and suggested range. `GET /api/overview?area=NO1&start=2026-08-01&end=2026-09-01` returns the headline, daily series, mix and regional ranking together, with missingness and snapshot provenance. See http://127.0.0.1:8000/docs for query documentation. The API reads `data/energy.sqlite`; set `ENERGY_DATABASE` to use another published snapshot. Set `ENERGY_API_URL` before starting/building Next.js if the API runs elsewhere.
+
+For frontend validation, run `npm run typecheck` and `npm run build` inside `frontend/`. Recharts is the overview candidate; the broader chart-library trial and matched Streamlit/new-UI latency comparison remain open.
+
 ## Current structure
 
 | Path | Purpose |
 | --- | --- |
 | `app.py`, `pages/` | Existing Streamlit application, retained during migration |
 | `app_core/` | Data loading and reusable statistical functions |
-| `tests/` | Existing Python tests |
+| `backend/` | FastAPI overview and coverage endpoints |
+| `frontend/` | Next.js overview with shadcn/ui primitives and Recharts |
+| `tests/` | Python data, analysis and API tests |
 | `data/` | Tracked sample data and geographical boundaries |
 | `notebooks/` | Original exploratory research |
 | `docs/` | Migration plan and historical documentation |
 
-The frontend and backend directories will be introduced during implementation. Existing features will be replaced in verified stages before obsolete UI code is removed.
+Existing features will be replaced in verified stages before obsolete UI code is removed.
 
 ## Repository provenance
 

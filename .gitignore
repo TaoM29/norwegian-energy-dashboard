@@ -247,3 +247,12 @@ data/energy.sqlite*
 data/.energy*
 data/weather/
 data/refresh*.log
+
+# Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/*.tsbuildinfo
+
+# Frontend source, distinct from Python build output.
+!frontend/lib/
+!frontend/lib/**
