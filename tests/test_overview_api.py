@@ -204,3 +204,19 @@ def test_missing_database_returns_503(tmp_path, monkeypatch):
         "/api/overview",
         params={"area": "NO1", "start": "2026-01-01", "end": "2026-01-02"},
     ).status_code == 503
+
+
+def test_headline_rounds_only_after_summing_daily_observations(client):
+    api, database = client
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            "UPDATE energy_observations SET value = 0.004 "
+            "WHERE area = 'NO1' AND kind = 'production'"
+        )
+    body = api.get(
+        "/api/overview",
+        params={"area": "NO1", "start": "2026-01-01", "end": "2026-01-04"},
+    ).json()
+    # 3 days × 24 hours × 5 groups × 0.004 kWh = 0.00144 MWh.
+    assert all(day["production"]["mwh"] == 0 for day in body["daily"])
+    assert body["headline"]["production"]["mwh"] == 0.001

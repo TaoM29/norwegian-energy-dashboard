@@ -330,7 +330,11 @@ def overview(
 
     headline = {}
     for kind in ("consumption", "production"):
-        values = [row[kind]["mwh"] for row in daily if row[kind]["mwh"] is not None]
+        # Round the final period total, not each daily subtotal before summing.
+        values = [
+            row["mwh"] for (_, row_kind), row in daily_lookup.items()
+            if row_kind == kind and row["mwh"] is not None
+        ]
         headline[kind] = _metric(
             sum(values) if values else None,
             sum(row[kind]["observedHours"] for row in daily),

@@ -56,7 +56,7 @@ Open http://localhost:3000. The overview includes area/date filters, daily produ
 
 `GET /api/coverage` returns the shared date envelope and suggested range. `GET /api/overview?area=NO1&start=2026-08-01&end=2026-09-01` returns the headline, daily series, mix and regional ranking together, with missingness and snapshot provenance. See http://127.0.0.1:8000/docs for query documentation. The API reads `data/energy.sqlite`; set `ENERGY_DATABASE` to use another published snapshot. Set `ENERGY_API_URL` before starting/building Next.js if the API runs elsewhere.
 
-For frontend validation, run `npm run typecheck` and `npm run build` inside `frontend/`. Recharts is the overview candidate; the broader chart-library trial and matched Streamlit/new-UI latency comparison remain open.
+For frontend validation, run `npm run typecheck` and `npm run build` inside `frontend/`. The [Phase 2 validation](docs/PHASE2_VALIDATION.md) records the chart-library trial and matched performance comparison. Open `/chart-trial` for the isolated, explicitly synthetic chart examples. Recharts remains in the overview; ECharts is selected for the richer analytical views.
 
 ## Current structure
 

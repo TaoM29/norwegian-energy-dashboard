@@ -128,13 +128,13 @@ Gate: **complete 2026-09-14** — 98 tests pass, including DST/units, idempotent
 - [x] Implement coverage, overview, time-series and region-summary API contracts with bounded query ranges.
 - [x] Connect one overview page to a real, versioned data snapshot through the Python API. Label fixture mode explicitly.
 - [x] Include a few useful KPIs, a dominant energy trend, regional map/ranking and a short evidence-based observation.
-- [ ] Use a documented chart-library trial for time-series zoom, uncertainty bands, heatmaps, wind roses and map interaction before standardizing.
-- [ ] Measure the original and new overview on the same dataset and environment. Initial targets: useful first view within 2.5 seconds and warm filter response within 500 ms at p95, with network/device conditions recorded. These are targets, not current measurements.
+- [x] Use a documented chart-library trial for time-series zoom, uncertainty bands, heatmaps, wind roses and map interaction before standardizing.
+- [x] Measure the original and new overview on the same dataset and environment. Initial targets: useful first view within 2.5 seconds and warm filter response within 500 ms at p95, with network/device conditions recorded. These are targets, not current measurements.
 - [x] Provide keyboard navigation, readable contrast, reduced-motion behavior and non-chart access to important values.
 
-Implementation note (2026-09-14): the overview API returns daily series and regional summaries in one response to keep filters and snapshot provenance aligned. Desktop and 390px mobile layouts, area/date controls, URL restoration and keyboard access were checked. Recharts remains a candidate pending the broader trial.
+Implementation note (2026-09-14): the overview API returns daily series and regional summaries in one response to keep filters and snapshot provenance aligned. Desktop and 390px mobile layouts, area/date controls, URL restoration and keyboard access were checked. The [chart trial and performance comparison](PHASE2_VALIDATION.md) select ECharts for advanced analytical views while retaining the existing Recharts overview. The retained Streamlit production/consumption pages provide the matched annual baseline because the original Home page contains no equivalent energy overview.
 
-Gate (not yet complete): the overview works with real data, filters agree across views, mobile/desktop layouts are checked, and latency is measured.
+Gate passed for the local slice: the overview works with real data, filters agree across views, mobile/desktop layouts are checked, and latency is measured. Full-year browser p95 was 400 ms for navigation to the useful view and 401 ms for area changes; matched annual totals agree within 0.001 MWh. These localhost, warm-cache results do not establish deployed latency.
 
 ### Phase 3 — Exploration and diagnostics parity
 
