@@ -12,6 +12,14 @@ Use [agents-skills-authoring](.agents/skills/agents-skills-authoring/SKILL.md) w
 
 Keep reusable skills for this project in `.agents/skills/` and project guidance in the relevant AGENTS.md scope.
 
+## Multi-agent work
+
+For substantive work with independent parts, or an explicit Astra consultation, use [sol-astra-team](.agents/skills/sol-astra-team/SKILL.md). Delegate focused assignments with clear ownership within the available slots; use Sol for scouts and workers and Astra for difficult advisory questions. Keep simple edits local, preserve the user's model choice, and retain coordinator responsibility for integration and required approvals.
+
+## Frontend design
+
+Use [dashboard-ui](.agents/skills/dashboard-ui/SKILL.md) for the planned React dashboard's layout and component work, with shadcn/ui as the preferred foundation. Use [dashboard-motion](.agents/skills/dashboard-motion/SKILL.md) when transitions help explain an interaction; Transitions.dev and selected beUI components are references. Preserve the plan's analytical meaning, accessibility, feature parity, and chart-library trial. Adding these skills does not scaffold the frontend or install runtime dependencies.
+
 ## Project checks and credential handling
 
 - Existing Python tests run with `python -m pytest -q`; CI covers Python 3.11 and 3.12. Choose checks relevant to the change and retain migration acceptance requirements.

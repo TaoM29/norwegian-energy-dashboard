@@ -1,0 +1,4 @@
+interface:
+  display_name: "Energy Dashboard UI"
+  short_description: "Compose a clear dashboard from curated components"
+  default_prompt: "Use $dashboard-ui to design and implement the requested energy dashboard interface using suitable existing components."

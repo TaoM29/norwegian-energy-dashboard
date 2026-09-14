@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sol Team with Astra Advisor"
+  short_description: "Coordinate Sol workers with focused Astra advice"
+  default_prompt: "Use $sol-astra-team to coordinate this project task with Sol scouts and workers, consulting Astra when a difficult decision needs advice."

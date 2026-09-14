@@ -1,0 +1,4 @@
+interface:
+  display_name: "Energy Dashboard Motion"
+  short_description: "Add subtle, accessible dashboard transitions"
+  default_prompt: "Use $dashboard-motion to refine this dashboard interaction with purposeful motion and a reduced-motion alternative."
