@@ -1,5 +1,6 @@
 "use client";
 
+import { Select } from "./ui/select";
 import { useEffect, useRef, useState } from "react";
 import { ArrowDownWideNarrow, ArrowRight, MapPin, X } from "lucide-react";
 import { areas, getJson, number, shiftDay, type Overview } from "@/lib/api";
@@ -59,14 +60,14 @@ export function RegionComparison({
         <label className="sort-pill">
           <ArrowDownWideNarrow size={15} />
           <span>Sort by</span>
-          <select
+          <Select
             aria-label="Sort regions"
             value={sort}
             onChange={(event) => setSort(event.target.value)}
           >
             <option value="consumption">Consumption</option>
             <option value="region">Region code</option>
-          </select>
+          </Select>
         </label>
       </div>
       <div className="region-table-scroll">

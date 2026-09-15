@@ -3,7 +3,14 @@
 import { useEffect, useId, useRef, useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { CalendarDays, ChevronDown } from "lucide-react";
-import { DayPicker, type DateRange as CalendarRange } from "react-day-picker";
+import {
+  DayPicker,
+  TZDate,
+  useDayPicker,
+  type MonthCaptionProps,
+  type DateRange as CalendarRange,
+} from "react-day-picker";
+import { Select } from "./ui/select";
 import { shiftDay } from "@/lib/api";
 import "react-day-picker/style.css";
 import "./date-range-picker.css";
@@ -32,6 +39,68 @@ export function formatDateRange({ start, end }: DateRange) {
       : value;
   };
   return `${format(start)} – ${format(end)}`;
+}
+
+function CalendarCaption({
+  calendarMonth,
+  displayIndex,
+  children: _children,
+  ...props
+}: MonthCaptionProps) {
+  const { goToMonth, dayPickerProps } = useDayPicker();
+  const date = calendarMonth.date;
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth();
+  const startYear = dayPickerProps.startMonth?.getUTCFullYear() ?? 1940;
+  const endYear = dayPickerProps.endMonth?.getUTCFullYear() ?? 2100;
+  const navigate = (nextYear: number, nextMonth: number) =>
+    goToMonth(new TZDate(nextYear, nextMonth - displayIndex, 1, "UTC"));
+  return (
+    <div {...props}>
+      <div className="calendar-caption-controls">
+        <Select
+          aria-label={`Month, calendar ${displayIndex + 1}`}
+          value={month}
+          onChange={(event) => navigate(year, Number(event.target.value))}
+        >
+          {Array.from({ length: 12 }, (_, index) => {
+            const candidate = new Date(Date.UTC(year, index, 1));
+            const before =
+              dayPickerProps.startMonth &&
+              candidate <
+                new Date(
+                  Date.UTC(
+                    startYear,
+                    dayPickerProps.startMonth.getUTCMonth(),
+                    1,
+                  ),
+                );
+            const after =
+              dayPickerProps.endMonth && candidate > dayPickerProps.endMonth;
+            return (
+              <option key={index} value={index} disabled={!!(before || after)}>
+                {new Intl.DateTimeFormat("en-GB", {
+                  month: "long",
+                  timeZone: "UTC",
+                }).format(candidate)}
+              </option>
+            );
+          })}
+        </Select>
+        <Select
+          aria-label={`Year, calendar ${displayIndex + 1}`}
+          value={year}
+          onChange={(event) => navigate(Number(event.target.value), month)}
+        >
+          {Array.from({ length: endYear - startYear + 1 }, (_, index) => (
+            <option key={index} value={startYear + index}>
+              {startYear + index}
+            </option>
+          ))}
+        </Select>
+      </div>
+    </div>
+  );
 }
 
 export function DateRangePicker({
@@ -233,7 +302,8 @@ export function DateRangePicker({
             numberOfMonths={compact ? 1 : 2}
             month={month}
             onMonthChange={setMonth}
-            captionLayout="dropdown"
+            captionLayout="label"
+            components={{ MonthCaption: CalendarCaption }}
             navLayout="after"
             startMonth={parseDate(min || "1940-01-01")}
             endMonth={parseDate(max || "2100-12-31")}
