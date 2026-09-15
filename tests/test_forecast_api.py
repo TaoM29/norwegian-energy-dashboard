@@ -133,3 +133,16 @@ def test_cancel_and_missing_or_terminal_job_responses(tmp_path) -> None:
     finally:
         manager.close()
 
+
+
+def test_public_deployment_disables_mutations_but_keeps_reads(tmp_path, monkeypatch):
+    monkeypatch.setenv("FORECAST_JOBS_ENABLED", "false")
+    client, manager = _client(tmp_path)
+    try:
+        assert client.get("/api/forecasts/capabilities").json() == {"customJobsEnabled": False}
+        assert client.get("/api/forecasts/results").status_code == 200
+        assert client.post("/api/forecasts/jobs", json={"kind": "sarimax"}).status_code == 403
+        assert client.post("/api/forecasts/jobs/anything/cancel").status_code == 403
+        assert manager.list_jobs() == []
+    finally:
+        manager.close()

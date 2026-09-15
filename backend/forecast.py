@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import atexit
+import os
 import threading
 from typing import Any, Literal
 
@@ -51,6 +52,20 @@ def _not_found(record: str) -> HTTPException:
     return HTTPException(status_code=404, detail=f"Forecast {record} was not found.")
 
 
+def custom_jobs_enabled() -> bool:
+    return os.environ.get("FORECAST_JOBS_ENABLED", "true").lower() in {"1", "true", "yes"}
+
+
+def require_custom_jobs() -> None:
+    if not custom_jobs_enabled():
+        raise HTTPException(403, "Custom runs are disabled on this deployment. Saved results remain available.")
+
+
+@router.get("/capabilities")
+def capabilities() -> dict:
+    return {"customJobsEnabled": custom_jobs_enabled()}
+
+
 @router.get("/results")
 def list_results(manager: ForecastJobManager = Depends(get_job_manager)) -> dict[str, Any]:
     try:
@@ -93,7 +108,7 @@ def get_job(
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
-@router.post("/jobs", status_code=status.HTTP_202_ACCEPTED)
+@router.post("/jobs", status_code=status.HTTP_202_ACCEPTED, dependencies=[Depends(require_custom_jobs)])
 def create_job(
     request: ForecastJobRequest,
     manager: ForecastJobManager = Depends(get_job_manager),
@@ -106,7 +121,7 @@ def create_job(
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
-@router.post("/jobs/{job_id}/cancel")
+@router.post("/jobs/{job_id}/cancel", dependencies=[Depends(require_custom_jobs)])
 def cancel_job(
     job_id: str, manager: ForecastJobManager = Depends(get_job_manager)
 ) -> dict[str, Any]:

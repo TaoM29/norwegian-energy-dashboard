@@ -12,6 +12,7 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
 import pandas as pd
+import requests
 from pydantic import BaseModel, Field, model_validator
 
 from app_core.analysis.snow_drift import (
@@ -136,13 +137,16 @@ def snow_drift(request: SnowDriftRequest) -> dict:
     """Calculate Tabler transport from ERA5-Seamless weather at an exact point."""
     start, end = season_span(request.seasonStart, request.seasonEnd)
     location_key = f"snow-drift:{request.latitude:.6f},{request.longitude:.6f}"
-    weather = load_openmeteo_point(
-        request.latitude,
-        request.longitude,
-        start,
-        end,
-        location_key=location_key,
-    )
+    try:
+        weather = load_openmeteo_point(
+            request.latitude,
+            request.longitude,
+            start,
+            end,
+            location_key=location_key,
+        )
+    except (ValueError, requests.RequestException) as error:
+        raise HTTPException(503, str(error)) from error
     provenance = dict(weather.attrs.get("provenance", {}))
     if weather.empty:
         detail = provenance.get("error", "Point weather is unavailable for the requested seasons.")

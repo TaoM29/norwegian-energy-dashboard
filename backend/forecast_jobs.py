@@ -202,7 +202,7 @@ def _git_revision() -> dict[str, Any]:
             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, timeout=3,
         ).stdout)
     except (OSError, subprocess.SubprocessError):
-        commit, dirty = None, None
+        commit, dirty = os.environ.get("ENERGY_CODE_COMMIT") or None, None
 
     digest = hashlib.sha256()
     for folder in (ROOT / "app_core", ROOT / "backend"):

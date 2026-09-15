@@ -369,3 +369,15 @@ app.include_router(explore_router)
 app.include_router(diagnostics_router)
 app.include_router(regional_router)
 app.include_router(forecast_router)
+
+
+@app.get("/api/health")
+def health() -> dict:
+    """Process liveness; readiness separately checks the published data."""
+    return {"status": "ok", "dataMode": os.environ.get("ENERGY_DATA_MODE", "published")}
+
+
+@app.get("/api/ready")
+def ready() -> dict:
+    state = coverage()
+    return {"status": "ready", "coverage": state["coverage"], "snapshot": state["snapshot"]}

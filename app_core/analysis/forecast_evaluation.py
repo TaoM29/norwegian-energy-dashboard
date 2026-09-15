@@ -12,6 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import json
 import math
+import os
 from pathlib import Path
 import subprocess
 from typing import Any, Callable, Iterable, Mapping
@@ -767,7 +768,7 @@ def _code_commit() -> str | None:
             ["git", "rev-parse", "HEAD"], cwd=root, check=True, capture_output=True, text=True, timeout=5
         ).stdout.strip() or None
     except (OSError, subprocess.SubprocessError):
-        return None
+        return os.environ.get("ENERGY_CODE_COMMIT") or None
 
 
 def _feature_metadata(cfg: Mapping[str, Any]) -> dict[str, Any]:
