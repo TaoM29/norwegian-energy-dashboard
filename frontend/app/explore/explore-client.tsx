@@ -165,7 +165,7 @@ function readFilters(coverage: Coverage): Filters {
   const aggregation = (
     ["hourly", "daily", "weekly"].includes(params.get("aggregation") || "")
       ? params.get("aggregation")
-      : "hourly"
+      : "daily"
   ) as Aggregation;
   const rolling = Math.max(
     0,
@@ -517,7 +517,7 @@ export default function ExploreClient() {
             />
           </label>
           <label>
-            Aggregation
+            Time detail
             <select
               value={draft.aggregation}
               onChange={(event) =>
@@ -618,19 +618,22 @@ export default function ExploreClient() {
               </label>
             </>
           )}
-          <label>
-            Line opacity <span>{draft.opacity.toFixed(2)}</span>
-            <input
-              type="range"
-              min={0.1}
-              max={1}
-              step={0.05}
-              value={draft.opacity}
-              onChange={(event) =>
-                update({ opacity: Number(event.target.value) })
-              }
-            />
-          </label>
+          <details className="display-settings">
+            <summary>Display options</summary>
+            <label>
+              Line opacity <span>{draft.opacity.toFixed(2)}</span>
+              <input
+                type="range"
+                min={0.1}
+                max={1}
+                step={0.05}
+                value={draft.opacity}
+                onChange={(event) =>
+                  update({ opacity: Number(event.target.value) })
+                }
+              />
+            </label>
+          </details>
           <button type="submit">Apply view</button>
           <small className="explore-coverage">
             Published common energy coverage: {coverage.coverage.start} to{" "}

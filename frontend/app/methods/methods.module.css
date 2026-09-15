@@ -6,7 +6,7 @@
   margin-top: 12px;
 }
 .content a {
-  color: #176b59;
+  color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 3px;
 }

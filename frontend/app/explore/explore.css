@@ -7,12 +7,12 @@
   gap: 8px 14px;
   min-width: min(100%, 350px);
   padding: 8px 12px 10px;
-  border: 1px solid #ccd8ce;
+  border: 1px solid var(--border);
   border-radius: 6px;
 }
 .explore-options legend {
   padding: 0 5px;
-  color: #4b6352;
+  color: var(--text-muted);
   font-size: 12px;
 }
 .explore-options label,
@@ -20,11 +20,11 @@
   flex-direction: row;
   align-items: center;
   gap: 6px;
-  color: #253b32;
+  color: var(--text);
 }
 .explore-coverage {
   flex-basis: 100%;
-  color: #607069;
+  color: var(--text-muted);
   line-height: 1.5;
 }
 .explore-state {
@@ -39,7 +39,7 @@
 }
 .explore-error {
   flex-direction: column;
-  color: #7a4038;
+  color: var(--danger);
 }
 .explore-spin {
   animation: explore-spin 1s linear infinite;
@@ -71,7 +71,7 @@
 }
 .analysis-metrics span,
 .analysis-metrics small {
-  color: #607069;
+  color: var(--text-muted);
   font-size: 11px;
   line-height: 1.45;
 }
@@ -89,7 +89,7 @@
 .explore-table-wrap th,
 .explore-table-wrap td {
   padding: 10px 12px;
-  border-bottom: 1px solid #e2e8e2;
+  border-bottom: 1px solid var(--border);
   text-align: right;
   white-space: nowrap;
 }
@@ -98,7 +98,7 @@
   text-align: left;
 }
 .explore-table-wrap thead th {
-  color: #607069;
+  color: var(--text-muted);
   font-weight: 600;
 }
 .explore-section-heading {
@@ -109,7 +109,7 @@
 }
 .explore-section-heading p {
   margin: 0;
-  color: #607069;
+  color: var(--text-muted);
 }
 .analysis-panel h3 {
   margin: 0 0 8px;
@@ -124,8 +124,8 @@
 .explore-sector-values span {
   padding: 6px 9px;
   border-radius: 5px;
-  background: #edf3ea;
-  color: #52665b;
+  background: var(--surface-muted);
+  color: var(--text-muted);
   font-size: 11px;
 }
 @keyframes explore-spin {
@@ -145,4 +145,14 @@
   .explore-options {
     min-width: 100%;
   }
+}
+
+.display-settings {
+  margin: 0 !important;
+}
+.display-settings summary {
+  font-size: 12px;
+}
+.display-settings input {
+  accent-color: var(--accent);
 }

@@ -1,47 +1,12 @@
 .analysis-workspace {
   min-height: 100vh;
-  background: #f5f7f4;
-  color: #253b32;
-}
-.analysis-topbar {
-  display: flex;
-  gap: 24px;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 4vw;
-  background: #fcfdfb;
-  border-bottom: 1px solid #dce3dc;
-}
-.analysis-brand {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  color: #176b59;
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.6px;
-}
-.analysis-topbar nav {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.analysis-topbar nav a {
-  padding: 10px 14px;
-  font-size: 13px;
-  border-radius: 6px;
-}
-.analysis-topbar nav a[aria-current="page"] {
-  background: #e5eee4;
-  color: #176b59;
-  font-weight: 600;
-}
-.analysis-topbar nav a:hover {
-  background: #edf3ec;
+  background: var(--page);
+  color: var(--text);
 }
 main.analysis-main {
-  max-width: 1440px;
-  padding: 36px 4vw;
+  max-width: 1280px;
+  padding: 44px 40px;
+  margin: auto;
   width: 100%;
 }
 .analysis-heading {
@@ -51,8 +16,8 @@ main.analysis-main {
   margin: 10px 0;
 }
 .analysis-heading p {
-  color: #607069;
-  max-width: 850px;
+  color: var(--text-muted);
+  max-width: 650px;
   line-height: 1.7;
 }
 .analysis-controls {
@@ -61,46 +26,46 @@ main.analysis-main {
   align-items: end;
   gap: 16px;
   padding: 20px;
-  border: 1px solid #dce3dc;
+  border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--surface);
   margin-bottom: 24px;
 }
 .analysis-controls label {
   display: flex;
   flex-direction: column;
   gap: 7px;
-  color: #4b6352;
+  color: var(--text-muted);
   font-size: 12px;
 }
 .analysis-controls input:not([type="checkbox"]):not([type="range"]),
 .analysis-controls select {
   min-height: 36px;
   max-width: 100%;
-  border: 1px solid #ccd8ce;
+  border: 1px solid var(--border);
   border-radius: 5px;
-  background: white;
+  background: var(--surface);
   padding: 7px 10px;
-  color: #253b32;
+  color: var(--text);
 }
 .analysis-controls input[type="number"] {
   width: 130px;
 }
 .analysis-controls input[type="checkbox"] {
-  accent-color: #176b59;
+  accent-color: var(--accent);
 }
 .analysis-controls button,
 .analysis-panel > button,
 .analysis-actions button {
   padding: 9px 14px;
-  border: 1px solid #b9cbbb;
+  border: 1px solid var(--border);
   border-radius: 6px;
-  background: #f6f9f5;
-  color: #176b59;
+  background: var(--surface-muted);
+  color: var(--accent);
 }
 .analysis-controls button[type="submit"] {
-  background: #176b59;
-  color: white;
+  background: var(--accent);
+  color: var(--on-accent);
 }
 .analysis-grid {
   display: grid;
@@ -110,9 +75,9 @@ main.analysis-main {
 .analysis-panel {
   min-width: 0;
   padding: 23px;
-  border: 1px solid #dce3dc;
+  border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--surface);
   margin-bottom: 22px;
 }
 .analysis-panel h2 {
@@ -120,7 +85,7 @@ main.analysis-main {
   margin-bottom: 12px;
 }
 .analysis-panel p {
-  color: #607069;
+  color: var(--text-muted);
   line-height: 1.7;
 }
 .analysis-metrics {
@@ -133,7 +98,7 @@ main.analysis-main {
   flex: 1;
   min-width: 145px;
   padding: 17px;
-  background: #edf3ea;
+  background: var(--surface-muted);
   border-radius: 8px;
 }
 .analysis-actions {
@@ -152,7 +117,7 @@ main.analysis-main {
   margin-left: auto;
   border: 0;
   background: none;
-  color: #376951;
+  color: var(--accent);
   text-decoration: underline;
   padding: 10px 0;
   font-size: 11px;
@@ -165,7 +130,7 @@ main.analysis-main {
 }
 .analysis-main summary {
   cursor: pointer;
-  color: #376951;
+  color: var(--accent);
   padding: 8px 0;
 }
 .analysis-main pre {
@@ -176,30 +141,16 @@ main.analysis-main {
 }
 .analysis-footer {
   display: block;
-  border-top: 1px solid #dce3dc;
+  border-top: 1px solid var(--border);
   padding-top: 20px;
   margin-top: 35px;
   font-size: 11px;
-  color: #607069;
+  color: var(--text-muted);
   line-height: 1.7;
 }
 @media (max-width: 760px) {
-  .analysis-topbar {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 16px;
-    padding: 18px;
-  }
-  .analysis-topbar nav {
-    margin: 0;
-    gap: 0;
-  }
-  .analysis-topbar nav a {
-    padding: 9px 10px;
-    font-size: 12px;
-  }
   main.analysis-main {
-    padding: 25px 18px;
+    padding: 30px 20px;
   }
   .analysis-grid {
     grid-template-columns: 1fr;

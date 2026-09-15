@@ -1,17 +1,9 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import { Waves } from "lucide-react";
+import { type ReactNode } from "react";
+import { usePathname } from "next/navigation";
+import { AppNavigation } from "./app-navigation";
 import "./analysis.css";
-
-const navigation = [
-  ["/", "Overview"],
-  ["/explore", "Explore"],
-  ["/forecasts", "Forecasts"],
-  ["/diagnostics", "Diagnostics"],
-  ["/regional", "Regional & snow"],
-  ["/methods", "Methods & data"],
-];
 
 export function AnalysisShell({
   title,
@@ -22,70 +14,37 @@ export function AnalysisShell({
   description: string;
   children: ReactNode;
 }) {
-  const [path, setPath] = useState("");
-  const [query, setQuery] = useState("");
-  useEffect(() => {
-    const update = () => {
-      setPath(window.location.pathname);
-      const current = new URLSearchParams(window.location.search);
-      const shared = new URLSearchParams();
-      for (const key of ["area", "start", "end"])
-        if (current.has(key)) shared.set(key, current.get(key)!);
-      setQuery(shared.toString() ? `?${shared}` : "");
-    };
-    update();
-    window.addEventListener("popstate", update);
-    // Forms update their own URL without leaving the page. Read the latest
-    // shared fields at navigation time too, rather than retaining old filters.
-    return () => window.removeEventListener("popstate", update);
-  }, []);
-  function destination(href: string) {
-    const current = new URLSearchParams(window.location.search);
-    const shared = new URLSearchParams();
-    for (const key of href === "/forecasts"
-      ? ["area"]
-      : ["area", "start", "end"])
-      if (current.has(key)) shared.set(key, current.get(key)!);
-    return href + (shared.size ? `?${shared}` : "");
-  }
+  const path = usePathname();
+  const guides: Record<string, string> = {
+    "/explore":
+      "Start with daily energy totals to compare electricity sources or types of use. Switch to weather to explore temperature, rain and wind. A gap means missing observations, not zero. Open the values and provenance below each chart for the full detail.",
+    "/forecasts":
+      "A forecast is an estimate, not a promise. Compare the model line with what actually happened. Shaded bands show estimated uncertainty; the accuracy table shows how often those bands contained the outcome. Lower average error is better, but only when models are compared on the same observations.",
+    "/diagnostics":
+      "Look for relationships, recurring rhythms or unusual observations. Weather & energy compares how two series move together; seasonal patterns separates repeating cycles from longer trends. A relationship does not prove cause, and an unusual point is not automatically an error. The default settings are a starting point; method settings let you dig deeper.",
+    "/regional":
+      "The map compares Norway’s five electricity price areas. Snow transport is a separate model: choose a location to estimate how wind moves snow. It is a modeled estimate, not a measurement of snow at that point. Coverage and assumptions are shown with each result.",
+  };
   return (
     <div className="analysis-workspace">
       <a href="#analysis-main" className="skip-link">
         Skip to analysis
       </a>
-      <header className="analysis-topbar">
-        <a className="analysis-brand" href="/">
-          <Waves size={26} />
-          <span>norwegian energy</span>
-        </a>
-        <nav aria-label="Main navigation">
-          {navigation.map(([href, label]) => (
-            <a
-              key={href}
-              href={
-                href +
-                (href === "/forecasts"
-                  ? new URLSearchParams(query).has("area")
-                    ? `?area=${encodeURIComponent(new URLSearchParams(query).get("area")!)}`
-                    : ""
-                  : query)
-              }
-              aria-current={path === href ? "page" : undefined}
-              onClick={(event) => {
-                event.currentTarget.href = destination(href);
-              }}
-            >
-              {label}
-            </a>
-          ))}
-        </nav>
-      </header>
+      <AppNavigation />
       <main className="analysis-main" id="analysis-main" tabIndex={-1}>
         <header className="analysis-heading">
-          <span className="eyebrow">OBSERVATIONS & ANALYSIS</span>
+          <span className="eyebrow">NORWAY, THROUGH THE DATA</span>
           <h1>{title}</h1>
           <p>{description}</p>
         </header>
+        {guides[path] && (
+          <details className="reading-guide">
+            <summary>How to read this page</summary>
+            <div>
+              <p>{guides[path]}</p>
+            </div>
+          </details>
+        )}
         {children}
         <footer className="analysis-footer">
           Elhub energy · Open-Meteo ERA5-Seamless weather · UTC intervals.
