@@ -12,6 +12,14 @@ Implemented 2026-09-15. The interface supports two levels of reading: a visitor 
 - The explorer starts with daily summaries; explicit hourly/weekly URL selections still work. Line opacity is under “Display options”. The underlying aggregation rules, source values and exports are unchanged.
 - Neutral charcoal and light surfaces, compact pill controls, subtle row dividers and restrained hover/press feedback. Theme changes apply immediately without color transitions. The detail drawer supports Escape, focus return and keyboard opening without motion. Reduced-motion preference removes those transitions. No animation framework or runtime dependency was added.
 
+## Date and filter interaction follow-up
+
+- A shared range picker serves overview, exploration, regional analysis, patterns, forecast targets and SARIMAX training. It has two calendar months on desktop, one on mobile, typed entry, validation, Cancel/Escape and focus return. Shortcuts use available observations rather than today's date; forecast calendars mark saved targets.
+- Displayed ranges include both dates in UTC; backend requests retain their exclusive end boundary. Analytical forms stage changes until Apply/Run, show applied scope and pending state, and offer Discard changes. Patterns retain previous results while editing and label them using their applied settings.
+- Navigation follows applied observation filters through Back/Forward and reload. Forecast dates remain separate from the observation workspace. Live forecast filters replace the current history entry; opening a result creates an entry. Narrowing targets selects a compatible saved origin.
+- Forecast evidence labels wrap into two columns at medium desktop widths. Regional groups use wrapping checkbox choices instead of a clipped multi-select requiring modifier keys. Forecast chart and metric notes explain each output's filter scope.
+- The picker follows the [shadcn/ui composition](https://ui.shadcn.com/docs/components/radix/date-picker), using React DayPicker and Radix Popover with project-owned markup and styling.
+
 ## References and selection
 
 Reviewed [Beautiful UI](https://www.beautifului.dev/), [beUI’s catalog](https://beui.dev/llms.txt), [Rare UI](https://www.rareui.com/), [Transitions.dev](https://transitions.dev/) and [shadcn/ui](https://ui.shadcn.com/docs/components). Applied the ideas of clear navigation, compact selection controls, optional detail and restrained state feedback. The existing shadcn-style buttons/cards and native disclosures were sufficient; no third-party component source was copied.
@@ -20,4 +28,4 @@ The supplied CRM screenshots informed the compact workspace structure, neutral s
 
 ## Verification
 
-TypeScript and production builds pass. Seven Chromium journeys cover the existing analytical routes and downloads plus system theme changes, saved preference across navigation/reload, 390px layouts, reading guides, hidden/revealed settings, keyboard method selection reduced-motion mode, region sorting and keyboard drawer dismissal/focus return. Light/dark desktop and mobile layouts were also inspected in the running preview. The [gallery](screenshots/README.md) uses explicitly synthetic fixture data; the development preview can use the published real snapshots.
+TypeScript and production builds pass. Twelve Chromium journeys cover the existing analytical routes and downloads plus system theme changes, saved preference across navigation/reload, 390px layouts, reading guides, hidden/revealed settings, keyboard method selection reduced-motion mode, region sorting and keyboard drawer dismissal/focus return. Additional checks cover range validation, inclusive UTC dates in a non-UTC browser, cancellation/focus return, mobile selection, staged filters, navigation history and compatible forecast origins. Light/dark desktop and mobile layouts were also inspected in the running preview. The [gallery](screenshots/README.md) uses explicitly synthetic fixture data; the development preview can use the published real snapshots.
