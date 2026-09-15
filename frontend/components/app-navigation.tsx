@@ -13,6 +13,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
+import {
+  DASHBOARD_URL_CHANGE_EVENT,
+  dashboardDestination,
+} from "@/lib/navigation-state";
 
 type Destination = {
   href: string;
@@ -50,26 +54,19 @@ const navigationGroups: { label: string; destinations: Destination[] }[] = [
 
 const destinations = navigationGroups.flatMap((group) => group.destinations);
 
-function sharedDestination(path: string) {
-  const current = new URLSearchParams(window.location.search);
-  const shared = new URLSearchParams();
-  for (const key of path === "/forecasts"
-    ? ["area"]
-    : ["area", "start", "end"]) {
-    if (current.has(key)) shared.set(key, current.get(key)!);
-  }
-  return path + (shared.size ? `?${shared}` : "");
-}
-
 export function AppNavigation() {
   const path = usePathname();
   const [links, setLinks] = useState(destinations.map(({ href }) => href));
   useEffect(() => {
     const update = () =>
-      setLinks(destinations.map(({ href }) => sharedDestination(href)));
+      setLinks(destinations.map(({ href }) => dashboardDestination(href)));
     update();
     window.addEventListener("popstate", update);
-    return () => window.removeEventListener("popstate", update);
+    window.addEventListener(DASHBOARD_URL_CHANGE_EVENT, update);
+    return () => {
+      window.removeEventListener("popstate", update);
+      window.removeEventListener(DASHBOARD_URL_CHANGE_EVENT, update);
+    };
   }, [path]);
 
   const activeDestination =
@@ -107,7 +104,7 @@ export function AppNavigation() {
                       href={links[index]}
                       aria-current={path === href ? "page" : undefined}
                       onClick={(event) => {
-                        event.currentTarget.href = sharedDestination(href);
+                        event.currentTarget.href = dashboardDestination(href);
                       }}
                     >
                       <Icon size={16} strokeWidth={1.5} aria-hidden="true" />

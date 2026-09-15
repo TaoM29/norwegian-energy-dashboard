@@ -23,6 +23,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { DateRangePicker } from "@/components/date-range-picker";
+import { writeDashboardUrl } from "@/lib/navigation-state";
 import { RegionComparison } from "@/components/region-comparison";
 import { AppNavigation } from "@/components/app-navigation";
 import { Button } from "@/components/ui/button";
@@ -99,6 +101,7 @@ export default function Page() {
           };
           setFilters(next);
           setDraft(next);
+          writeDashboardUrl(`?${new URLSearchParams(next)}`, { replace: true });
         };
         readUrl();
       })
@@ -158,7 +161,7 @@ export default function Page() {
     updateStarted.current = performance.now();
     setDraft(next);
     setFilters(next);
-    window.history.pushState(null, "", `?${new URLSearchParams(next)}`);
+    writeDashboardUrl(`?${new URLSearchParams(next)}`);
   }
   function download() {
     if (!overview) return;
@@ -271,76 +274,16 @@ export default function Page() {
                 ))}
               </div>
             </div>
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                const dates = new FormData(event.currentTarget);
-                if (draft)
-                  apply({
-                    ...draft,
-                    start: String(dates.get("start")),
-                    end: String(dates.get("end")),
-                  });
-              }}
-              className="date-filter"
-            >
-              <label>
-                <span className="field-label">FROM · UTC</span>
-                <input
-                  name="start"
-                  aria-label="Start date"
-                  type="date"
-                  required
-                  min={coverage?.coverage.start}
-                  max={draft?.end}
-                  value={draft?.start || ""}
-                  onChange={(e) =>
-                    draft && setDraft({ ...draft, start: e.target.value })
-                  }
-                />
-              </label>
-              <span className="date-arrow" aria-hidden="true">
-                →
-              </span>
-              <label>
-                <span className="field-label">THROUGH · UTC</span>
-                <input
-                  name="end"
-                  aria-label="End date"
-                  type="date"
-                  required
-                  min={draft?.start}
-                  max={
-                    coverage ? shiftDay(coverage.coverage.end, -1) : undefined
-                  }
-                  value={draft?.end || ""}
-                  onChange={(e) =>
-                    draft && setDraft({ ...draft, end: e.target.value })
-                  }
-                />
-              </label>
-              <Button
-                type="submit"
-                variant="outline"
-                disabled={!draft || loading}
-              >
-                Apply
-              </Button>
-            </form>
-            <button
-              className="range-reset"
-              onClick={() =>
-                coverage &&
-                apply({
-                  area: filters?.area || "NO1",
-                  start: coverage.suggestedRange.start,
-                  end: shiftDay(coverage.suggestedRange.end, -1),
-                })
-              }
-              disabled={!coverage}
-            >
-              Last 28 days <RefreshCw size={14} />
-            </button>
+            {draft && (
+              <DateRangePicker
+                value={draft}
+                min={coverage?.coverage.start}
+                max={coverage ? shiftDay(coverage.coverage.end, -1) : undefined}
+                disabled={loading}
+                applyLabel="Apply dates"
+                onChange={(range) => apply({ ...draft, ...range })}
+              />
+            )}
           </section>
           <div className="scope-line">
             <span>
@@ -380,7 +323,8 @@ export default function Page() {
               <Waves size={32} />
               <h2>No observations for these dates</h2>
               <p>
-                Choose dates within the available coverage or use Last 28 days.
+                Choose dates within the available coverage or use the Latest 28
+                days shortcut.
               </p>
             </Card>
           ) : (
