@@ -1,0 +1,264 @@
+.date-range-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+.date-range-label {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.date-range-label > span {
+  font-size: 11px;
+}
+button.date-range-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  min-height: 36px;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  color: var(--text);
+  padding: 7px 12px;
+  font-size: 12px;
+  box-shadow: var(--control-shadow);
+  white-space: nowrap;
+}
+.date-range-trigger svg {
+  flex-shrink: 0;
+}
+.date-range-trigger:disabled {
+  opacity: 0.5;
+}
+.date-range-popover {
+  z-index: 60;
+  width: 650px;
+  max-width: calc(100vw - 24px);
+  max-height: var(--radix-popover-content-available-height);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--surface-raised);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  box-shadow: 0 14px 45px #0003;
+  padding: 18px;
+  outline: none;
+}
+.date-range-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.date-range-heading strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.date-range-heading > span {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.date-range-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.date-range-popover button {
+  font: inherit;
+}
+.date-range-presets button,
+.date-range-actions button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 12px;
+  min-height: 34px;
+}
+.date-range-presets button[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.date-range-popover button:disabled {
+  opacity: 0.4;
+}
+.date-range-inputs {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.date-range-inputs > label {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.date-range-inputs > span {
+  align-self: center;
+  margin-top: 18px;
+  color: var(--text-muted);
+}
+.date-range-inputs input {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.date-range-popover .rdp-root {
+  --rdp-accent-color: var(--action);
+  --rdp-accent-background-color: color-mix(
+    in srgb,
+    var(--action) 15%,
+    var(--surface)
+  );
+  --rdp-day-height: 38px;
+  --rdp-day-width: 40px;
+  --rdp-day_button-height: 36px;
+  --rdp-day_button-width: 38px;
+  --rdp-day_button-border-radius: 7px;
+  --rdp-months-gap: 24px;
+  --rdp-today-color: var(--accent);
+  --rdp-outside-opacity: 0.35;
+  font-size: 12px;
+}
+.date-range-popover .rdp-months {
+  flex-wrap: nowrap;
+  justify-content: center;
+}
+.date-range-popover .rdp-month_caption {
+  font-size: 13px;
+}
+.date-range-popover .rdp-dropdown {
+  color: var(--text);
+  background: var(--surface);
+}
+.date-range-popover .rdp-weekday {
+  font-size: 11px;
+  font-weight: 400;
+}
+.date-range-popover .rdp-day_button:hover {
+  background: var(--surface-muted);
+  color: var(--text);
+}
+.date-range-popover .rdp-range_start .rdp-day_button,
+.date-range-popover .rdp-range_end .rdp-day_button {
+  color: var(--on-action);
+  background: var(--action);
+}
+.date-range-popover .rdp-day_button {
+  font-size: 12px;
+  font-weight: 400;
+  position: relative;
+}
+.date-range-popover .date-range-saved .rdp-day_button::after {
+  content: "";
+  width: 4px;
+  height: 4px;
+  position: absolute;
+  bottom: 2px;
+  left: calc(50% - 2px);
+  border-radius: 50%;
+  background: currentColor;
+}
+.date-range-help {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  padding: 12px 0;
+}
+.date-range-error {
+  color: var(--danger);
+}
+.date-range-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+.date-range-actions .date-range-apply {
+  background: var(--action);
+  color: var(--on-action);
+  border-color: transparent;
+}
+.date-range-popover button:focus-visible,
+.date-range-popover input:focus-visible,
+.date-range-popover select:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+@media (max-width: 680px) {
+  .date-range-popover {
+    width: 350px;
+    padding: 14px;
+  }
+  .date-range-heading {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .date-range-presets button {
+    flex: 1 1 40%;
+  }
+  .date-range-popover .rdp-root {
+    --rdp-day-width: 42px;
+    --rdp-day_button-width: 40px;
+    --rdp-day-height: 42px;
+    --rdp-day_button-height: 40px;
+  }
+  .date-range-inputs input {
+    font-size: 16px;
+  }
+}
+/* Dashboard table styles must not change the calendar grid geometry. */
+.date-range-popover .rdp-month_grid {
+  width: auto;
+}
+.date-range-popover .rdp-month_grid th,
+.date-range-popover .rdp-month_grid td {
+  padding: 0;
+  border: 0;
+  text-align: center;
+}
+.date-range-popover .rdp-month_grid thead {
+  position: static;
+  background: transparent;
+}
+.date-range-popover .rdp-month_grid .rdp-weekday {
+  padding: 8px 0;
+}
+/* Keep a tall picker inside the viewport even when neither side of its trigger fits it. */
+.date-range-popover {
+  max-height: calc(100dvh - 24px);
+}
+.date-range-popover[data-side="bottom"] {
+  transform: translateY(
+    min(0px, calc(var(--radix-popover-content-available-height) - 100%))
+  );
+}
+.date-range-popover[data-side="top"] {
+  transform: translateY(
+    max(0px, calc(100% - var(--radix-popover-content-available-height)))
+  );
+}
