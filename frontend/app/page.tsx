@@ -2,8 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  ArrowDownLeft,
-  ArrowUpRight,
   ArrowRight,
   Check,
   ChevronDown,
@@ -11,7 +9,6 @@ import {
   MapPin,
   RefreshCw,
   Waves,
-  Zap,
 } from "lucide-react";
 import {
   Area,
@@ -23,6 +20,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { HelpPanel, HelpTip } from "@/components/help";
 import { ExportMenu } from "@/components/export-menu";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { writeDashboardUrl } from "@/lib/navigation-state";
@@ -252,25 +250,27 @@ export default function Page() {
               </Button>
             </ExportMenu>
           </div>
-          <details className="reading-guide">
-            <summary>New here? A 30-second guide</summary>
-            <div>
-              <p>
-                Choose a region and time period. <strong>Production</strong> is
-                electricity generated; <strong>consumption</strong> is
-                electricity used. The chart compares them day by day.
-              </p>
-              <p>
-                NO1–NO5 are Norway’s five electricity price areas. GWh measures
-                energy: 1 GWh is one million kWh. Production minus consumption
-                is an energy balance, not a measurement of exports.
-              </p>
-              <a href="/methods">
-                See the methods, sources and project findings{" "}
-                <ArrowRight size={14} />
-              </a>
-            </div>
-          </details>
+          <div className="reading-guide">
+            <HelpPanel label="New here? A 30-second guide">
+              <div>
+                <p>
+                  Choose a region and time period. <strong>Production</strong>{" "}
+                  is electricity generated; <strong>consumption</strong> is
+                  electricity used. The chart compares them day by day.
+                </p>
+                <p>
+                  NO1–NO5 are Norway’s five electricity price areas. GWh
+                  measures energy: 1 GWh is one million kWh. Production minus
+                  consumption is an energy balance, not a measurement of
+                  exports.
+                </p>
+                <a href="/methods">
+                  See the methods, sources and project findings{" "}
+                  <ArrowRight size={14} />
+                </a>
+              </div>
+            </HelpPanel>
+          </div>
           <section className="filterbar" aria-label="Overview filters">
             <div className="area-filter">
               <span className="field-label">REGION · PRICE AREA</span>
@@ -357,7 +357,6 @@ export default function Page() {
                   title="Energy produced"
                   value={production?.mwh == null ? null : production.mwh / 1000}
                   unit="GWh"
-                  icon={<ArrowUpRight size={18} />}
                   note="Across observed production groups"
                 />
                 <Metric
@@ -366,21 +365,18 @@ export default function Page() {
                     consumption?.mwh == null ? null : consumption.mwh / 1000
                   }
                   unit="GWh"
-                  icon={<ArrowDownLeft size={18} />}
                   note="Across observed consumption groups"
                 />
                 <Metric
                   title="Production − consumption"
                   value={balance}
                   unit="GWh"
-                  icon={<Zap size={17} />}
                   note="An energy balance, not measured exports"
                 />
                 <Metric
                   title="Hydropower share"
                   value={hydro?.share == null ? null : hydro.share * 100}
                   unit="%"
-                  icon={<Waves size={18} />}
                   note="Of observed energy production"
                 />
               </section>
@@ -651,26 +647,25 @@ function Metric({
   title,
   value,
   unit,
-  icon,
   note,
 }: {
   title: string;
   value: number | null;
   unit: string;
-  icon: React.ReactNode;
   note: string;
 }) {
   return (
     <div className="metric">
       <div className="metric-label">
         {title}
-        <span>{icon}</span>
+        <HelpTip label={title} iconOnly>
+          {note}
+        </HelpTip>
       </div>
       <div className="metric-value">
         {number(value)}
         <span>{unit}</span>
       </div>
-      <p>{note}</p>
     </div>
   );
 }

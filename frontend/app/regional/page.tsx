@@ -17,6 +17,8 @@ import { downloadCsv, downloadJson } from "@/lib/download";
 import { areas, getJson, number, shiftDay, type Coverage } from "@/lib/api";
 import { DateRangePicker, parseDate } from "@/components/date-range-picker";
 import { AppliedFilters } from "@/components/applied-filters";
+import { HelpPanel, HelpTip } from "@/components/help";
+import { Select } from "@/components/ui/select";
 import { writeDashboardUrl } from "@/lib/navigation-state";
 import styles from "./regional.module.css";
 
@@ -723,10 +725,10 @@ export default function RegionalPage() {
         <>
           <div className={styles.modeIntro}>
             <strong>Compare like-for-like regional energy records</strong>
-            <span>
+            <HelpTip label="Comparison scope">
               Choose production or consumption groups and one inclusive UTC
               date range. Every price area uses the same selection.
-            </span>
+            </HelpTip>
           </div>
           <form
             id="regional-energy-panel"
@@ -737,7 +739,8 @@ export default function RegionalPage() {
           >
             <label>
               Energy kind
-              <select
+              <Select
+                aria-label="Energy kind"
                 value={draft.kind}
                 onChange={(event) => {
                   const kind = event.target.value as Filters["kind"];
@@ -750,7 +753,7 @@ export default function RegionalPage() {
               >
                 <option value="production">Production</option>
                 <option value="consumption">Consumption</option>
-              </select>
+              </Select>
             </label>
             <fieldset className={styles.groupChoices}>
               <legend>Energy groups</legend>
@@ -812,10 +815,10 @@ export default function RegionalPage() {
         <>
           <div className={styles.modeIntro}>
             <strong>Estimate snow transport at one coordinate</strong>
-            <span>
+            <HelpTip label="Snow model scope">
               Set the site, July–June seasons, transport assumptions, and fence
               type. This model does not use the energy comparison dates.
-            </span>
+            </HelpTip>
           </div>
           <form
             id="regional-snow-panel"
@@ -931,7 +934,8 @@ export default function RegionalPage() {
             </label>
             <label>
               Fence type
-              <select
+              <Select
+                aria-label="Fence type"
                 value={draft.fenceType}
                 onChange={(event) =>
                   setDraft({ ...draft, fenceType: event.target.value })
@@ -940,7 +944,7 @@ export default function RegionalPage() {
                 {fenceTypes.map((name) => (
                   <option key={name}>{name}</option>
                 ))}
-              </select>
+              </Select>
             </label>
             <button type="submit">Run snow model</button>
           </form>
@@ -987,11 +991,11 @@ export default function RegionalPage() {
       <div className="analysis-grid">
         <section className="analysis-panel">
           <h2>Price-area comparison</h2>
-          <p>
-            {summary?.aggregation || "Mean of valid hourly source records."}{" "}
+          <p>{summary?.aggregation || "Mean of valid hourly source records."}</p>
+          <HelpTip label="Using the map">
             Select a region or map point, then open Snow model to use that
             coordinate. The regional table compares all five price areas.
-          </p>
+          </HelpTip>
           {regionalError && (
             <p className={styles.error} role="alert">
               {regionalError}
@@ -1059,9 +1063,11 @@ export default function RegionalPage() {
           <h2>Regional values</h2>
           <p>
             {filters.start} through {filters.end}, inclusive UTC dates ·{" "}
-            {summary?.unit || "kWh"}. Partial rows have fewer valid group-hour
-            records than requested.
+            {summary?.unit || "kWh"}.
           </p>
+          <HelpTip label="Regional coverage">
+            Partial rows have fewer valid group-hour records than requested.
+          </HelpTip>
           <div className={styles.tableWrap}>
             <table>
               <thead>
@@ -1113,8 +1119,7 @@ export default function RegionalPage() {
             </ExportMenu>
           )}
           {summary && (
-            <details>
-              <summary>Source and aggregation metadata</summary>
+            <HelpPanel label="Source and aggregation metadata">
               <pre>
                 {JSON.stringify(
                   {
@@ -1127,7 +1132,7 @@ export default function RegionalPage() {
                   2,
                 )}
               </pre>
-            </details>
+            </HelpPanel>
           )}
         </section>
       </div>
@@ -1139,12 +1144,12 @@ export default function RegionalPage() {
           Tabler transport at {filters.latitude.toFixed(5)},{" "}
           {filters.longitude.toFixed(5)}
         </h2>
-        <p>
-          This calculation uses ERA5-Seamless weather at the selected
-          coordinate, not the fixed city proxy used by area weather views.
-          Seasons run July through June. Partial seasons remain visible and
-          labeled.
-        </p>
+        <p>ERA5-Seamless point weather · July–June seasons.</p>
+        <HelpTip label="Location and seasons">
+          The calculation uses weather at the selected coordinate instead of
+          the fixed city proxy used by area weather views. Partial seasons
+          remain visible and labeled.
+        </HelpTip>
         <p className={styles.methodNote}>
           Tabler transport is a statistical estimate. Fence height is an
           indicative storage calculation and is not a site-specific engineering
@@ -1310,8 +1315,7 @@ export default function RegionalPage() {
                 </table>
               </div>
             </details>
-            <details>
-              <summary>Method, units, and engineering limitation</summary>
+            <HelpPanel label="Method, units, and engineering limitation">
               <pre>
                 {JSON.stringify(
                   {
@@ -1325,7 +1329,7 @@ export default function RegionalPage() {
                   2,
                 )}
               </pre>
-            </details>
+            </HelpPanel>
             <details>
               <summary>First 24 point-weather source rows</summary>
               <div className={styles.tableWrap}>

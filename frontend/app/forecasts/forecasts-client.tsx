@@ -28,6 +28,8 @@ import {
   type DateRange,
 } from "@/components/date-range-picker";
 import { ExportMenu } from "@/components/export-menu";
+import { HelpPanel, HelpTip } from "@/components/help";
+import { Select } from "@/components/ui/select";
 import { areas, number, shiftDay } from "@/lib/api";
 import { downloadCsv, downloadJson } from "@/lib/download";
 import { writeDashboardUrl } from "@/lib/navigation-state";
@@ -1308,7 +1310,8 @@ export default function ForecastsClient() {
         <div className={styles.resultToolbar}>
           <label>
             Result
-            <select
+            <Select
+              aria-label="Prepared forecast result"
               value={view.result}
               onChange={(event) =>
                 updateView(
@@ -1328,7 +1331,7 @@ export default function ForecastsClient() {
                   {item.title} · {item.kind}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <button
             type="button"
@@ -1369,7 +1372,14 @@ export default function ForecastsClient() {
             aria-labelledby="result-summary-title"
           >
             <div className={styles.resultSummaryHeading}>
-              <h2 id="result-summary-title">Saved test summary</h2>
+              <div>
+                <h2 id="result-summary-title">Saved test summary</h2>
+                <HelpTip label="How the summary is calculated">
+                  MAE ranking uses overall rows from the selected cohort and
+                  only compares models when their sample counts match. Coverage
+                  should be read together with interval width in Metric details.
+                </HelpTip>
+              </div>
               <span>
                 Retrospective · not operational
               </span>
@@ -1421,10 +1431,6 @@ export default function ForecastsClient() {
                 </small>
               </div>
             </div>
-            <p className={styles.summaryFootnote}>
-              Overall rows for the selected cohort; models rank only when sample
-              counts match. Read coverage with interval width in Metric details.
-            </p>
           </section>
 
           {detail.kind === "sarimax" && detail.converged === false && (
@@ -1442,14 +1448,15 @@ export default function ForecastsClient() {
           >
             <label>
               Area
-              <select
+              <Select
+                aria-label="Forecast price area"
                 value={view.area}
                 onChange={(event) => updateView({ area: event.target.value })}
               >
                 {availableAreas.map((area) => (
                   <option key={area}>{area}</option>
                 ))}
-              </select>
+              </Select>
             </label>
             <DateRangePicker
               label="Target dates"
@@ -1463,7 +1470,8 @@ export default function ForecastsClient() {
             {availableSplits.length > 0 && (
               <label>
                 Evaluation cohort
-                <select
+                <Select
+                  aria-label="Evaluation cohort"
                   value={
                     availableSplits.includes(view.split)
                       ? view.split
@@ -1482,13 +1490,14 @@ export default function ForecastsClient() {
                           : split.replaceAll("_", " ")}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
             )}
             {availableOrigins.length > 0 && (
               <label>
                 Matched forecast origin
-                <select
+                <Select
+                  aria-label="Matched forecast origin"
                   value={
                     availableOrigins.includes(view.origin)
                       ? view.origin
@@ -1503,7 +1512,7 @@ export default function ForecastsClient() {
                       {formatDateTime(origin)}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
             )}
             <fieldset className={styles.inlineChecks}>
@@ -1545,14 +1554,18 @@ export default function ForecastsClient() {
                 {view.area} · {summary?.horizon || 24} steps
               </span>
             </div>
-            <p>
-              {detail.kind === "sarimax"
-                ? "Future actuals are not available in this issued forecast; use its rolling backtest below for an actual comparison. "
-                : ""}
-              The shaded band is the selected model&apos;s stored predictive
-              interval. It represents conditional model uncertainty; weather
-              uncertainty is included only when the artifact metadata says so.
-            </p>
+            <div className={styles.chartContext}>
+              {detail.kind === "sarimax" && (
+                <span>
+                  Future actuals are unavailable; compare the rolling backtest.
+                </span>
+              )}
+              <HelpTip label="Forecast uncertainty">
+                The shaded band is the selected model&apos;s stored predictive
+                interval. It is conditional on the fitted model; weather
+                uncertainty is included only when the artifact says so.
+              </HelpTip>
+            </div>
             <p className={styles.appliedScope}>
               <strong>Applied to this chart:</strong> {view.area} · {view.start}{" "}
               to {view.end}, inclusive · {view.models.length} model
@@ -1753,17 +1766,17 @@ export default function ForecastsClient() {
                 {metricSummary.rows} metric rows · {metricSummary.models} models
               </span>
             </div>
-            <p>
-              MAE and RMSE use kWh. Coverage is the share of actuals inside the
-              interval; width measures sharpness at that coverage, and pinball
-              loss evaluates quantiles. MASE scales error by in-sample seasonal
-              change. MASE below 1 does not by itself prove a model beat the
-              displayed held-out baseline; compare their errors on the same
-              targets directly.
-            </p>
+            <HelpTip label="Metric definitions">
+              MAE and RMSE use kWh. Coverage is the share of outcomes inside the
+              interval; width measures sharpness, and pinball loss evaluates
+              quantiles. MASE scales error by in-sample seasonal change. Compare
+              models on the same targets rather than treating MASE below one as
+              proof of improvement.
+            </HelpTip>
             <label className={styles.metricBreakdownControl}>
               Metric breakdown
-              <select
+              <Select
+                aria-label="Metric breakdown"
                 value={view.dimension}
                 onChange={(event) =>
                   updateView({ dimension: event.target.value })
@@ -1774,7 +1787,7 @@ export default function ForecastsClient() {
                 <option value="season">Season</option>
                 <option value="horizon">Horizon</option>
                 <option value="isPeakPeriod">Peak period</option>
-              </select>
+              </Select>
             </label>
             <p className={styles.appliedScope}>
               <strong>Applied to these metrics:</strong>{" "}
@@ -1881,7 +1894,8 @@ export default function ForecastsClient() {
             <div>
               <label className={styles.jobSelector}>
                 Select job
-                <select
+                <Select
+                  aria-label="Forecast job history"
                   value={view.job}
                   onChange={(event) => updateView({ job: event.target.value })}
                 >
@@ -1891,7 +1905,7 @@ export default function ForecastsClient() {
                       {job.kind} · {job.status} · {formatDateTime(job.createdAt)}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
 
               {selectedJob && (
@@ -1963,7 +1977,8 @@ export default function ForecastsClient() {
             <div className={styles.drawerForms}>
               <label className={styles.experimentType}>
                 Experiment type
-                <select
+                <Select
+                  aria-label="Experiment type"
                   value={experimentKind}
                   onChange={(event) =>
                     setExperimentKind(event.target.value as Job["kind"])
@@ -1971,7 +1986,7 @@ export default function ForecastsClient() {
                 >
                   <option value="evaluation">Household-demand evaluation</option>
                   <option value="sarimax">Custom SARIMAX</option>
-                </select>
+                </Select>
               </label>
               {experimentKind === "evaluation" ? (
                 <EvaluationForm
@@ -2121,8 +2136,13 @@ function EvaluationForm({
     <form className={styles.jobForm} onSubmit={onSubmit}>
       <div className={styles.formTitle}>
         <div>
-          <h3>Household-demand evaluation</h3>
-          <p>Matched origins across areas and models.</p>
+          <h3>
+            Household-demand evaluation{" "}
+            <HelpTip label="Matched evaluation">
+              Models share the same forecast origins and targets so their
+              recorded errors can be compared directly.
+            </HelpTip>
+          </h3>
         </div>
         <span>24 h default</span>
       </div>
@@ -2249,7 +2269,8 @@ function EvaluationForm({
         />
         <label>
           Weather availability
-          <select
+          <Select
+            aria-label="Evaluation weather availability"
             value={value.weatherMode}
             onChange={(event) =>
               onChange({
@@ -2265,17 +2286,18 @@ function EvaluationForm({
             <option value="realized_future_upper_bound">
               Realized future weather (upper bound)
             </option>
-          </select>
+          </Select>
         </label>
       </div>
-      <p className={styles.limitNote}>
-        Enter origin dates as comma-separated YYYY-MM-DD values. Every
-        validation origin must precede calibration, and every calibration origin
-        must precede the final holdout. Limits: 1–48 forecast hours, 30–365
-        training days, energy lag 24–168 h, weather lag 24–240 h. Operational
-        weather forecasts are intentionally unavailable until archived
-        issue-time data exists.
-      </p>
+      <HelpPanel label="Evaluation dates, limits and weather">
+        <p>
+          Enter origin dates as comma-separated YYYY-MM-DD values. Validation
+          must precede calibration, and calibration must precede the final
+          holdout. Limits are 1–48 forecast hours, 30–365 training days, energy
+          delay 24–168 hours and weather delay 24–240 hours. Operational weather
+          forecasts remain unavailable until archived issue-time data exists.
+        </p>
+      </HelpPanel>
       <button
         className={styles.runButton}
         type="submit"
@@ -2321,19 +2343,145 @@ function SarimaxForm({
     seasonalOrder[index] = next;
     onChange({ ...value, seasonalOrder });
   };
+  const trainingEnd = shiftDay(value.end, -1);
+  const issueTime = new Date(`${value.end}T00:00:00Z`);
+  issueTime.setUTCHours(issueTime.getUTCHours() + value.energyLagHours);
+  const targetStepMs = value.frequency === "h" ? 3_600_000 : 86_400_000;
+  const forecastWindowEnd = new Date(
+    issueTime.getTime() + Math.max(0, value.horizon) * targetStepMs,
+  );
+  const horizonPresets =
+    value.frequency === "h" ? [24, 72, 168] : [7, 30, 60];
   return (
     <form className={styles.jobForm} onSubmit={onSubmit}>
       <div className={styles.formTitle}>
         <div>
-          <h3>Custom SARIMAX</h3>
-          <p>Legacy controls with explicit availability lags.</p>
+          <h3>
+            Custom SARIMAX{" "}
+            <HelpTip label="About SARIMAX experiments">
+              This model combines an energy time series with optional weather
+              regressors. Results are retrospective experiments on revised
+              observations, not operational forecasts.
+            </HelpTip>
+          </h3>
         </div>
         <span>State budget 64</span>
       </div>
+
+      <section
+        className={styles.forecastSetup}
+        aria-labelledby="forecast-setup-title"
+      >
+        <div className={styles.setupHeading}>
+          <span className={styles.sectionKicker}>Forecast setup</span>
+          <h4 id="forecast-setup-title">Training period to forecast horizon</h4>
+        </div>
+        <div className={styles.setupControls}>
+          <DateRangePicker
+            label="Training dates"
+            value={{ start: value.start, end: trainingEnd }}
+            onChange={(range: DateRange) =>
+              onChange({
+                ...value,
+                start: range.start,
+                end: shiftDay(range.end, 1),
+              })
+            }
+            disabled={disabled}
+          />
+          <label>
+            Time unit
+            <Select
+              aria-label="SARIMAX forecast time unit"
+              value={value.frequency}
+              onChange={(event) => {
+                const frequency = event.target
+                  .value as SarimaxDraft["frequency"];
+                onChange({
+                  ...value,
+                  frequency,
+                  horizon: frequency === "h" ? 24 : 30,
+                  baselineLag: frequency === "h" ? 168 : 7,
+                  backtestHorizon: frequency === "h" ? 24 : 7,
+                  step: frequency === "h" ? 24 : 1,
+                  seasonalOrder: [
+                    value.seasonalOrder[0],
+                    value.seasonalOrder[1],
+                    value.seasonalOrder[2],
+                    frequency === "h" ? 24 : 7,
+                  ],
+                });
+              }}
+            >
+              <option value="h">Hourly targets</option>
+              <option value="D">Daily targets</option>
+            </Select>
+          </label>
+          <NumberField
+            label={`Ahead (${value.frequency === "h" ? "hours" : "days"})`}
+            min={1}
+            max={horizonMax}
+            value={value.horizon}
+            onChange={(horizon) => onChange({ ...value, horizon })}
+          />
+          <NumberField
+            label="Energy availability delay (hours)"
+            min={0}
+            max={168}
+            step={value.frequency === "D" ? 24 : 1}
+            value={value.energyLagHours}
+            onChange={(energyLagHours) =>
+              onChange({ ...value, energyLagHours })
+            }
+          />
+        </div>
+        <div
+          className={styles.horizonPresets}
+          aria-label="Forecast horizon presets"
+        >
+          {horizonPresets.map((horizon) => (
+            <button
+              type="button"
+              key={horizon}
+              aria-pressed={value.horizon === horizon}
+              onClick={() => onChange({ ...value, horizon })}
+            >
+              {horizon} {value.frequency === "h" ? "hours" : "days"}
+            </button>
+          ))}
+        </div>
+        <ol className={styles.forecastFlow}>
+          <li>
+            <span>1 · Train</span>
+            <strong>{value.start} – {trainingEnd}</strong>
+            <small>Inclusive observed period</small>
+          </li>
+          <li>
+            <span>2 · Forecast issue / start</span>
+            <strong>{formatDateTime(issueTime.toISOString())}</strong>
+            <small>
+              Energy data becomes usable {value.energyLagHours} h after the
+              training interval closes
+            </small>
+          </li>
+          <li>
+            <span>3 · Ahead horizon</span>
+            <strong>
+              Until {formatDateTime(forecastWindowEnd.toISOString())}
+            </strong>
+            <small>
+              {value.horizon} {value.frequency === "h" ? "hourly" : "daily"}{" "}
+              targets · boundary after the final target
+            </small>
+          </li>
+        </ol>
+      </section>
+
       <div className={styles.formGrid}>
         <label>
           Area
-          <select
+          <Select
+            aria-label="SARIMAX price area"
             value={value.area}
             onChange={(event) =>
               onChange({ ...value, area: event.target.value })
@@ -2342,11 +2490,12 @@ function SarimaxForm({
             {Object.keys(areas).map((area) => (
               <option key={area}>{area}</option>
             ))}
-          </select>
+          </Select>
         </label>
         <label>
           Energy kind
-          <select
+          <Select
+            aria-label="SARIMAX energy kind"
             value={value.kind}
             onChange={(event) => {
               const kind = event.target.value as SarimaxDraft["kind"];
@@ -2359,11 +2508,12 @@ function SarimaxForm({
           >
             <option value="production">Production</option>
             <option value="consumption">Consumption</option>
-          </select>
+          </Select>
         </label>
         <label>
           Group
-          <select
+          <Select
+            aria-label="SARIMAX energy group"
             value={value.group}
             onChange={(event) =>
               onChange({ ...value, group: event.target.value })
@@ -2372,198 +2522,176 @@ function SarimaxForm({
             {groups.map((group) => (
               <option key={group}>{group}</option>
             ))}
-          </select>
-        </label>
-        <label>
-          Frequency
-          <select
-            value={value.frequency}
-            onChange={(event) => {
-              const frequency = event.target.value as SarimaxDraft["frequency"];
-              onChange({
-                ...value,
-                frequency,
-                horizon: frequency === "h" ? 24 : 30,
-                baselineLag: frequency === "h" ? 168 : 7,
-                backtestHorizon: frequency === "h" ? 24 : 7,
-                step: frequency === "h" ? 24 : 1,
-                seasonalOrder: [
-                  value.seasonalOrder[0],
-                  value.seasonalOrder[1],
-                  value.seasonalOrder[2],
-                  frequency === "h" ? 24 : 7,
-                ],
-              });
-            }}
-          >
-            <option value="h">Hourly</option>
-            <option value="D">Daily</option>
-          </select>
-        </label>
-        <DateRangePicker
-          label="Training dates"
-          value={{ start: value.start, end: shiftDay(value.end, -1) }}
-          onChange={(range: DateRange) =>
-            onChange({
-              ...value,
-              start: range.start,
-              end: shiftDay(range.end, 1),
-            })
-          }
-          disabled={disabled}
-        />
-        <NumberField
-          label={`Horizon (${value.frequency === "h" ? "hours" : "days"})`}
-          min={1}
-          max={horizonMax}
-          value={value.horizon}
-          onChange={(horizon) => onChange({ ...value, horizon })}
-        />
-        <label>
-          Future weather
-          <select
-            value={value.futureWeather}
-            disabled={!value.weatherVariables.length}
-            onChange={(event) =>
-              onChange({
-                ...value,
-                futureWeather: event.target
-                  .value as SarimaxDraft["futureWeather"],
-              })
-            }
-          >
-            <option value="last">Repeat last available row</option>
-            <option value="hod-mean">Hour/day-of-week mean</option>
-          </select>
+          </Select>
         </label>
       </div>
-      <fieldset>
-        <legend>Weather regressors</legend>
-        <div className={styles.checkGrid}>
-          {weatherVariables.map(([key, label]) => (
-            <label key={key}>
+
+      <details className={styles.formDisclosure}>
+        <summary>Model structure</summary>
+        <div>
+          <fieldset>
+            <legend>Nonseasonal order (p, d, q)</legend>
+            <div className={styles.compactGrid}>
+              <NumberField
+                label="p"
+                min={0}
+                max={3}
+                value={value.order[0]}
+                onChange={(next) => setOrder(0, next)}
+              />
+              <NumberField
+                label="d"
+                min={0}
+                max={2}
+                value={value.order[1]}
+                onChange={(next) => setOrder(1, next)}
+              />
+              <NumberField
+                label="q"
+                min={0}
+                max={3}
+                value={value.order[2]}
+                onChange={(next) => setOrder(2, next)}
+              />
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>
+              <label className={styles.legendCheck}>
+                <input
+                  type="checkbox"
+                  checked={value.seasonal}
+                  onChange={(event) =>
+                    onChange({ ...value, seasonal: event.target.checked })
+                  }
+                />{" "}
+                Seasonal order (P, D, Q, s)
+              </label>
+            </legend>
+            <div className={styles.compactGrid}>
+              {value.seasonalOrder.map((order, index) => (
+                <NumberField
+                  key={["P", "D", "Q", "s"][index]}
+                  label={["P", "D", "Q", "s"][index]}
+                  min={index === 3 ? 2 : 0}
+                  max={[1, 2, 1, sMax][index]}
+                  value={order}
+                  disabled={!value.seasonal}
+                  onChange={(next) => setSeasonal(index, next)}
+                />
+              ))}
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>
+              <label className={styles.legendCheck}>
+                <input
+                  type="checkbox"
+                  checked={value.dynamic}
+                  onChange={(event) =>
+                    onChange({ ...value, dynamic: event.target.checked })
+                  }
+                />{" "}
+                Dynamic in-sample prediction
+              </label>
+            </legend>
+            <label>
+              Dynamic start: {Math.round(value.dynamicStart * 100)}%
               <input
-                type="checkbox"
-                checked={value.weatherVariables.includes(key)}
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                disabled={!value.dynamic}
+                value={value.dynamicStart}
                 onChange={(event) =>
                   onChange({
                     ...value,
-                    weatherVariables: event.target.checked
-                      ? [...value.weatherVariables, key]
-                      : value.weatherVariables.filter((item) => item !== key),
+                    dynamicStart: Number(event.target.value),
                   })
                 }
-              />{" "}
-              {label}
+              />
             </label>
-          ))}
+          </fieldset>
         </div>
-      </fieldset>
-      <fieldset>
-        <legend>Nonseasonal order (p, d, q)</legend>
-        <div className={styles.compactGrid}>
-          <NumberField
-            label="p"
-            min={0}
-            max={3}
-            value={value.order[0]}
-            onChange={(next) => setOrder(0, next)}
-          />
-          <NumberField
-            label="d"
-            min={0}
-            max={2}
-            value={value.order[1]}
-            onChange={(next) => setOrder(1, next)}
-          />
-          <NumberField
-            label="q"
-            min={0}
-            max={3}
-            value={value.order[2]}
-            onChange={(next) => setOrder(2, next)}
-          />
-        </div>
-      </fieldset>
-      <fieldset>
-        <legend>
-          <label className={styles.legendCheck}>
-            <input
-              type="checkbox"
-              checked={value.seasonal}
-              onChange={(event) =>
-                onChange({ ...value, seasonal: event.target.checked })
+      </details>
+
+      <details className={styles.formDisclosure}>
+        <summary>Weather inputs and availability</summary>
+        <div>
+          <fieldset>
+            <legend>Weather regressors</legend>
+            <div className={styles.checkGrid}>
+              {weatherVariables.map(([key, label]) => (
+                <label key={key}>
+                  <input
+                    type="checkbox"
+                    checked={value.weatherVariables.includes(key)}
+                    onChange={(event) =>
+                      onChange({
+                        ...value,
+                        weatherVariables: event.target.checked
+                          ? [...value.weatherVariables, key]
+                          : value.weatherVariables.filter(
+                              (item) => item !== key,
+                            ),
+                      })
+                    }
+                  />{" "}
+                  {label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <div className={styles.formGrid}>
+            <label>
+              Future weather
+              <Select
+                aria-label="SARIMAX future weather assumption"
+                value={value.futureWeather}
+                disabled={!value.weatherVariables.length}
+                onChange={(event) =>
+                  onChange({
+                    ...value,
+                    futureWeather: event.target
+                      .value as SarimaxDraft["futureWeather"],
+                  })
+                }
+              >
+                <option value="last">Repeat last available row</option>
+                <option value="hod-mean">Hour/day-of-week mean</option>
+              </Select>
+            </label>
+            <NumberField
+              label="Weather availability delay (hours)"
+              min={0}
+              max={336}
+              step={value.frequency === "D" ? 24 : 1}
+              value={value.weatherLagHours}
+              onChange={(weatherLagHours) =>
+                onChange({ ...value, weatherLagHours })
               }
-            />{" "}
-            Seasonal order (P, D, Q, s)
-          </label>
-        </legend>
-        <div className={styles.compactGrid}>
-          <NumberField
-            label="P"
-            min={0}
-            max={1}
-            value={value.seasonalOrder[0]}
-            disabled={!value.seasonal}
-            onChange={(next) => setSeasonal(0, next)}
-          />
-          <NumberField
-            label="D"
-            min={0}
-            max={2}
-            value={value.seasonalOrder[1]}
-            disabled={!value.seasonal}
-            onChange={(next) => setSeasonal(1, next)}
-          />
-          <NumberField
-            label="Q"
-            min={0}
-            max={1}
-            value={value.seasonalOrder[2]}
-            disabled={!value.seasonal}
-            onChange={(next) => setSeasonal(2, next)}
-          />
-          <NumberField
-            label="s"
-            min={2}
-            max={sMax}
-            value={value.seasonalOrder[3]}
-            disabled={!value.seasonal}
-            onChange={(next) => setSeasonal(3, next)}
-          />
+            />
+          </div>
+          {value.weatherVariables.length > 0 && (
+            <label className={styles.comparisonToggle}>
+              <input
+                type="checkbox"
+                checked={value.evalNoExog}
+                onChange={(event) =>
+                  onChange({ ...value, evalNoExog: event.target.checked })
+                }
+              />{" "}
+              Also evaluate SARIMAX without weather on the same backtest origins
+            </label>
+          )}
         </div>
-      </fieldset>
-      <fieldset>
-        <legend>
-          <label className={styles.legendCheck}>
-            <input
-              type="checkbox"
-              checked={value.dynamic}
-              onChange={(event) =>
-                onChange({ ...value, dynamic: event.target.checked })
-              }
-            />{" "}
-            Dynamic in-sample prediction
-          </label>
-        </legend>
-        <label>
-          Dynamic start: {Math.round(value.dynamicStart * 100)}%
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.05}
-            disabled={!value.dynamic}
-            value={value.dynamicStart}
-            onChange={(event) =>
-              onChange({ ...value, dynamicStart: Number(event.target.value) })
-            }
-          />
-        </label>
-      </fieldset>
-      <fieldset>
-        <legend>
-          <label className={styles.legendCheck}>
+      </details>
+
+      <details className={styles.formDisclosure}>
+        <summary>Rolling backtest</summary>
+        <div>
+          <label className={styles.comparisonToggle}>
             <input
               type="checkbox"
               checked={value.backtest}
@@ -2571,85 +2699,57 @@ function SarimaxForm({
                 onChange({ ...value, backtest: event.target.checked })
               }
             />{" "}
-            Rolling-origin backtest
+            Compare against recorded outcomes at earlier origins
           </label>
-        </legend>
-        <div className={styles.compactGrid}>
-          <NumberField
-            label="Baseline lag"
-            min={1}
-            max={value.frequency === "h" ? 336 : 60}
-            value={value.baselineLag}
-            disabled={!value.backtest}
-            onChange={(baselineLag) => onChange({ ...value, baselineLag })}
-          />
-          <NumberField
-            label="Backtest horizon"
-            min={1}
-            max={horizonMax}
-            value={value.backtestHorizon}
-            disabled={!value.backtest}
-            onChange={(backtestHorizon) =>
-              onChange({ ...value, backtestHorizon })
-            }
-          />
-          <NumberField
-            label="Cutoff step"
-            min={1}
-            max={horizonMax}
-            value={value.step}
-            disabled={!value.backtest}
-            onChange={(step) => onChange({ ...value, step })}
-          />
-          <NumberField
-            label="Folds"
-            min={1}
-            max={5}
-            value={value.folds}
-            disabled={!value.backtest}
-            onChange={(folds) => onChange({ ...value, folds })}
-          />
+          <div className={styles.compactGrid}>
+            <NumberField
+              label="Baseline lag"
+              min={1}
+              max={value.frequency === "h" ? 336 : 60}
+              value={value.baselineLag}
+              disabled={!value.backtest}
+              onChange={(baselineLag) => onChange({ ...value, baselineLag })}
+            />
+            <NumberField
+              label="Backtest horizon"
+              min={1}
+              max={horizonMax}
+              value={value.backtestHorizon}
+              disabled={!value.backtest}
+              onChange={(backtestHorizon) =>
+                onChange({ ...value, backtestHorizon })
+              }
+            />
+            <NumberField
+              label="Cutoff step"
+              min={1}
+              max={horizonMax}
+              value={value.step}
+              disabled={!value.backtest}
+              onChange={(step) => onChange({ ...value, step })}
+            />
+            <NumberField
+              label="Folds"
+              min={1}
+              max={5}
+              value={value.folds}
+              disabled={!value.backtest}
+              onChange={(folds) => onChange({ ...value, folds })}
+            />
+          </div>
         </div>
-      </fieldset>
-      <div className={styles.formGrid}>
-        <NumberField
-          label="Energy publication lag (h)"
-          min={0}
-          max={168}
-          step={value.frequency === "D" ? 24 : 1}
-          value={value.energyLagHours}
-          onChange={(energyLagHours) => onChange({ ...value, energyLagHours })}
-        />
-        <NumberField
-          label="Weather publication lag (h)"
-          min={0}
-          max={336}
-          step={value.frequency === "D" ? 24 : 1}
-          value={value.weatherLagHours}
-          onChange={(weatherLagHours) =>
-            onChange({ ...value, weatherLagHours })
-          }
-        />
-      </div>
-      {value.weatherVariables.length > 0 && (
-        <label className={styles.comparisonToggle}>
-          <input
-            type="checkbox"
-            checked={value.evalNoExog}
-            onChange={(event) =>
-              onChange({ ...value, evalNoExog: event.target.checked })
-            }
-          />{" "}
-          Also evaluate SARIMAX without weather on the same backtest origins
-        </label>
-      )}
-      <p className={styles.limitNote}>
-        Limits: 2–366 training days; horizon ≤168 hourly or 60 daily; p/q ≤3;
-        P/Q ≤1; seasonal period ≤168; 5 folds; state-space budget 64 (current
-        order: {sarimaxStateCount(value)}). Daily lags must use complete days.
-        The issue time follows the exclusive training end plus the energy lag,
-        and the model bridges that unavailable gap before the displayed horizon.
-      </p>
+      </details>
+
+      <HelpPanel label="SARIMAX limits and timing">
+        <p>
+          Training uses 2–366 complete UTC days. Hourly horizons stop at 168
+          and daily horizons at 60. The issue time is the exclusive training
+          end plus the energy availability delay; the model bridges that gap
+          before returning the requested targets. Daily delays use complete
+          days. Orders must remain within the 64-state budget (current order:{" "}
+          {sarimaxStateCount(value)}).
+        </p>
+      </HelpPanel>
       {sarimaxStateCount(value) > 64 && (
         <p className={styles.error} role="alert">
           Reduce the seasonal period or orders; this configuration exceeds the
