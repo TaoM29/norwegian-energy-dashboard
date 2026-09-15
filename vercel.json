@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "fastapi",
+  "buildCommand": "python deploy/vercel/build.py",
+  "regions": ["fra1"],
+  "functions": {
+    "server.py": {
+      "maxDuration": 300,
+      "excludeFiles": "{frontend/**,tests/**,docs/**,notebooks/**,.agents/**,.github/**,.git/**,.vercel-deploy/**,data/fixture/**,data/*.csv,scripts/**}"
+    }
+  }
+}
