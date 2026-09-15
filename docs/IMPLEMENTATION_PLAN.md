@@ -146,6 +146,8 @@ Gate passed for the local slice: the overview works with real data, filters agre
 
 Gate: each relevant parity row has working UI, numerical verification and documented intentional behavior changes.
 
+Completed 2026-09-15: `/explore`, `/diagnostics` and `/regional` provide the Phase 3 workflows, shared URL state, data/metadata downloads and ECharts rendering. Daily summaries are built before snapshot publication. The [Phase 3 validation](PHASE3_VALIDATION.md) records numerical parity, browser checks, scientific assumptions and intentional behavior changes. Streamlit remains runnable; forecasting continues in Phase 4.
+
 ### Phase 4 — Forecasting and trustworthy evaluation
 
 - Extract forecasting from page execution. Serve stored results; use explicit jobs for custom experiments with status, limits, cancellation and failure states.

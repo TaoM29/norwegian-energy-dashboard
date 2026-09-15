@@ -2,7 +2,7 @@
 
 A Norwegian energy and weather analysis project evolving into a **Next.js / React frontend with a Python backend**.
 
-**Status:** Phase 1 data loading and correctness are implemented. Public energy data has been backfilled from 2021 through available 2026 observations, with validated UTC intervals, coverage-aware controls and atomic refreshes. The first Phase 2 overview now runs in Next.js with a Python API. Streamlit retains the broader analytical features during migration.
+**Status:** Phase 1 data loading and correctness are implemented. Public energy data has been backfilled from 2021 through available 2026 observations, with validated UTC intervals, coverage-aware controls and atomic refreshes. The overview and Phase 3 exploration, regional/snow-drift and diagnostics workspaces now run in Next.js with a Python API. Streamlit remains runnable; forecasting migration is next in Phase 4.
 
 ## Implementation plan
 
@@ -56,7 +56,7 @@ Open http://localhost:3000. The overview includes area/date filters, daily produ
 
 `GET /api/coverage` returns the shared date envelope and suggested range. `GET /api/overview?area=NO1&start=2026-08-01&end=2026-09-01` returns the headline, daily series, mix and regional ranking together, with missingness and snapshot provenance. See http://127.0.0.1:8000/docs for query documentation. The API reads `data/energy.sqlite`; set `ENERGY_DATABASE` to use another published snapshot. Set `ENERGY_API_URL` before starting/building Next.js if the API runs elsewhere.
 
-For frontend validation, run `npm run typecheck` and `npm run build` inside `frontend/`. The [Phase 2 validation](docs/PHASE2_VALIDATION.md) records the chart-library trial and matched performance comparison. Open `/chart-trial` for the isolated, explicitly synthetic chart examples. Recharts remains in the overview; ECharts is selected for the richer analytical views.
+For frontend validation, run `npm run typecheck` and `npm run build` inside `frontend/`. The [Phase 2 validation](docs/PHASE2_VALIDATION.md) records the chart-library trial and matched performance comparison. The [Phase 3 validation](docs/PHASE3_VALIDATION.md) records exploration and diagnostics parity. Open `/explore` for energy/weather, `/diagnostics` for correlation, decomposition and statistical quality checks, and `/regional` for maps and snow drift. Open `/chart-trial` for the isolated, explicitly synthetic chart examples. Recharts remains in the overview; ECharts is selected for the richer analytical views.
 
 ## Current structure
 
