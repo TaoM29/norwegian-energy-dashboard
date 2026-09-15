@@ -1,9 +1,9 @@
 .selectorPanel,
 .jobsSection {
   padding: 24px;
-  border: 1px solid #dce3dc;
+  border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--surface);
   margin-bottom: 22px;
 }
 
@@ -23,13 +23,13 @@
 .selectorPanel p,
 .jobsSection > p,
 .jobForm p {
-  color: #607069;
+  color: var(--text-muted);
   line-height: 1.6;
   margin: 0;
 }
 
 .sectionKicker {
-  color: #176b59;
+  color: var(--accent);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.5px;
@@ -50,7 +50,7 @@
   flex-direction: column;
   gap: 7px;
   min-width: 0;
-  color: #4b6352;
+  color: var(--text-muted);
   font-size: 12px;
 }
 
@@ -59,17 +59,17 @@
 .jobForm input:not([type="checkbox"]):not([type="range"]) {
   width: 100%;
   min-height: 38px;
-  border: 1px solid #ccd8ce;
+  border: 1px solid var(--border);
   border-radius: 5px;
-  background: white;
+  background: var(--surface);
   padding: 7px 9px;
-  color: #253b32;
+  color: var(--text);
 }
 
 .selectorGrid select:focus-visible,
 .jobForm select:focus-visible,
 .runButton:focus-visible {
-  outline: 3px solid #357c66;
+  outline: 3px solid var(--accent);
   outline-offset: 3px;
 }
 
@@ -80,8 +80,8 @@
   align-items: center;
   padding: 14px;
   border-radius: 8px;
-  background: #edf3ea;
-  color: #176b59;
+  background: var(--surface-muted);
+  color: var(--accent);
 }
 
 .jobStatus > div:not(.progressTrack) {
@@ -91,13 +91,13 @@
 }
 
 .jobStatus span {
-  color: #607069;
+  color: var(--text-muted);
   font-size: 12px;
 }
 
 .jobStatus[data-state="failed"] {
-  background: #fff1ed;
-  color: #9e3d2f;
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 .progressValue {
@@ -109,38 +109,38 @@
   height: 5px;
   overflow: hidden;
   border-radius: 99px;
-  background: #d3ded5;
+  background: var(--border);
 }
 
 .progressTrack span {
   display: block;
   height: 100%;
-  background: #176b59;
+  background: var(--accent);
 }
 
 .error {
   padding: 13px 15px;
-  border-left: 3px solid #b84b38;
-  background: #fff1ed;
-  color: #8d3428 !important;
+  border-left: 3px solid var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger) !important;
   line-height: 1.6;
 }
 
 .loading,
 .empty {
   padding: 28px;
-  border: 1px dashed #cbd6cc;
+  border: 1px dashed var(--border);
   border-radius: 8px;
-  color: #607069;
+  color: var(--text-muted);
   text-align: center;
 }
 
 .evidenceStrip {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  border: 1px solid #dce3dc;
+  border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--surface);
   margin-bottom: 12px;
   overflow: hidden;
 }
@@ -150,7 +150,7 @@
   grid-template-columns: auto 1fr;
   gap: 5px 8px;
   padding: 17px;
-  border-right: 1px solid #e4e9e2;
+  border-right: 1px solid var(--border);
 }
 
 .evidenceStrip > div:last-child {
@@ -159,11 +159,11 @@
 
 .evidenceStrip svg {
   grid-row: 1 / 3;
-  color: #39816a;
+  color: var(--accent);
 }
 
 .evidenceStrip span {
-  color: #687870;
+  color: var(--text-muted);
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.8px;
@@ -184,13 +184,13 @@
 }
 
 .retrospective {
-  color: #285e4c;
-  background: #eaf3ec;
+  color: var(--accent);
+  background: var(--surface-muted);
 }
 
 .upperBound {
-  color: #775216;
-  background: #fff6dc;
+  color: var(--warning);
+  background: var(--warning-soft);
 }
 
 .inlineChecks {
@@ -204,7 +204,7 @@
 
 .inlineChecks legend {
   width: 100%;
-  color: #4b6352;
+  color: var(--text-muted);
   font-size: 12px;
   margin-bottom: 4px;
 }
@@ -232,8 +232,8 @@
   flex: 0 0 auto;
   padding: 7px 9px;
   border-radius: 5px;
-  background: #edf3ea;
-  color: #416151;
+  background: var(--surface-muted);
+  color: var(--text-muted);
   font-size: 11px;
 }
 
@@ -252,7 +252,7 @@
 .tableWrap th,
 .tableWrap td {
   padding: 10px 12px;
-  border-bottom: 1px solid #e5ebe5;
+  border-bottom: 1px solid var(--surface-muted);
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
@@ -263,20 +263,20 @@
 }
 
 .tableWrap thead th {
-  color: #607069;
+  color: var(--text-muted);
   font-size: 10px;
   letter-spacing: 0.7px;
   text-transform: uppercase;
 }
 
 .failures {
-  border-left: 3px solid #d4774d;
+  border-left: 3px solid var(--warning);
   padding-left: 14px;
 }
 
 .jobsSection {
   margin-top: 34px;
-  background: #f9fbf8;
+  background: var(--surface);
 }
 
 .jobsSection > p {
@@ -290,9 +290,9 @@
   gap: 17px;
   min-width: 0;
   padding: 20px;
-  border: 1px solid #dce3dc;
+  border: 1px solid var(--border);
   border-radius: 9px;
-  background: #fff;
+  background: var(--surface);
 }
 
 .formTitle h3 {
@@ -302,13 +302,13 @@
 .jobForm fieldset {
   min-width: 0;
   padding: 13px;
-  border: 1px solid #e0e7e0;
+  border: 1px solid var(--border);
   border-radius: 7px;
 }
 
 .jobForm legend {
   padding: 0 6px;
-  color: #425c4e;
+  color: var(--text-muted);
   font-size: 12px;
   font-weight: 600;
 }
@@ -328,9 +328,9 @@
 
 .comparisonToggle {
   padding: 11px 13px;
-  border: 1px solid #dce3dc;
+  border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fbfcfa;
+  background: var(--surface);
 }
 
 .compactGrid {
@@ -339,13 +339,13 @@
 
 .jobForm input[type="range"] {
   width: 100%;
-  accent-color: #176b59;
+  accent-color: var(--accent);
 }
 
 .limitNote {
   padding: 11px 13px;
   border-radius: 6px;
-  background: #f2f5f1;
+  background: var(--surface-muted);
   font-size: 11px;
 }
 
@@ -355,10 +355,10 @@
   justify-content: center;
   gap: 8px;
   min-height: 40px;
-  border: 1px solid #176b59;
+  border: 1px solid var(--accent);
   border-radius: 6px;
-  background: #176b59;
-  color: #fff;
+  background: var(--accent);
+  color: var(--on-accent);
   font-weight: 600;
 }
 
@@ -375,7 +375,7 @@
     border-right: 0;
   }
   .evidenceStrip > div:nth-child(-n + 2) {
-    border-bottom: 1px solid #e4e9e2;
+    border-bottom: 1px solid var(--border);
   }
 }
 
@@ -388,7 +388,7 @@
   }
   .evidenceStrip > div {
     border-right: 0;
-    border-bottom: 1px solid #e4e9e2;
+    border-bottom: 1px solid var(--border);
   }
   .evidenceStrip > div:last-child {
     border-bottom: 0;

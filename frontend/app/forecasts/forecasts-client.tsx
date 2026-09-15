@@ -1174,7 +1174,7 @@ export default function ForecastsClient() {
   return (
     <AnalysisShell
       title="Forecasts & evaluation"
-      description="Inspect prepared 24-hour household-demand benchmarks across NO1–NO5, compare models on matched forecast origins, and run bounded custom experiments."
+      description="Can we predict tomorrow’s electricity use? Compare saved forecasts with actual outcomes, then explore the evidence behind each model."
     >
       <section
         className={styles.selectorPanel}

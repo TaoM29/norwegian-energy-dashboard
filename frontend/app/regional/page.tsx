@@ -555,7 +555,7 @@ export default function RegionalPage() {
   return (
     <AnalysisShell
       title="Regional energy & snow drift"
-      description="Compare record-weighted hourly energy across NO1–NO5, then use an exact map coordinate for a linked Tabler snow-transport analysis."
+      description="See how energy use differs across Norway, then explore how local wind and weather shape snow transport."
     >
       <form className="analysis-controls" onSubmit={apply}>
         <label>
