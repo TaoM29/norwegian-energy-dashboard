@@ -4,7 +4,8 @@ Norwegian energy and weather analytics, delivered as a Next.js dashboard with a 
 
 The current application covers energy exploration, weather, regional maps, snow drift, diagnostics, and forecast evaluation. The former Streamlit app is retired.
 
-Live dashboard: <https://norwegian-energy-dashboard.vercel.app>
+Live dashboard: <https://norwegian-energy-dashboard.vercel.app>  
+Source code: <https://github.com/TaoM29/norwegian-energy-dashboard>
 
 ## Features
 
