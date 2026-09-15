@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "fastapi",
+  "buildCommand": "python build.py",
+  "regions": ["fra1"],
+  "functions": {
+    "server.py": {"maxDuration": 300, "excludeFiles": "{snapshots.tar.gz,build.py}"}
+  }
+}

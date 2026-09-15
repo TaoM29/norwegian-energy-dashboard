@@ -1,6 +1,43 @@
 # Release and operations
 
-This release candidate uses Next.js and FastAPI. It needs one API worker because the bounded forecast queue is local to that process. Public configuration serves prepared results and disables custom fitting; a local development API enables bounded jobs by default.
+This release candidate uses Next.js and FastAPI. Deployments that enable custom fitting need one API worker because the bounded forecast queue is local to that process. Public configuration serves prepared results and disables custom fitting; a local development API enables bounded jobs by default.
+
+## Vercel production
+
+- Dashboard: https://norwegian-energy-dashboard.vercel.app
+- FastAPI: https://norwegian-energy-api.vercel.app
+- Vercel scope: `taom29s-projects`.
+
+The frontend and API are separate Vercel projects. The frontend's production
+`ENERGY_API_URL` points to the API; Next.js rewrites keep browser requests on the
+same origin. No local server or MongoDB connection is needed.
+
+The API bundles the real published observations and saved forecast results.
+`deploy/vercel/server.py` keeps SQLite read-only and copies weather/forecast caches
+to temporary writable storage. Custom background fitting remains disabled. The
+API uses Python 3.12 and Vercel Large Functions because the scientific dependencies
+and observation database exceed the standard Python bundle limit.
+
+Deploy from a refreshed local snapshot (Vercel CLI authentication required):
+
+```sh
+python scripts/prepare_vercel.py
+npx vercel deploy --cwd .vercel-deploy/api --project norwegian-energy-api --prod --yes --build-env VERCEL_SUPPORT_LARGE_FUNCTIONS=1 --env VERCEL_SUPPORT_LARGE_FUNCTIONS=1
+npx vercel deploy --cwd frontend --project norwegian-energy-dashboard --prod --yes
+```
+
+The staging script includes only application code and published data, excludes
+local job records, and takes a consistent SQLite backup. Staging and project links
+are ignored by Git. These commands do not commit or push.
+
+Snapshots are fixed for each deployment: run the existing local refresh and
+redeploy the API to publish new observations or saved forecast results. Temporary
+point-weather caches do not persist across instances. The container scheduler below
+is a separate self-hosted option, not a Vercel refresh service.
+
+Verify `/api/ready`, overview, weather, regional data, and saved forecasts through
+the dashboard domain after deployment. Roll back with Vercel's deployment history;
+API and frontend releases are promoted independently.
 
 ## Clean setup and offline demonstration
 
@@ -44,7 +81,7 @@ docker compose up -d
 curl --fail http://127.0.0.1:3001/api/ready
 ```
 
-The frontend listens on host loopback port 3001, and the API is only on the Compose network. Put the frontend behind the deployment host's HTTPS reverse proxy for public access. No hosting account, domain or production host is configured in this repository; these commands alone do not publish an Internet site.
+The frontend listens on host loopback port 3001, and the API is only on the Compose network. Put the frontend behind the deployment host's HTTPS reverse proxy for public access. These container commands are an alternative to the Vercel deployment above and do not publish an Internet site by themselves.
 
 To deploy the offline demonstration, set `DATA_DIR=./data/fixture ENERGY_DATA_MODE=fixture` before `docker compose up -d`. Never run the refresh profile against fixture data.
 

@@ -269,3 +269,7 @@ frontend/.next-e2e/
 
 data/refresh-status.json
 data/refresh-status.tmp
+
+# Local Vercel release staging and project links
+.vercel-deploy/
+.vercel/
