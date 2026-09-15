@@ -10,6 +10,9 @@ from typing import Iterator, Literal
 from fastapi import FastAPI, HTTPException
 
 from app_core.ingestion.models import AREAS, BASE_GROUPS
+from backend.explore import router as explore_router
+from backend.diagnostics import router as diagnostics_router
+from backend.regional import router as regional_router
 
 
 DEFAULT_DATABASE = Path(__file__).resolve().parents[1] / "data" / "energy.sqlite"
@@ -174,6 +177,14 @@ def _metric(mwh: float | None, observed_hours: int, expected_hours: int) -> dict
 def _daily_rows(
     connection: sqlite3.Connection, area: str, start: str, end: str
 ) -> dict[tuple[str, str], dict]:
+    if connection.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='energy_daily_totals'").fetchone():
+        rows = connection.execute(
+            "SELECT day, kind, value / 1000.0 AS mwh, observed_hours FROM energy_daily_totals "
+            "WHERE area = ? AND day >= ? AND day < ? ORDER BY day, kind",
+            (area, start[:10], end[:10]),
+        ).fetchall()
+        return {(row["day"], row["kind"]): {"mwh": row["mwh"], "observedHours": int(row["observed_hours"])} for row in rows}
+    # Older snapshots remain readable until the next scheduled publication.
     rows = connection.execute(
         """
         WITH hourly AS (
@@ -351,3 +362,8 @@ def overview(
         "regionalRanking": ranking,
         "expectedGroups": {kind: list(groups) for kind, groups in BASE_GROUPS.items()},
     }
+
+# Keep the analytical workspaces independent while sharing the published sources.
+app.include_router(explore_router)
+app.include_router(diagnostics_router)
+app.include_router(regional_router)
