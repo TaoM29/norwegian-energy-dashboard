@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { OverviewCaseStudies } from "@/components/overview-case-studies";
 import { AnalysisShell } from "@/components/analysis-shell";
 import styles from "./methods.module.css";
 import { Coverage, getJson } from "@/lib/api";
@@ -146,61 +147,7 @@ export default function Methods() {
             a separately labeled upper-bound experiment.
           </p>
         </section>
-        <section className="analysis-panel">
-          <h2>Three findings from recorded observations</h2>
-          <p>
-            These are fixed examples from the September 2026 validation
-            snapshots. Refreshing source data may change a rerun. Synthetic
-            fixture mode does not reproduce these scientific findings.
-          </p>
-          <div className="analysis-grid">
-            <article>
-              <h3>How much did NO1 produce in 2025?</h3>
-              <p>
-                Summing disjoint hourly production groups gives{" "}
-                <strong>19,717,508.644 MWh</strong>. The new daily-summary path
-                matches the migration reference. This measures production, not
-                net exports.
-              </p>
-              <a href="/explore?area=NO1&start=2025-01-01&end=2025-12-31">
-                Inspect the production year →
-              </a>
-            </article>
-            <article>
-              <h3>Does complexity beat weekly repetition?</h3>
-              <p>
-                On 19 matched area-days, gradient boosting achieved{" "}
-                <strong>61,991.89 kWh MAE</strong> versus{" "}
-                <strong>88,508.58</strong> for seasonal naive, a 29.96%
-                reduction. Ridge was 1.71% worse. The small four-date holdout
-                does not establish broad superiority; nominal 80%
-                gradient-boosting intervals covered only 61.6%.
-              </p>
-              <a href="/forecasts?result=phase4-household-24h">
-                Inspect the held-out benchmark →
-              </a>
-            </article>
-            <article>
-              <h3>What does the Bergen snow model estimate?</h3>
-              <p>
-                At 60.3913° N, 5.3221° E for July 2024–June 2025, the validated
-                run estimated <strong>44.7 tonnes per metre</strong> of
-                snowfall-controlled transport and an indicative{" "}
-                <strong>2.13 m</strong> Wyoming fence height. It used 3,000 m
-                transport distance, 30,000 m fetch and relocation coefficient
-                0.5.
-              </p>
-              <p>
-                The retained Tabler model is sensitive to the selected weather
-                point and parameters. This is a model illustration, not a
-                site-specific engineering design.
-              </p>
-              <a href="/regional?lat=60.3913&lon=5.3221&seasonStart=2024&seasonEnd=2024">
-                Explore the regional model →
-              </a>
-            </article>
-          </div>
-        </section>
+        <OverviewCaseStudies />
         <section className="analysis-panel">
           <h2>Architecture and reproducibility</h2>
           <p>

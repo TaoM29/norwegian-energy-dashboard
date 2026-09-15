@@ -609,10 +609,10 @@ export default function ExploreClient() {
                     update({ normalize: event.target.checked })
                   }
                 />
-                Normalize 0–1
+                Compare shapes (scale 0–1)
               </label>
               <label>
-                Rolling mean · hours
+                Smooth over · hours
                 <input
                   type="number"
                   min={0}
@@ -759,7 +759,7 @@ function EnergyView({
           </small>
         </div>
         <div>
-          <span>Resolution</span>
+          <span>Time interval</span>
           <strong>{response.aggregationLabel}</strong>
           <small>
             {number(response.coverage.observations, 0)} finite source values
@@ -775,31 +775,36 @@ function EnergyView({
                 : "Consumption"}{" "}
               through time
             </h2>
-            <p>Group values use exact UTC interval sums in kWh.</p>
-          </div>
-          <div className="analysis-actions">
-            <button
-              type="button"
-              onClick={() => downloadCsv(`${filename}.csv`, response.series)}
-            >
-              <Download size={14} /> Data CSV
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                downloadJson(`${filename}-metadata.json`, {
-                  query: response.query,
-                  coverage: response.coverage,
-                  metadata: response.metadata,
-                })
-              }
-            >
-              Metadata JSON
-            </button>
+            <p>
+              Electricity totals for each time interval, in kilowatt-hours
+              (kWh). Dates use UTC.
+            </p>
           </div>
         </div>
         <AnalysisChart
           option={option}
+          exports={
+            <>
+              <button
+                type="button"
+                onClick={() => downloadCsv(`${filename}.csv`, response.series)}
+              >
+                <Download size={14} /> Data CSV
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  downloadJson(`${filename}-metadata.json`, {
+                    query: response.query,
+                    coverage: response.coverage,
+                    metadata: response.metadata,
+                  })
+                }
+              >
+                Metadata JSON
+              </button>
+            </>
+          }
           label={`${response.query.kind} groups through time`}
           height={410}
         />
@@ -917,7 +922,7 @@ function WeatherView({
           </small>
         </div>
         <div>
-          <span>Resolution</span>
+          <span>Time interval</span>
           <strong>{response.aggregationLabel}</strong>
           <small>
             {response.query.rollingHours
@@ -940,30 +945,32 @@ function WeatherView({
               boundary.
             </p>
           </div>
-          <div className="analysis-actions">
-            <button
-              type="button"
-              onClick={() => downloadCsv(`${filename}.csv`, response.series)}
-            >
-              <Download size={14} /> Data CSV
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                downloadJson(`${filename}-metadata.json`, {
-                  query: response.query,
-                  coverage: response.coverage,
-                  variables: response.variableDefinitions,
-                  metadata: response.metadata,
-                })
-              }
-            >
-              Metadata JSON
-            </button>
-          </div>
         </div>
         <AnalysisChart
           option={option}
+          exports={
+            <>
+              <button
+                type="button"
+                onClick={() => downloadCsv(`${filename}.csv`, response.series)}
+              >
+                <Download size={14} /> Data CSV
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  downloadJson(`${filename}-metadata.json`, {
+                    query: response.query,
+                    coverage: response.coverage,
+                    variables: response.variableDefinitions,
+                    metadata: response.metadata,
+                  })
+                }
+              >
+                Metadata JSON
+              </button>
+            </>
+          }
           label="Selected weather variables through time"
           height={410}
         />
@@ -974,10 +981,11 @@ function WeatherView({
         />
       </section>
       <section className="analysis-panel">
-        <h2>Whole-window summary</h2>
+        <h2>Summary for selected dates</h2>
         <p>
-          Summary values remain in physical units even when the explorer is
-          normalized.
+          Summary values retain their original units. “Compare shapes” scales
+          each chart series from 0 to 1, so its axis no longer shows physical
+          quantities.
         </p>
         <div className="explore-table-wrap">
           <table>

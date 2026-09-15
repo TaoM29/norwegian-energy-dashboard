@@ -1,27 +1,11 @@
-.selectorPanel,
-.jobsSection {
-  padding: 24px;
+.selectorPanel {
+  padding: 11px 12px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--surface);
-  margin-bottom: 22px;
+  margin-bottom: 16px;
 }
 
-.selectorPanel {
-  display: grid;
-  grid-template-columns: minmax(280px, 1fr) minmax(360px, 1.1fr);
-  gap: 28px;
-  align-items: end;
-}
-
-.selectorPanel h2,
-.jobsSection h2 {
-  margin: 7px 0 8px;
-  font-size: 24px;
-}
-
-.selectorPanel p,
-.jobsSection > p,
 .jobForm p {
   color: var(--text-muted);
   line-height: 1.6;
@@ -36,7 +20,6 @@
   text-transform: uppercase;
 }
 
-.selectorGrid,
 .formGrid,
 .compactGrid {
   display: grid;
@@ -44,7 +27,9 @@
   gap: 13px;
 }
 
-.selectorGrid label,
+.resultToolbar label,
+.jobSelector,
+.experimentType,
 .jobForm label {
   display: flex;
   flex-direction: column;
@@ -54,7 +39,9 @@
   font-size: 12px;
 }
 
-.selectorGrid select,
+.resultToolbar select,
+.jobSelector select,
+.experimentType select,
 .jobForm select,
 .jobForm input:not([type="checkbox"]):not([type="range"]) {
   width: 100%;
@@ -66,11 +53,358 @@
   color: var(--text);
 }
 
-.selectorGrid select:focus-visible,
+.resultToolbar select:focus-visible,
+.jobSelector select:focus-visible,
+.experimentType select:focus-visible,
+.experimentButton:focus-visible,
+.drawerClose:focus-visible,
 .jobForm select:focus-visible,
 .runButton:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 3px;
+}
+
+.resultToolbar {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.experimentButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 1px solid var(--action);
+  border-radius: 6px;
+  background: var(--action);
+  color: var(--on-action);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.resultSummary {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  margin-bottom: 14px;
+}
+
+.resultSummaryHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.resultSummaryHeading h2 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.resultSummaryHeading > span {
+  flex: 0 0 auto;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.evidenceSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--border);
+}
+
+.evidenceSummaryGrid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 12px;
+  background: var(--surface-muted);
+}
+
+.evidenceSummaryGrid span,
+.evidenceSummaryGrid small {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.evidenceSummaryGrid span {
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.evidenceSummaryGrid strong {
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.resultSummary .summaryFootnote {
+  margin: 7px 0 0;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.primaryChart {
+  margin-bottom: 14px;
+}
+
+.resultFilters {
+  gap: 9px 12px;
+  margin-bottom: 12px;
+  padding: 12px;
+}
+
+.detailDisclosure {
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+}
+
+.detailDisclosure > summary {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 52px;
+  padding: 12px 42px 12px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.detailDisclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.detailDisclosure > summary::after {
+  position: absolute;
+  right: 17px;
+  content: "+";
+  color: var(--text-muted);
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.detailDisclosure[open] > summary::after {
+  content: "−";
+}
+
+.detailDisclosure > summary:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.detailDisclosure > summary span {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.detailDisclosure > summary small {
+  color: var(--text-muted);
+  font-size: 11px;
+  text-align: right;
+}
+
+.disclosureBody {
+  padding: 4px 16px 18px;
+  border-top: 1px solid var(--border);
+}
+
+.disclosureBody h2 {
+  margin: 16px 0 8px;
+  font-size: 20px;
+}
+
+.tableExport {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.metricBreakdownControl {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: min(260px, 100%);
+  margin-top: 14px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.metricBreakdownControl select {
+  min-height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  padding: 7px 9px;
+  color: var(--text);
+}
+
+.metricBreakdownControl select:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.experimentDialog {
+  position: fixed;
+  inset: 0 0 0 auto;
+  box-sizing: border-box;
+  width: min(660px, 100%);
+  max-width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0 0 0 auto;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-left: 1px solid var(--border);
+  background: var(--page);
+  color: var(--text);
+}
+
+.experimentDialog::backdrop {
+  background: rgba(18, 20, 19, 0.48);
+}
+
+.drawerHeader {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.drawerHeader h2 {
+  margin: 5px 0 0;
+  font-size: 22px;
+}
+
+.drawerClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+.drawerBody {
+  height: calc(100dvh - 79px);
+  padding: 18px 20px 28px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.drawerIntroduction {
+  margin: 0 0 14px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.drawerJobs {
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.drawerJobs > summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.drawerJobs > summary:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.drawerJobs > summary small {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.drawerJobs > div {
+  padding: 0 14px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.jobSelector,
+.experimentType {
+  display: flex;
+  margin-top: 14px;
+}
+
+.selectedJob {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.selectedJob pre,
+.disclosureBody pre {
+  max-width: 100%;
+  overflow: auto;
+  font-size: 11px;
+}
+
+.drawerForms {
+  display: grid;
+  gap: 14px;
+}
+
+.drawerForms .jobForm {
+  margin: 0;
+}
+
+.disabledExperiments {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.disabledExperiments h3 {
+  margin: 0 0 7px;
+  font-size: 17px;
+}
+
+.disabledExperiments p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .jobStatus {
@@ -291,16 +625,6 @@
   padding-left: 14px;
 }
 
-.jobsSection {
-  margin-top: 34px;
-  background: var(--surface);
-}
-
-.jobsSection > p {
-  max-width: 800px;
-  margin-bottom: 20px;
-}
-
 .jobForm {
   display: flex;
   flex-direction: column;
@@ -372,10 +696,10 @@
   justify-content: center;
   gap: 8px;
   min-height: 40px;
-  border: 1px solid var(--accent);
+  border: 1px solid var(--action);
   border-radius: 6px;
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--action);
+  color: var(--on-action);
   font-weight: 600;
 }
 
@@ -397,15 +721,9 @@
   }
 }
 
-@media (max-width: 950px) {
-  .selectorPanel {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 620px) {
-  .selectorPanel,
-  .selectorGrid,
+  .resultToolbar,
+  .evidenceSummaryGrid,
   .formGrid,
   .evidenceStrip {
     grid-template-columns: 1fr;
@@ -425,9 +743,34 @@
     flex-direction: column;
     gap: 5px;
   }
-  .selectorPanel,
-  .jobsSection,
   .jobForm {
     padding: 16px;
+  }
+
+  .selectorPanel {
+    padding: 10px;
+  }
+
+  .resultSummaryHeading,
+  .detailDisclosure > summary,
+  .drawerJobs > summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .detailDisclosure > summary small {
+    text-align: left;
+  }
+
+  .experimentDialog {
+    width: 100%;
+    border-left: 0;
+  }
+
+  .drawerHeader,
+  .drawerBody {
+    padding-right: 16px;
+    padding-left: 16px;
   }
 }

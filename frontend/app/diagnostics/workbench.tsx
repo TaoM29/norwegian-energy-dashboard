@@ -15,6 +15,7 @@ import { AnalysisShell } from "@/components/analysis-shell";
 import { AppliedFilters } from "@/components/applied-filters";
 import { DateRangePicker, parseDate } from "@/components/date-range-picker";
 import { areas, getJson, number, shiftDay, type Coverage } from "@/lib/api";
+import { ExportMenu } from "@/components/export-menu";
 import { downloadCsv, downloadJson } from "@/lib/download";
 import { writeDashboardUrl } from "@/lib/navigation-state";
 import "./diagnostics.css";
@@ -366,10 +367,11 @@ export default function DiagnosticsWorkbench() {
       bounds?: { min: string; max: string },
     ) => {
       const restoredView = queryValue(params, "view", "correlation");
-      const nextView =
-        (["correlation", "decomposition", "quality"].includes(restoredView)
+      const nextView = (
+        ["correlation", "decomposition", "quality"].includes(restoredView)
           ? restoredView
-          : "correlation") as View;
+          : "correlation"
+      ) as View;
       const fallbackStart = fallbackDates?.start || "";
       const fallbackEnd = fallbackDates?.end || "";
       const requestedStart = queryValue(params, "start", fallbackStart);
@@ -758,7 +760,7 @@ export default function DiagnosticsWorkbench() {
                     checked={normalize}
                     onChange={(event) => setNormalize(event.target.checked)}
                   />{" "}
-                  Normalize comparison
+                  Compare shapes (standardized)
                 </label>
               </>
             )}
@@ -920,25 +922,30 @@ export default function DiagnosticsWorkbench() {
       )}
       {result && (
         <>
-          <CoverageNote metadata={result.metadata} view={applied?.view ?? view} />
+          <CoverageNote
+            metadata={result.metadata}
+            view={applied?.view ?? view}
+          />
           <div className="analysis-actions">
-            <button
-              onClick={() =>
-                downloadJson(`${fileStem}-metadata.json`, {
-                  query: result.query,
-                  units: result.units,
-                  metadata: result.metadata,
-                  ...(applied?.view === "decomposition"
-                    ? {
-                        effectiveParameters: (result as Decomposition)
-                          .effectiveParameters,
-                      }
-                    : {}),
-                })
-              }
-            >
-              Download metadata JSON
-            </button>
+            <ExportMenu label="Export metadata">
+              <button
+                onClick={() =>
+                  downloadJson(`${fileStem}-metadata.json`, {
+                    query: result.query,
+                    units: result.units,
+                    metadata: result.metadata,
+                    ...(applied?.view === "decomposition"
+                      ? {
+                          effectiveParameters: (result as Decomposition)
+                            .effectiveParameters,
+                        }
+                      : {}),
+                  })
+                }
+              >
+                Download metadata JSON
+              </button>
+            </ExportMenu>
             <span>
               {result.metadata.analyzedPoints.toLocaleString("en-GB")} hourly
               points analyzed
@@ -1040,18 +1047,22 @@ function CorrelationView({
       <section className="analysis-panel">
         <h2>Aligned hourly series</h2>
         <p>
-          Positive lag moves weather forward in time. Normalization changes this
-          comparison view only.
+          Positive lag moves weather forward in time. “Compare shapes” puts both
+          series on a standard-deviation scale, without physical units. It
+          changes this chart only, not the correlation calculation.
         </p>
         <AnalysisChart
           option={comparison}
           label="Aligned weather and energy series"
+
+          exports={
+            <button
+              onClick={() => downloadCsv(`${fileStem}-values.csv`, data.values)}
+            >
+              Download displayed values CSV
+            </button>
+          }
         />
-        <button
-          onClick={() => downloadCsv(`${fileStem}-values.csv`, data.values)}
-        >
-          Download displayed values CSV
-        </button>
       </section>
       <section className="analysis-panel">
         <h2>Centered rolling correlation</h2>
@@ -1181,16 +1192,19 @@ function DecompositionView({
         <AnalysisChart
           option={observed}
           label="STL observed energy and trend"
+
+          exports={
+            <>
+              <button
+                onClick={() =>
+                  downloadCsv(`${fileStem}-components.csv`, data.components)
+                }
+              >
+                Download components CSV
+              </button>
+            </>
+          }
         />
-        <div className="analysis-actions">
-          <button
-            onClick={() =>
-              downloadCsv(`${fileStem}-components.csv`, data.components)
-            }
-          >
-            Download components CSV
-          </button>
-        </div>
       </section>
       <section className="analysis-panel">
         <h2>Seasonal pattern and residual</h2>
@@ -1209,14 +1223,17 @@ function DecompositionView({
           option={heatmap}
           label="Energy spectrogram"
           height={440}
-        />
-        <button
-          onClick={() =>
-            downloadCsv(`${fileStem}-spectrogram.csv`, spectralRows)
+
+          exports={
+            <button
+              onClick={() =>
+                downloadCsv(`${fileStem}-spectrogram.csv`, spectralRows)
+              }
+            >
+              Download spectral values CSV
+            </button>
           }
-        >
-          Download spectral values CSV
-        </button>
+        />
       </section>
       <details>
         <summary>Effective parameters and provenance</summary>
@@ -1356,23 +1373,29 @@ function QualityView({ data, fileStem }: { data: Quality; fileStem: string }) {
           <AnalysisChart
             option={spc}
             label="Temperature SPC control band and flags"
+
+            exports={
+              <>
+                <button
+                  onClick={() =>
+                    downloadCsv(`${fileStem}-spc-values.csv`, data.spc.values)
+                  }
+                >
+                  Download displayed SPC values
+                </button>
+                <button
+                  onClick={() =>
+                    downloadCsv(
+                      `${fileStem}-spc-flags.csv`,
+                      data.spc.flaggedValues,
+                    )
+                  }
+                >
+                  Download SPC flags
+                </button>
+              </>
+            }
           />
-          <div className="analysis-actions">
-            <button
-              onClick={() =>
-                downloadCsv(`${fileStem}-spc-values.csv`, data.spc.values)
-              }
-            >
-              Download displayed SPC values
-            </button>
-            <button
-              onClick={() =>
-                downloadCsv(`${fileStem}-spc-flags.csv`, data.spc.flaggedValues)
-              }
-            >
-              Download SPC flags
-            </button>
-          </div>
           <FlagTable
             title="SPC flag table"
             rows={data.spc.flaggedValues}
@@ -1396,23 +1419,31 @@ function QualityView({ data, fileStem }: { data: Quality; fileStem: string }) {
               value={data.lof.summary.points.toLocaleString("en-GB")}
             />
           </div>
-          <AnalysisChart option={lof} label="Precipitation LOF anomalies" />
-          <div className="analysis-actions">
-            <button
-              onClick={() =>
-                downloadCsv(`${fileStem}-lof-values.csv`, data.lof.values)
-              }
-            >
-              Download displayed LOF values
-            </button>
-            <button
-              onClick={() =>
-                downloadCsv(`${fileStem}-lof-flags.csv`, data.lof.flaggedValues)
-              }
-            >
-              Download LOF flags
-            </button>
-          </div>
+          <AnalysisChart
+            option={lof}
+            label="Precipitation LOF anomalies"
+            exports={
+              <>
+                <button
+                  onClick={() =>
+                    downloadCsv(`${fileStem}-lof-values.csv`, data.lof.values)
+                  }
+                >
+                  Download displayed LOF values
+                </button>
+                <button
+                  onClick={() =>
+                    downloadCsv(
+                      `${fileStem}-lof-flags.csv`,
+                      data.lof.flaggedValues,
+                    )
+                  }
+                >
+                  Download LOF flags
+                </button>
+              </>
+            }
+          />
           <FlagTable
             title="LOF flag table"
             rows={data.lof.flaggedValues}

@@ -16,7 +16,9 @@ import {
   CloudSun,
   Database,
   Play,
+  Settings2,
   Square,
+  X,
   Zap,
 } from "lucide-react";
 import AnalysisChart from "@/components/analysis-chart";
@@ -25,6 +27,7 @@ import {
   DateRangePicker,
   type DateRange,
 } from "@/components/date-range-picker";
+import { ExportMenu } from "@/components/export-menu";
 import { areas, number, shiftDay } from "@/lib/api";
 import { downloadCsv, downloadJson } from "@/lib/download";
 import { writeDashboardUrl } from "@/lib/navigation-state";
@@ -399,6 +402,10 @@ export default function ForecastsClient() {
   const [customJobsEnabled, setCustomJobsEnabled] = useState(false);
   const [evaluation, setEvaluation] = useState(defaultEvaluation);
   const [sarimax, setSarimax] = useState(defaultSarimax);
+  const [experimentKind, setExperimentKind] = useState<Job["kind"]>(
+    "evaluation",
+  );
+  const experimentDialogRef = useRef<HTMLDialogElement>(null);
 
   const updateView = useCallback(
     (patch: Partial<ViewState>, replace = true) => {
@@ -900,21 +907,69 @@ export default function ForecastsClient() {
   }, [filteredPredictions]);
 
   const metricSummary = useMemo(() => {
-    const models = new Set(filteredMetrics.map(modelKey));
-    const values = filteredMetrics
-      .flatMap((row) => [
-        numericValue(row, "mae", "MAE"),
-        numericValue(row, "rmse", "RMSE"),
-        numericValue(row, "coverage", "intervalCoverage"),
-        numericValue(row, "pinball", "pinballLoss"),
-      ])
-      .filter((value): value is number => value != null);
+    const summaryRows = metricRows.filter((row) => {
+      const scope = textValue(row, "scope", "dimension", "breakdown");
+      const rowSplit = explicitSplit(row);
+      return (
+        (!scope || scope === "overall") &&
+        (!view || view.models.includes(modelKey(row))) &&
+        (!view ||
+          !availableSplits.includes(view.split) ||
+          !rowSplit ||
+          rowSplit === view.split)
+      );
+    });
+    const ranked = summaryRows
+      .map((row) => ({ row, mae: numericValue(row, "mae", "MAE") }))
+      .filter((item): item is { row: Json; mae: number } => item.mae != null)
+      .sort((a, b) => a.mae - b.mae);
+    const sampleSizes = new Set(
+      ranked
+        .map(({ row }) =>
+          numericValue(row, "n", "count", "observations", "points"),
+        )
+        .filter((value): value is number => value != null),
+    );
+    const modelCounts = ranked.reduce((counts, { row }) => {
+      const model = modelKey(row);
+      counts.set(model, (counts.get(model) || 0) + 1);
+      return counts;
+    }, new Map<string, number>());
+    const allRowsHaveSampleSize = ranked.every(
+      ({ row }) =>
+        numericValue(row, "n", "count", "observations", "points") != null,
+    );
+    const comparable =
+      [...modelCounts.values()].every((count) => count === 1) &&
+      (ranked.length <= 1 || (allRowsHaveSampleSize && sampleSizes.size === 1));
+    const best = comparable ? ranked[0] || null : null;
+    const baselineRow = ranked.find(
+      ({ row }) => modelKey(row) === "seasonal_naive",
+    );
+    const baselineMae = best
+      ? numericValue(best.row, "baselineMae", "baseline_mae") ??
+        baselineRow?.mae ??
+        null
+      : null;
+    const coverage = best
+      ? numericValue(best.row, "coverage", "intervalCoverage")
+      : null;
+    const nominalCoverage = numericValue(
+      asObject(detail?.config),
+      "interval_coverage",
+      "intervalCoverage",
+    );
     return {
       rows: filteredMetrics.length,
-      models: models.size,
-      values: values.length,
+      models: new Set(filteredMetrics.map(modelKey)).size,
+      bestModel: best ? modelKey(best.row) : "",
+      bestMae: best?.mae ?? null,
+      baselineMae,
+      coverage,
+      nominalCoverage,
+      comparable,
     };
-  }, [filteredMetrics]);
+  }, [availableSplits, detail?.config, filteredMetrics, metricRows, view]);
 
   const trainingOption = useMemo<EChartsCoreOption>(
     () => ({
@@ -1223,6 +1278,23 @@ export default function ForecastsClient() {
     detail?.kind === "sarimax" && Array.isArray(detail.config?.weatherVariables)
       ? detail.config.weatherVariables
       : null;
+  const maeChange =
+    metricSummary.bestMae != null &&
+    metricSummary.baselineMae != null &&
+    metricSummary.baselineMae !== 0
+      ? ((metricSummary.baselineMae - metricSummary.bestMae) /
+          metricSummary.baselineMae) *
+        100
+      : null;
+  const actualCoverage =
+    metricSummary.coverage == null
+      ? null
+      : metricSummary.coverage * (metricSummary.coverage <= 1 ? 100 : 1);
+  const nominalCoverage =
+    metricSummary.nominalCoverage == null
+      ? null
+      : metricSummary.nominalCoverage *
+        (metricSummary.nominalCoverage <= 1 ? 100 : 1);
 
   return (
     <AnalysisShell
@@ -1231,17 +1303,9 @@ export default function ForecastsClient() {
     >
       <section
         className={styles.selectorPanel}
-        aria-labelledby="prepared-title"
+        aria-label="Prepared forecast results"
       >
-        <div>
-          <span className={styles.sectionKicker}>Prepared results</span>
-          <h2 id="prepared-title">Forecast results</h2>
-          <p>
-            Review the selected task across its saved dates, price areas, models
-            and matched forecast origins.
-          </p>
-        </div>
-        <div className={styles.selectorGrid}>
+        <div className={styles.resultToolbar}>
           <label>
             Result
             <select
@@ -1266,78 +1330,15 @@ export default function ForecastsClient() {
               ))}
             </select>
           </label>
-          <label>
-            Job
-            <select
-              value={view.job}
-              onChange={(event) => updateView({ job: event.target.value })}
-            >
-              <option value="">No job selected</option>
-              {jobs.map((job) => (
-                <option value={job.id} key={job.id}>
-                  {job.kind} · {job.status} · {formatDateTime(job.createdAt)}
-                </option>
-              ))}
-            </select>
-          </label>
+          <button
+            type="button"
+            className={styles.experimentButton}
+            onClick={() => experimentDialogRef.current?.showModal()}
+          >
+            <Settings2 size={15} aria-hidden="true" /> Experiment settings
+          </button>
         </div>
       </section>
-
-      {selectedJob && (
-        <section className="analysis-panel" aria-label="Selected forecast job">
-          <ResultStatus job={selectedJob} />
-          <div className="analysis-actions">
-            {["queued", "running"].includes(selectedJob.status) && (
-              <button
-                type="button"
-                onClick={cancelJob}
-                disabled={runningAction}
-              >
-                <Square size={14} aria-hidden="true" /> Cancel job
-              </button>
-            )}
-            {selectedJob.resultId && (
-              <button
-                type="button"
-                onClick={() =>
-                  updateView(
-                    {
-                      result: selectedJob.resultId!,
-                      start: "",
-                      end: "",
-                      models: [],
-                      origin: "",
-                    },
-                    false,
-                  )
-                }
-              >
-                Open result
-              </button>
-            )}
-          </div>
-          {selectedJob.error && (
-            <p className={styles.error} role="alert">
-              {selectedJob.error}
-            </p>
-          )}
-          <details>
-            <summary>Submitted configuration and enforced limits</summary>
-            <pre>
-              {JSON.stringify(
-                { config: selectedJob.config, limits: selectedJob.limits },
-                null,
-                2,
-              )}
-            </pre>
-          </details>
-        </section>
-      )}
-      {jobError && (
-        <p className={styles.error} role="alert">
-          {jobError}
-        </p>
-      )}
 
       {error && (
         <section className="analysis-panel">
@@ -1364,52 +1365,68 @@ export default function ForecastsClient() {
       {detail && (
         <>
           <section
-            className={styles.evidenceStrip}
-            aria-label="Forecast evidence context"
+            className={styles.resultSummary}
+            aria-labelledby="result-summary-title"
           >
-            <div>
-              <Database size={17} aria-hidden="true" />
-              <span>Source</span>
-              <strong>{String(source || "Stored versioned artifact")}</strong>
-            </div>
-            <div>
-              <Clock3 size={17} aria-hidden="true" />
-              <span>Forecast issue</span>
-              <strong>{formatDateTime(issueTime)}</strong>
-            </div>
-            <div>
-              <Zap size={17} aria-hidden="true" />
+            <div className={styles.resultSummaryHeading}>
+              <h2 id="result-summary-title">Saved test summary</h2>
               <span>
-                {detail.kind === "evaluation"
-                  ? "Energy eligibility cutoff"
-                  : "Last energy available"}
+                Retrospective · not operational
               </span>
-              <strong>{formatDateTime(lastEnergy)}</strong>
             </div>
-            <div>
-              <CloudSun size={17} aria-hidden="true" />
-              <span>
-                {detail.kind === "evaluation"
-                  ? "Weather eligibility cutoff"
-                  : "Last weather available"}
-              </span>
-              <strong>
-                {configuredWeather?.length === 0
-                  ? "Not used"
-                  : formatDateTime(lastWeather)}
-              </strong>
+            <div className={styles.evidenceSummaryGrid}>
+              <div>
+                <span>Average error (MAE)</span>
+                <strong>
+                  {!metricSummary.comparable
+                    ? "Not comparable"
+                    : metricSummary.bestMae == null
+                      ? "Not recorded"
+                      : `${number(metricSummary.bestMae, 0)} kWh`}
+                </strong>
+                <small>
+                  {!metricSummary.comparable
+                    ? "Selected models use different sample counts"
+                    : metricSummary.bestModel
+                      ? modelLabel(metricSummary.bestModel)
+                      : "No comparable overall rows"}
+                </small>
+              </div>
+              <div>
+                <span>Compared with seasonal pattern</span>
+                <strong>
+                  {maeChange == null
+                    ? "No matched comparison"
+                    : metricSummary.bestModel === "seasonal_naive"
+                      ? "Reference model"
+                      : `${number(Math.abs(maeChange), 1)}% ${maeChange >= 0 ? "lower" : "higher"} MAE`}
+                </strong>
+                <small>
+                  The seasonal pattern repeats demand from one week earlier
+                </small>
+              </div>
+              <div>
+                <span>Outcomes inside interval</span>
+                <strong>
+                  {actualCoverage == null
+                    ? "Not recorded"
+                    : `${number(actualCoverage, 1)}%`}
+                </strong>
+                <small>
+                  {nominalCoverage == null
+                    ? "No nominal target saved"
+                    : metricSummary.bestModel
+                      ? `${number(nominalCoverage, 1)}% nominal · ${modelLabel(metricSummary.bestModel)}`
+                      : `${number(nominalCoverage, 1)}% nominal`}
+                </small>
+              </div>
             </div>
+            <p className={styles.summaryFootnote}>
+              Overall rows for the selected cohort; models rank only when sample
+              counts match. Read coverage with interval width in Metric details.
+            </p>
           </section>
-          <p
-            className={upperBound ? styles.upperBound : styles.retrospective}
-            role="note"
-          >
-            {upperBound
-              ? "Realized future weather upper bound: this retrospective experiment uses weather that was not available at issue time. It is not an operational forecast."
-              : detail.kind === "sarimax"
-                ? "Retrospective custom experiment using revised snapshots and assumed publication lags. Its projected weather scenario and historical fit are not an as-issued operational forecast."
-                : "Retrospective held-out evaluation: publication lags and historical availability are applied. Historical performance does not promise operational accuracy."}
-          </p>
+
           {detail.kind === "sarimax" && detail.converged === false && (
             <p className={styles.error} role="alert">
               The optimizer did not converge. Forecasts and nominal intervals
@@ -1417,20 +1434,9 @@ export default function ForecastsClient() {
               drawing conclusions.
             </p>
           )}
-          {detail.kind === "sarimax" &&
-            Array.isArray(detail.warnings) &&
-            detail.warnings.length > 0 && (
-              <details className={styles.failures}>
-                <summary>
-                  {detail.warnings.length} model warning
-                  {detail.warnings.length === 1 ? "" : "s"}
-                </summary>
-                <pre>{detail.warnings.map(String).join("\n")}</pre>
-              </details>
-            )}
 
           <form
-            className="analysis-controls"
+            className={`analysis-controls ${styles.resultFilters}`}
             onSubmit={(event) => event.preventDefault()}
             aria-label="Stored result filters"
           >
@@ -1500,21 +1506,6 @@ export default function ForecastsClient() {
                 </select>
               </label>
             )}
-            <label>
-              Metric breakdown
-              <select
-                value={view.dimension}
-                onChange={(event) =>
-                  updateView({ dimension: event.target.value })
-                }
-              >
-                <option value="overall">Overall</option>
-                <option value="area">Area</option>
-                <option value="season">Season</option>
-                <option value="horizon">Horizon</option>
-                <option value="isPeakPeriod">Peak period</option>
-              </select>
-            </label>
             <fieldset className={styles.inlineChecks}>
               <legend>Models</legend>
               {availableModels.map((model) => (
@@ -1536,7 +1527,7 @@ export default function ForecastsClient() {
             </fieldset>
           </form>
 
-          <section className="analysis-panel">
+          <section className={`analysis-panel ${styles.primaryChart}`}>
             <div className={styles.panelHeading}>
               <div>
                 <span className={styles.sectionKicker}>
@@ -1573,60 +1564,129 @@ export default function ForecastsClient() {
                 option={chartOption}
                 label={`${detail.title} ${view.area} ${view.split} forecast`}
                 height={440}
+                exports={
+                  <>
+                    <button
+                      type="button"
+                      disabled={!filteredPredictions.length}
+                      onClick={() =>
+                        downloadCsv(
+                          `forecast-${detail.id}-${view.area}-${view.split}.csv`,
+                          csvRows(filteredPredictions),
+                        )
+                      }
+                    >
+                      Download displayed CSV
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        downloadJson(`forecast-${detail.id}-metadata.json`, {
+                          id: detail.id,
+                          title: detail.title,
+                          kind: detail.kind,
+                          createdAt: detail.createdAt,
+                          config: detail.config,
+                          selectedParameters: detail.selectedParameters,
+                          calibration: detail.calibration,
+                          origins: detail.origins,
+                          coverage: detail.coverage,
+                          failures:
+                            detail.failures || detail.backtest?.failures,
+                          metadata,
+                          filters: view,
+                        })
+                      }
+                    >
+                      Download metadata JSON
+                    </button>
+                  </>
+                }
               />
             ) : (
               <p className={styles.empty}>
                 No forecast rows match these filters.
               </p>
             )}
-            <div className="analysis-actions">
-              <button
-                type="button"
-                disabled={!filteredPredictions.length}
-                onClick={() =>
-                  downloadCsv(
-                    `forecast-${detail.id}-${view.area}-${view.split}.csv`,
-                    csvRows(filteredPredictions),
-                  )
-                }
-              >
-                Download displayed CSV
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  downloadJson(`forecast-${detail.id}-metadata.json`, {
-                    id: detail.id,
-                    title: detail.title,
-                    kind: detail.kind,
-                    createdAt: detail.createdAt,
-                    config: detail.config,
-                    selectedParameters: detail.selectedParameters,
-                    calibration: detail.calibration,
-                    origins: detail.origins,
-                    coverage: detail.coverage,
-                    failures: detail.failures || detail.backtest?.failures,
-                    metadata,
-                    filters: view,
-                  })
-                }
-              >
-                Download metadata JSON
-              </button>
-            </div>
           </section>
 
-          {detail.kind === "sarimax" && trainingRows.length > 0 && (
-            <section className="analysis-panel">
-              <div className={styles.panelHeading}>
+          <details className={styles.detailDisclosure}>
+            <summary>
+              <span>Evidence, availability and limitations</span>
+              <small>Source, issue time and publication cutoffs</small>
+            </summary>
+            <div className={styles.disclosureBody}>
+              <section
+                className={styles.evidenceStrip}
+                aria-label="Forecast evidence context"
+              >
                 <div>
-                  <span className={styles.sectionKicker}>
-                    In-sample diagnostics
-                  </span>
-                  <h2>Actual, fitted and dynamic training path</h2>
+                  <Database size={17} aria-hidden="true" />
+                  <span>Source</span>
+                  <strong>{String(source || "Stored versioned artifact")}</strong>
                 </div>
-                <span>{number(numericValue(detail, "aic"), 1)} AIC</span>
-              </div>
+                <div>
+                  <Clock3 size={17} aria-hidden="true" />
+                  <span>Forecast issue</span>
+                  <strong>{formatDateTime(issueTime)}</strong>
+                </div>
+                <div>
+                  <Zap size={17} aria-hidden="true" />
+                  <span>
+                    {detail.kind === "evaluation"
+                      ? "Energy eligibility cutoff"
+                      : "Last energy available"}
+                  </span>
+                  <strong>{formatDateTime(lastEnergy)}</strong>
+                </div>
+                <div>
+                  <CloudSun size={17} aria-hidden="true" />
+                  <span>
+                    {detail.kind === "evaluation"
+                      ? "Weather eligibility cutoff"
+                      : "Last weather available"}
+                  </span>
+                  <strong>
+                    {configuredWeather?.length === 0
+                      ? "Not used"
+                      : formatDateTime(lastWeather)}
+                  </strong>
+                </div>
+              </section>
+              <p
+                className={
+                  upperBound ? styles.upperBound : styles.retrospective
+                }
+                role="note"
+              >
+                {upperBound
+                  ? "Realized future weather upper bound: this retrospective experiment uses weather that was not available at issue time. It is not an operational forecast."
+                  : detail.kind === "sarimax"
+                    ? "Retrospective custom experiment using revised snapshots and assumed publication lags. Its projected weather scenario and historical fit are not an as-issued operational forecast."
+                    : "Retrospective held-out evaluation: publication lags and historical availability are applied. Historical performance does not promise operational accuracy."}
+              </p>
+              {detail.kind === "sarimax" &&
+                Array.isArray(detail.warnings) &&
+                detail.warnings.length > 0 && (
+                  <details className={styles.failures}>
+                    <summary>
+                      {detail.warnings.length} model warning
+                      {detail.warnings.length === 1 ? "" : "s"}
+                    </summary>
+                    <pre>{detail.warnings.map(String).join("\n")}</pre>
+                  </details>
+                )}
+            </div>
+          </details>
+
+          {detail.kind === "sarimax" && trainingRows.length > 0 && (
+            <details className={styles.detailDisclosure}>
+              <summary>
+                <span>In-sample training diagnostics</span>
+                <small>{number(numericValue(detail, "aic"), 1)} AIC</small>
+              </summary>
+              <div className={styles.disclosureBody}>
+              <h2>Actual, fitted and dynamic training path</h2>
               <p>
                 One-step fitted values use preceding actuals. After the
                 configured dynamic start, the dynamic path recursively uses
@@ -1637,20 +1697,18 @@ export default function ForecastsClient() {
                 label={`${detail.title} in-sample actual fitted dynamic`}
                 height={350}
               />
-            </section>
+              </div>
+            </details>
           )}
 
           {detail.kind === "sarimax" && backtestRows.length > 0 && (
-            <section className="analysis-panel">
-              <div className={styles.panelHeading}>
-                <div>
-                  <span className={styles.sectionKicker}>
-                    Rolling-origin development check
-                  </span>
-                  <h2>Latest matched backtest origin</h2>
-                </div>
-                <span>{detail.backtest?.metrics?.length || 0} models</span>
-              </div>
+            <details className={styles.detailDisclosure}>
+              <summary>
+                <span>Rolling-origin development check</span>
+                <small>{detail.backtest?.metrics?.length || 0} models</small>
+              </summary>
+              <div className={styles.disclosureBody}>
+              <h2>Latest matched backtest origin</h2>
               <p>
                 This custom backtest is a development-period diagnostic, not the
                 untouched benchmark holdout. Every displayed model uses the same
@@ -1661,10 +1719,18 @@ export default function ForecastsClient() {
                 label={`${detail.title} latest rolling backtest`}
                 height={350}
               />
-            </section>
+              </div>
+            </details>
           )}
 
-          <section className="analysis-panel">
+          <details className={styles.detailDisclosure}>
+            <summary>
+              <span>Metric details and downloads</span>
+              <small>
+                {metricSummary.rows} rows · {metricSummary.models} models
+              </small>
+            </summary>
+            <div className={styles.disclosureBody}>
             <div className={styles.panelHeading}>
               <div>
                 <span className={styles.sectionKicker}>
@@ -1695,6 +1761,21 @@ export default function ForecastsClient() {
               displayed held-out baseline; compare their errors on the same
               targets directly.
             </p>
+            <label className={styles.metricBreakdownControl}>
+              Metric breakdown
+              <select
+                value={view.dimension}
+                onChange={(event) =>
+                  updateView({ dimension: event.target.value })
+                }
+              >
+                <option value="overall">Overall</option>
+                <option value="area">Area</option>
+                <option value="season">Season</option>
+                <option value="horizon">Horizon</option>
+                <option value="isPeakPeriod">Peak period</option>
+              </select>
+            </label>
             <p className={styles.appliedScope}>
               <strong>Applied to these metrics:</strong>{" "}
               {detail.kind === "evaluation" &&
@@ -1709,7 +1790,8 @@ export default function ForecastsClient() {
               breakdown compares all regions.
             </p>
             <MetricTable rows={filteredMetrics} dimension={view.dimension} />
-            <div className="analysis-actions">
+            <div className={styles.tableExport}>
+              <ExportMenu label="Export metrics">
               <button
                 type="button"
                 disabled={!filteredMetrics.length}
@@ -1722,6 +1804,7 @@ export default function ForecastsClient() {
               >
                 Download displayed metrics CSV
               </button>
+              </ExportMenu>
             </div>
             {failures.length > 0 && (
               <details className={styles.failures}>
@@ -1736,10 +1819,15 @@ export default function ForecastsClient() {
                 <pre>{JSON.stringify(failures, null, 2)}</pre>
               </details>
             )}
-          </section>
+            </div>
+          </details>
 
-          <section className="analysis-panel">
-            <h2>Methods, sources and limitations</h2>
+          <details className={styles.detailDisclosure}>
+            <summary>
+              <span>Methods, sources and limitations</span>
+              <small>Artifact design and configuration</small>
+            </summary>
+            <div className={styles.disclosureBody}>
             <p>
               Prepared household-demand benchmarks use all five price areas, a
               24-hour target, baseline, Ridge, gradient boosting and SARIMAX on
@@ -1753,47 +1841,166 @@ export default function ForecastsClient() {
                 {JSON.stringify({ metadata, config: detail.config }, null, 2)}
               </pre>
             </details>
-          </section>
+            </div>
+          </details>
         </>
       )}
 
-      {customJobsEnabled ? (
-        <section
-          className={styles.jobsSection}
-          aria-labelledby="experiments-title"
-        >
-          <span className={styles.sectionKicker}>Bounded compute</span>
-          <h2 id="experiments-title">Run an experiment</h2>
-          <p>
+      <dialog
+        ref={experimentDialogRef}
+        className={styles.experimentDialog}
+        aria-labelledby="experiments-title"
+      >
+        <div className={styles.drawerHeader}>
+          <div>
+            <span className={styles.sectionKicker}>Bounded compute</span>
+            <h2 id="experiments-title">Experiment settings</h2>
+          </div>
+          <button
+            type="button"
+            className={styles.drawerClose}
+            aria-label="Close experiment settings"
+            onClick={() => experimentDialogRef.current?.close()}
+          >
+            <X size={18} aria-hidden="true" />
+          </button>
+        </div>
+        <div className={styles.drawerBody}>
+          <p className={styles.drawerIntroduction}>
             Compare a prepared set of areas and models, or configure a focused
             SARIMAX forecast. Submitted runs report progress and can be
             cancelled.
           </p>
-          <div className="analysis-grid">
-            <EvaluationForm
-              value={evaluation}
-              onChange={setEvaluation}
-              onSubmit={runEvaluation}
-              disabled={runningAction}
-            />
-            <SarimaxForm
-              value={sarimax}
-              onChange={setSarimax}
-              onSubmit={runSarimax}
-              disabled={runningAction}
-            />
-          </div>
-        </section>
-      ) : (
-        <section className="analysis-panel">
-          <h2>Prepared results</h2>
-          <p>
-            Custom runs are disabled on this deployment. You can explore and
-            download the saved results above. Run your own experiments with the
-            local installation.
-          </p>
-        </section>
-      )}
+          <details className={styles.drawerJobs}>
+            <summary>
+              <span>Job history</span>
+              <small>
+                {selectedJob ? `${selectedJob.kind} · ${selectedJob.status}` : `${jobs.length} saved jobs`}
+              </small>
+            </summary>
+            <div>
+              <label className={styles.jobSelector}>
+                Select job
+                <select
+                  value={view.job}
+                  onChange={(event) => updateView({ job: event.target.value })}
+                >
+                  <option value="">No job selected</option>
+                  {jobs.map((job) => (
+                    <option value={job.id} key={job.id}>
+                      {job.kind} · {job.status} · {formatDateTime(job.createdAt)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {selectedJob && (
+                <section
+                  className={styles.selectedJob}
+                  aria-label="Selected forecast job"
+                >
+                  <ResultStatus job={selectedJob} />
+                  <div className="analysis-actions">
+                    {["queued", "running"].includes(selectedJob.status) && (
+                      <button
+                        type="button"
+                        onClick={cancelJob}
+                        disabled={runningAction}
+                      >
+                        <Square size={14} aria-hidden="true" /> Cancel job
+                      </button>
+                    )}
+                    {selectedJob.resultId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateView(
+                            {
+                              result: selectedJob.resultId!,
+                              start: "",
+                              end: "",
+                              models: [],
+                              origin: "",
+                            },
+                            false,
+                          );
+                          experimentDialogRef.current?.close();
+                        }}
+                      >
+                        Open result
+                      </button>
+                    )}
+                  </div>
+                  {selectedJob.error && (
+                    <p className={styles.error} role="alert">
+                      {selectedJob.error}
+                    </p>
+                  )}
+                  <details>
+                    <summary>Submitted configuration and enforced limits</summary>
+                    <pre>
+                      {JSON.stringify(
+                        {
+                          config: selectedJob.config,
+                          limits: selectedJob.limits,
+                        },
+                        null,
+                        2,
+                      )}
+                    </pre>
+                  </details>
+                </section>
+              )}
+            </div>
+          </details>
+          {jobError && (
+            <p className={styles.error} role="alert">
+              {jobError}
+            </p>
+          )}
+
+          {customJobsEnabled ? (
+            <div className={styles.drawerForms}>
+              <label className={styles.experimentType}>
+                Experiment type
+                <select
+                  value={experimentKind}
+                  onChange={(event) =>
+                    setExperimentKind(event.target.value as Job["kind"])
+                  }
+                >
+                  <option value="evaluation">Household-demand evaluation</option>
+                  <option value="sarimax">Custom SARIMAX</option>
+                </select>
+              </label>
+              {experimentKind === "evaluation" ? (
+                <EvaluationForm
+                  value={evaluation}
+                  onChange={setEvaluation}
+                  onSubmit={runEvaluation}
+                  disabled={runningAction}
+                />
+              ) : (
+                <SarimaxForm
+                  value={sarimax}
+                  onChange={setSarimax}
+                  onSubmit={runSarimax}
+                  disabled={runningAction}
+                />
+              )}
+            </div>
+          ) : (
+            <div className={styles.disabledExperiments}>
+              <h3>Prepared results only</h3>
+              <p>
+                Custom runs are disabled on this deployment. Explore and
+                download the saved results, or use a local installation to run
+                an experiment.
+              </p>
+            </div>
+          )}
+        </div>
+      </dialog>
     </AnalysisShell>
   );
 }

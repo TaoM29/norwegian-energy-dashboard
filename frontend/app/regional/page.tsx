@@ -12,9 +12,10 @@ import { registerMap } from "echarts/core";
 import type { EChartsCoreOption, EChartsType } from "echarts/core";
 import AnalysisChart from "@/components/analysis-chart";
 import { AnalysisShell } from "@/components/analysis-shell";
+import { ExportMenu } from "@/components/export-menu";
 import { downloadCsv, downloadJson } from "@/lib/download";
 import { areas, getJson, number, shiftDay, type Coverage } from "@/lib/api";
-import { DateRangePicker } from "@/components/date-range-picker";
+import { DateRangePicker, parseDate } from "@/components/date-range-picker";
 import { AppliedFilters } from "@/components/applied-filters";
 import { writeDashboardUrl } from "@/lib/navigation-state";
 import styles from "./regional.module.css";
@@ -36,7 +37,9 @@ const consumptionGroups = [
 ];
 const fenceTypes = ["Wyoming", "Slat-and-wire", "Solid"];
 
+type Mode = "energy" | "snow";
 type Filters = {
+  mode: Mode;
   area: string;
   start: string;
   end: string;
@@ -134,6 +137,26 @@ function initialFilters(coverage?: Coverage): Filters {
   const defaultEnd = shiftDay(today.toISOString().slice(0, 10), -1);
   const defaultStart =
     coverage?.suggestedRange.start || shiftDay(defaultEnd, -29);
+  const availableEnd = coverage
+    ? shiftDay(coverage.coverage.end, -1)
+    : defaultEnd;
+  const requestedStart = query.get("start") || defaultStart;
+  const start =
+    !parseDate(requestedStart) ||
+    (coverage &&
+      (requestedStart < coverage.coverage.start ||
+        requestedStart > availableEnd))
+      ? defaultStart
+      : requestedStart;
+  const requestedEnd = query.get("end") || defaultEnd;
+  const end =
+    !parseDate(requestedEnd) ||
+    requestedEnd < start ||
+    (coverage && requestedEnd > availableEnd)
+      ? defaultEnd < start
+        ? start
+        : defaultEnd
+      : requestedEnd;
   const completeSeason =
     today.getUTCMonth() >= 6
       ? today.getUTCFullYear() - 1
@@ -146,10 +169,18 @@ function initialFilters(coverage?: Coverage): Filters {
   )
     .split(",")
     .filter((group) => allowed.includes(group));
+  const requestedMode = query.get("mode");
+  const mode: Mode =
+    requestedMode === "snow" ||
+    (!requestedMode &&
+      (query.has("lat") || query.has("lon") || query.has("seasonStart")))
+      ? "snow"
+      : "energy";
   return {
+    mode,
     area: areas[query.get("area") || ""] ? query.get("area")! : "NO1",
-    start: query.get("start") || defaultStart,
-    end: query.get("end") || defaultEnd,
+    start,
+    end,
     kind,
     groups: groups.length ? groups : [allowed[0]],
     latitude: numeric("lat", 61.5),
@@ -167,6 +198,7 @@ function initialFilters(coverage?: Coverage): Filters {
 
 function writeUrl(filters: Filters, replace = false) {
   const query = new URLSearchParams({
+    mode: filters.mode,
     area: filters.area,
     start: filters.start,
     end: filters.end,
@@ -182,6 +214,29 @@ function writeUrl(filters: Filters, replace = false) {
     fenceType: filters.fenceType,
   });
   writeDashboardUrl(`?${query}`, { replace });
+}
+
+function energyChanged(draft: Filters, applied: Filters) {
+  return (
+    draft.area !== applied.area ||
+    draft.start !== applied.start ||
+    draft.end !== applied.end ||
+    draft.kind !== applied.kind ||
+    draft.groups.join(",") !== applied.groups.join(",")
+  );
+}
+
+function snowChanged(draft: Filters, applied: Filters) {
+  return (
+    draft.latitude !== applied.latitude ||
+    draft.longitude !== applied.longitude ||
+    draft.seasonStart !== applied.seasonStart ||
+    draft.seasonEnd !== applied.seasonEnd ||
+    draft.transportDistanceM !== applied.transportDistanceM ||
+    draft.fetchDistanceM !== applied.fetchDistanceM ||
+    draft.relocationCoefficient !== applied.relocationCoefficient ||
+    draft.fenceType !== applied.fenceType
+  );
 }
 
 function csvSnowRows(result: SnowResult) {
@@ -208,8 +263,9 @@ export default function RegionalPage() {
   const [geographyReady, setGeographyReady] = useState(false);
   const [regionalError, setRegionalError] = useState("");
   const [snowError, setSnowError] = useState("");
-  const [regionalLoading, setRegionalLoading] = useState(true);
-  const [snowLoading, setSnowLoading] = useState(true);
+  const [regionalLoading, setRegionalLoading] = useState(false);
+  const [snowLoading, setSnowLoading] = useState(false);
+  const [requestRevision, setRequestRevision] = useState(0);
 
   useEffect(() => {
     let live = true;
@@ -219,6 +275,8 @@ export default function RegionalPage() {
       filtersRef.current = value;
       setFilters(value);
       setDraft(value);
+      setRegionalLoading(value.mode === "energy");
+      setSnowLoading(value.mode === "snow");
       writeUrl(value, true);
     };
     getJson<Coverage>("/api/coverage")
@@ -239,6 +297,7 @@ export default function RegionalPage() {
   }, []);
 
   useEffect(() => {
+    if (!filters || filters.mode !== "energy" || geographyReady) return;
     const controller = new AbortController();
     getJson<Record<string, unknown>>(
       "/api/regional/geography",
@@ -252,10 +311,13 @@ export default function RegionalPage() {
         if (!controller.signal.aborted) setRegionalError(error.message);
       });
     return () => controller.abort();
-  }, []);
+  }, [filters?.mode, geographyReady]);
 
   useEffect(() => {
-    if (!filters) return;
+    if (!filters || filters.mode !== "energy") {
+      setRegionalLoading(false);
+      return;
+    }
     const controller = new AbortController();
     setRegionalLoading(true);
     setRegionalError("");
@@ -278,10 +340,20 @@ export default function RegionalPage() {
         if (!controller.signal.aborted) setRegionalLoading(false);
       });
     return () => controller.abort();
-  }, [filters?.start, filters?.end, filters?.kind, filters?.groups.join(",")]);
+  }, [
+    filters?.mode,
+    filters?.start,
+    filters?.end,
+    filters?.kind,
+    filters?.groups.join(","),
+    requestRevision,
+  ]);
 
   useEffect(() => {
-    if (!filters) return;
+    if (!filters || filters.mode !== "snow") {
+      setSnowLoading(false);
+      return;
+    }
     const controller = new AbortController();
     setSnowLoading(true);
     setSnowError("");
@@ -319,6 +391,7 @@ export default function RegionalPage() {
       });
     return () => controller.abort();
   }, [
+    filters?.mode,
     filters?.latitude,
     filters?.longitude,
     filters?.seasonStart,
@@ -327,14 +400,54 @@ export default function RegionalPage() {
     filters?.fetchDistanceM,
     filters?.relocationCoefficient,
     filters?.fenceType,
+    requestRevision,
   ]);
 
   function apply(event: FormEvent) {
     event.preventDefault();
-    if (!draft) return;
-    filtersRef.current = draft;
-    setFilters(draft);
-    writeUrl(draft);
+    if (!draft || !filters) return;
+    const next: Filters =
+      draft.mode === "energy"
+        ? {
+            ...filters,
+            mode: "energy",
+            area: draft.area,
+            start: draft.start,
+            end: draft.end,
+            kind: draft.kind,
+            groups: draft.groups,
+          }
+        : {
+            ...filters,
+            mode: "snow",
+            latitude: draft.latitude,
+            longitude: draft.longitude,
+            seasonStart: draft.seasonStart,
+            seasonEnd: draft.seasonEnd,
+            transportDistanceM: draft.transportDistanceM,
+            fetchDistanceM: draft.fetchDistanceM,
+            relocationCoefficient: draft.relocationCoefficient,
+            fenceType: draft.fenceType,
+          };
+    filtersRef.current = next;
+    setFilters(next);
+    setRegionalLoading(next.mode === "energy");
+    setSnowLoading(next.mode === "snow");
+    setRequestRevision((value) => value + 1);
+    writeUrl(next);
+  }
+
+  function chooseMode(mode: Mode) {
+    if (!draft || !filters || mode === filters.mode) return;
+    const next = { ...filters, mode };
+    filtersRef.current = next;
+    setFilters(next);
+    setDraft({ ...draft, mode });
+    setRegionalError("");
+    setSnowError("");
+    setRegionalLoading(mode === "energy");
+    setSnowLoading(mode === "snow");
+    writeUrl(next);
   }
 
   function selectPoint(latitude: number, longitude: number, area?: string) {
@@ -554,7 +667,7 @@ export default function RegionalPage() {
   if (!draft || !filters)
     return (
       <AnalysisShell
-        title="Regional energy & snow drift"
+        title="Regional analysis"
         description="Loading analysis controls…"
       >
         <p role="status">Loading…</p>
@@ -564,196 +677,320 @@ export default function RegionalPage() {
     draft.kind === "production" ? productionGroups : consumptionGroups;
   return (
     <AnalysisShell
-      title="Regional energy & snow drift"
-      description="See how energy use differs across Norway, then explore how local wind and weather shape snow transport."
+      title="Regional analysis"
+      description="Compare energy across Norway’s price areas or estimate wind-driven snow transport at one location."
     >
-      <form className="analysis-controls" onSubmit={apply}>
-        <label>
-          Energy kind
-          <select
-            value={draft.kind}
-            onChange={(event) => {
-              const kind = event.target.value as Filters["kind"];
-              setDraft({
-                ...draft,
-                kind,
-                groups: [kind === "production" ? "solar" : "household"],
-              });
+      <div
+        className={styles.modeSwitch}
+        role="tablist"
+        aria-label="Regional analysis"
+      >
+        {(["energy", "snow"] as Mode[]).map((mode) => (
+          <button
+            id={`regional-${mode}-tab`}
+            key={mode}
+            type="button"
+            role="tab"
+            aria-selected={filters.mode === mode}
+            aria-controls={`regional-${mode}-panel`}
+            tabIndex={filters.mode === mode ? 0 : -1}
+            onClick={() => chooseMode(mode)}
+            onKeyDown={(event) => {
+              if (![
+                "ArrowLeft",
+                "ArrowRight",
+                "Home",
+                "End",
+              ].includes(event.key))
+                return;
+              event.preventDefault();
+              const next =
+                event.key === "ArrowLeft" || event.key === "Home"
+                  ? "energy"
+                  : "snow";
+              chooseMode(next);
+              requestAnimationFrame(() =>
+                document.getElementById(`regional-${next}-tab`)?.focus(),
+              );
             }}
           >
-            <option value="production">Production</option>
-            <option value="consumption">Consumption</option>
-          </select>
-        </label>
-        <fieldset className={styles.groupChoices}>
-          <legend>Groups</legend>
-          <div>
-            {availableGroups.map((group) => (
-              <label key={group}>
-                <input
-                  type="checkbox"
-                  checked={draft.groups.includes(group)}
-                  onChange={(event) =>
-                    setDraft({
-                      ...draft,
-                      groups: event.target.checked
-                        ? availableGroups.filter(
-                            (item) =>
-                              item === group || draft.groups.includes(item),
-                          )
-                        : draft.groups.filter((item) => item !== group),
-                    })
-                  }
-                />
-                {group}
-              </label>
-            ))}
-          </div>
-        </fieldset>
-        <DateRangePicker
-          value={draft}
-          min={coverageBounds?.coverage.start}
-          max={
-            coverageBounds
-              ? shiftDay(coverageBounds.coverage.end, -1)
-              : undefined
-          }
-          onChange={(range) => setDraft({ ...draft, ...range })}
-        />
-        <label>
-          Latitude
-          <input
-            type="number"
-            min={-90}
-            max={90}
-            step="0.000001"
-            required
-            value={draft.latitude}
-            onChange={(event) =>
-              setDraft({ ...draft, latitude: Number(event.target.value) })
-            }
-          />
-        </label>
-        <label>
-          Longitude
-          <input
-            type="number"
-            min={-180}
-            max={180}
-            step="0.000001"
-            required
-            value={draft.longitude}
-            onChange={(event) =>
-              setDraft({ ...draft, longitude: Number(event.target.value) })
-            }
-          />
-        </label>
-        <label>
-          First season
-          <input
-            type="number"
-            min={1940}
-            max={2100}
-            required
-            value={draft.seasonStart}
-            onChange={(event) =>
-              setDraft({ ...draft, seasonStart: Number(event.target.value) })
-            }
-          />
-        </label>
-        <label>
-          Last season
-          <input
-            type="number"
-            min={1940}
-            max={2100}
-            required
-            value={draft.seasonEnd}
-            onChange={(event) =>
-              setDraft({ ...draft, seasonEnd: Number(event.target.value) })
-            }
-          />
-        </label>
-        <label>
-          T (m)
-          <input
-            type="number"
-            min={100}
-            max={10000}
-            step={100}
-            required
-            value={draft.transportDistanceM}
-            onChange={(event) =>
-              setDraft({
-                ...draft,
-                transportDistanceM: Number(event.target.value),
-              })
-            }
-          />
-        </label>
-        <label>
-          F (m)
-          <input
-            type="number"
-            min={1000}
-            max={200000}
-            step={1000}
-            required
-            value={draft.fetchDistanceM}
-            onChange={(event) =>
-              setDraft({ ...draft, fetchDistanceM: Number(event.target.value) })
-            }
-          />
-        </label>
-        <label>
-          Relocation θ
-          <input
-            type="number"
-            min={0}
-            max={1}
-            step={0.05}
-            required
-            value={draft.relocationCoefficient}
-            onChange={(event) =>
-              setDraft({
-                ...draft,
-                relocationCoefficient: Number(event.target.value),
-              })
-            }
-          />
-        </label>
-        <label>
-          Fence type
-          <select
-            value={draft.fenceType}
-            onChange={(event) =>
-              setDraft({ ...draft, fenceType: event.target.value })
-            }
-          >
-            {fenceTypes.map((name) => (
-              <option key={name}>{name}</option>
-            ))}
-          </select>
-        </label>
-        <button type="submit" disabled={!draft.groups.length}>
-          Apply analysis
-        </button>
-      </form>
-      <AppliedFilters
-        dirty={JSON.stringify(draft) !== JSON.stringify(filters)}
-        start={filters.start}
-        end={filters.end}
-        loading={regionalLoading || snowLoading}
-        onReset={() => setDraft(filters)}
-      />
+            {mode === "energy" ? "Energy comparison" : "Snow model"}
+          </button>
+        ))}
+      </div>
 
+      {filters.mode === "energy" ? (
+        <>
+          <div className={styles.modeIntro}>
+            <strong>Compare like-for-like regional energy records</strong>
+            <span>
+              Choose production or consumption groups and one inclusive UTC
+              date range. Every price area uses the same selection.
+            </span>
+          </div>
+          <form
+            id="regional-energy-panel"
+            role="tabpanel"
+            aria-labelledby="regional-energy-tab"
+            className="analysis-controls"
+            onSubmit={apply}
+          >
+            <label>
+              Energy kind
+              <select
+                value={draft.kind}
+                onChange={(event) => {
+                  const kind = event.target.value as Filters["kind"];
+                  setDraft({
+                    ...draft,
+                    kind,
+                    groups: [kind === "production" ? "solar" : "household"],
+                  });
+                }}
+              >
+                <option value="production">Production</option>
+                <option value="consumption">Consumption</option>
+              </select>
+            </label>
+            <fieldset className={styles.groupChoices}>
+              <legend>Energy groups</legend>
+              <div>
+                {availableGroups.map((group) => (
+                  <label key={group}>
+                    <input
+                      type="checkbox"
+                      checked={draft.groups.includes(group)}
+                      onChange={(event) =>
+                        setDraft({
+                          ...draft,
+                          groups: event.target.checked
+                            ? availableGroups.filter(
+                                (item) =>
+                                  item === group || draft.groups.includes(item),
+                              )
+                            : draft.groups.filter((item) => item !== group),
+                        })
+                      }
+                    />
+                    {group}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <DateRangePicker
+              value={{ start: draft.start, end: draft.end }}
+              min={coverageBounds?.coverage.start}
+              max={
+                coverageBounds
+                  ? shiftDay(coverageBounds.coverage.end, -1)
+                  : undefined
+              }
+              onChange={(range) => setDraft({ ...draft, ...range })}
+            />
+            <button type="submit" disabled={!draft.groups.length}>
+              Compare energy
+            </button>
+          </form>
+          <AppliedFilters
+            dirty={energyChanged(draft, filters)}
+            start={filters.start}
+            end={filters.end}
+            loading={regionalLoading}
+            onReset={() =>
+              setDraft({
+                ...draft,
+                area: filters.area,
+                start: filters.start,
+                end: filters.end,
+                kind: filters.kind,
+                groups: filters.groups,
+              })
+            }
+          />
+        </>
+      ) : (
+        <>
+          <div className={styles.modeIntro}>
+            <strong>Estimate snow transport at one coordinate</strong>
+            <span>
+              Set the site, July–June seasons, transport assumptions, and fence
+              type. This model does not use the energy comparison dates.
+            </span>
+          </div>
+          <form
+            id="regional-snow-panel"
+            role="tabpanel"
+            aria-labelledby="regional-snow-tab"
+            className="analysis-controls"
+            onSubmit={apply}
+          >
+            <label>
+              Latitude
+              <input
+                type="number"
+                min={-90}
+                max={90}
+                step="0.000001"
+                required
+                value={draft.latitude}
+                onChange={(event) =>
+                  setDraft({ ...draft, latitude: Number(event.target.value) })
+                }
+              />
+            </label>
+            <label>
+              Longitude
+              <input
+                type="number"
+                min={-180}
+                max={180}
+                step="0.000001"
+                required
+                value={draft.longitude}
+                onChange={(event) =>
+                  setDraft({ ...draft, longitude: Number(event.target.value) })
+                }
+              />
+            </label>
+            <label>
+              First July–June season
+              <input
+                type="number"
+                min={1940}
+                max={2100}
+                required
+                value={draft.seasonStart}
+                onChange={(event) =>
+                  setDraft({ ...draft, seasonStart: Number(event.target.value) })
+                }
+              />
+            </label>
+            <label>
+              Last July–June season
+              <input
+                type="number"
+                min={1940}
+                max={2100}
+                required
+                value={draft.seasonEnd}
+                onChange={(event) =>
+                  setDraft({ ...draft, seasonEnd: Number(event.target.value) })
+                }
+              />
+            </label>
+            <label>
+              Transport distance T (m)
+              <input
+                type="number"
+                min={100}
+                max={10000}
+                step={100}
+                required
+                value={draft.transportDistanceM}
+                onChange={(event) =>
+                  setDraft({
+                    ...draft,
+                    transportDistanceM: Number(event.target.value),
+                  })
+                }
+              />
+            </label>
+            <label>
+              Fetch distance F (m)
+              <input
+                type="number"
+                min={1000}
+                max={200000}
+                step={1000}
+                required
+                value={draft.fetchDistanceM}
+                onChange={(event) =>
+                  setDraft({
+                    ...draft,
+                    fetchDistanceM: Number(event.target.value),
+                  })
+                }
+              />
+            </label>
+            <label>
+              Relocation coefficient θ
+              <input
+                type="number"
+                min={0}
+                max={1}
+                step={0.05}
+                required
+                value={draft.relocationCoefficient}
+                onChange={(event) =>
+                  setDraft({
+                    ...draft,
+                    relocationCoefficient: Number(event.target.value),
+                  })
+                }
+              />
+            </label>
+            <label>
+              Fence type
+              <select
+                value={draft.fenceType}
+                onChange={(event) =>
+                  setDraft({ ...draft, fenceType: event.target.value })
+                }
+              >
+                {fenceTypes.map((name) => (
+                  <option key={name}>{name}</option>
+                ))}
+              </select>
+            </label>
+            <button type="submit">Run snow model</button>
+          </form>
+          <div
+            className={styles.appliedModel}
+            data-pending={snowChanged(draft, filters) && !snowLoading}
+          >
+            <span>
+              Applied: {filters.latitude.toFixed(5)}, {filters.longitude.toFixed(5)} ·
+              seasons {filters.seasonStart}–{filters.seasonEnd}
+            </span>
+            <span role="status">
+              {snowLoading
+                ? "Updating result…"
+                : snowChanged(draft, filters)
+                  ? "Changes not applied"
+                  : "Model settings applied"}
+            </span>
+            {snowChanged(draft, filters) && !snowLoading && (
+              <button
+                type="button"
+                onClick={() =>
+                  setDraft({
+                    ...draft,
+                    latitude: filters.latitude,
+                    longitude: filters.longitude,
+                    seasonStart: filters.seasonStart,
+                    seasonEnd: filters.seasonEnd,
+                    transportDistanceM: filters.transportDistanceM,
+                    fetchDistanceM: filters.fetchDistanceM,
+                    relocationCoefficient: filters.relocationCoefficient,
+                    fenceType: filters.fenceType,
+                  })
+                }
+              >
+                Discard changes
+              </button>
+            )}
+          </div>
+        </>
+      )}
+
+      {filters.mode === "energy" && (
       <div className="analysis-grid">
         <section className="analysis-panel">
           <h2>Price-area comparison</h2>
           <p>
             {summary?.aggregation || "Mean of valid hourly source records."}{" "}
-            Click a region to pass that exact coordinate to snow drift; the
-            coordinate fields provide full keyboard access.
+            Select a region or map point, then open Snow model to use that
+            coordinate. The regional table compares all five price areas.
           </p>
           {regionalError && (
             <p className={styles.error} role="alert">
@@ -769,6 +1006,34 @@ export default function RegionalPage() {
               label={`NO1 to NO5 ${filters.kind} mean map with selected point at ${filters.latitude}, ${filters.longitude}`}
               height={500}
               onReady={attachMap}
+              exports={
+                summary ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        downloadCsv(
+                          `regional-${filters.start}-${filters.end}.csv`,
+                          summary.areas,
+                        )
+                      }
+                    >
+                      Download displayed CSV
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        downloadJson(
+                          `regional-${filters.start}-${filters.end}-metadata.json`,
+                          summary,
+                        )
+                      }
+                    >
+                      Download data + metadata JSON
+                    </button>
+                  </>
+                ) : null
+              }
             />
           )}
           <div
@@ -821,34 +1086,32 @@ export default function RegionalPage() {
               </tbody>
             </table>
           </div>
-          <div className="analysis-actions">
-            <button
-              type="button"
-              disabled={!summary}
-              onClick={() =>
-                summary &&
-                downloadCsv(
-                  `regional-${filters.start}-${filters.end}.csv`,
-                  summary.areas,
-                )
-              }
-            >
-              Download displayed CSV
-            </button>
-            <button
-              type="button"
-              disabled={!summary}
-              onClick={() =>
-                summary &&
-                downloadJson(
-                  `regional-${filters.start}-${filters.end}-metadata.json`,
-                  summary,
-                )
-              }
-            >
-              Download data + metadata JSON
-            </button>
-          </div>
+          {summary && (
+            <ExportMenu>
+              <button
+                type="button"
+                onClick={() =>
+                  downloadCsv(
+                    `regional-${filters.start}-${filters.end}.csv`,
+                    summary.areas,
+                  )
+                }
+              >
+                Download displayed CSV
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  downloadJson(
+                    `regional-${filters.start}-${filters.end}-metadata.json`,
+                    summary,
+                  )
+                }
+              >
+                Download data + metadata JSON
+              </button>
+            </ExportMenu>
+          )}
           {summary && (
             <details>
               <summary>Source and aggregation metadata</summary>
@@ -868,7 +1131,9 @@ export default function RegionalPage() {
           )}
         </section>
       </div>
+      )}
 
+      {filters.mode === "snow" && (
       <section className="analysis-panel">
         <h2>
           Tabler transport at {filters.latitude.toFixed(5)},{" "}
@@ -922,6 +1187,32 @@ export default function RegionalPage() {
                 <AnalysisChart
                   option={seasonalOption}
                   label="Seasonal Tabler snow transport in tonnes per metre"
+                  exports={
+                    <>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          downloadCsv(
+                            `snow-drift-${filters.latitude}-${filters.longitude}.csv`,
+                            csvSnowRows(snow),
+                          )
+                        }
+                      >
+                        Download seasonal CSV
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          downloadJson(
+                            `snow-drift-${filters.latitude}-${filters.longitude}-metadata.json`,
+                            snow,
+                          )
+                        }
+                      >
+                        Download full data + metadata JSON
+                      </button>
+                    </>
+                  }
                 />
               </div>
               <div>
@@ -929,6 +1220,19 @@ export default function RegionalPage() {
                 <AnalysisChart
                   option={monthlyOption}
                   label="Average monthly Tabler snow transport from July through June"
+                  exports={
+                    <button
+                      type="button"
+                      onClick={() =>
+                        downloadCsv(
+                          `snow-drift-monthly-${filters.latitude}-${filters.longitude}.csv`,
+                          snow.monthly,
+                        )
+                      }
+                    >
+                      Download monthly CSV
+                    </button>
+                  }
                 />
               </div>
             </div>
@@ -938,6 +1242,19 @@ export default function RegionalPage() {
                 <AnalysisChart
                   option={roseOption}
                   label="Sixteen-sector potential wind-driven snow transport rose"
+                  exports={
+                    <button
+                      type="button"
+                      onClick={() =>
+                        downloadJson(
+                          `snow-drift-${filters.latitude}-${filters.longitude}-metadata.json`,
+                          snow,
+                        )
+                      }
+                    >
+                      Download full data + metadata JSON
+                    </button>
+                  }
                 />
               </div>
               <div>
@@ -965,41 +1282,6 @@ export default function RegionalPage() {
                   </table>
                 </div>
               </div>
-            </div>
-            <div className="analysis-actions">
-              <button
-                type="button"
-                onClick={() =>
-                  downloadCsv(
-                    `snow-drift-${filters.latitude}-${filters.longitude}.csv`,
-                    csvSnowRows(snow),
-                  )
-                }
-              >
-                Download seasonal CSV
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  downloadCsv(
-                    `snow-drift-monthly-${filters.latitude}-${filters.longitude}.csv`,
-                    snow.monthly,
-                  )
-                }
-              >
-                Download monthly CSV
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  downloadJson(
-                    `snow-drift-${filters.latitude}-${filters.longitude}-metadata.json`,
-                    snow,
-                  )
-                }
-              >
-                Download full data + metadata JSON
-              </button>
             </div>
             <details>
               <summary>Monthly transport by season</summary>
@@ -1071,6 +1353,7 @@ export default function RegionalPage() {
           </>
         )}
       </section>
+      )}
     </AnalysisShell>
   );
 }
