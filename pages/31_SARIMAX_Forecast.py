@@ -449,6 +449,7 @@ st.plotly_chart(fig, use_container_width=True)
 
 
 st.subheader("Backtesting & baselines")
+st.caption("Retained retrospective analysis: exogenous backtests use realized test-period weather, an upper-bound experiment. Publication lags are not reconstructed here. Use the Forecasts workspace for availability-aware evaluation and stored results.")
 
 if do_backtest:
     with st.spinner("Running rolling backtest (this may take a bit)…"):
