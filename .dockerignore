@@ -14,3 +14,5 @@ data
 !data/file.geojson
 notebooks
 .agents
+
+frontend/.next-e2e

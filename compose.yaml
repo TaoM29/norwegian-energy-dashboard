@@ -49,5 +49,11 @@ services:
     volumes:
       - ${DATA_DIR:-./data}:/app/data
     command: ["python", "scripts/scheduled_refresh.py"]
+    healthcheck:
+      test: ["CMD", "python", "scripts/scheduled_refresh.py", "--healthcheck"]
+      interval: 60s
+      timeout: 5s
+      start_period: 10s
+      retries: 1
     restart: unless-stopped
     logging: *logging
