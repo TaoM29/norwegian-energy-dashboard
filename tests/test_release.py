@@ -33,3 +33,31 @@ def test_container_forecast_provenance_uses_build_revision(monkeypatch):
     assert revision["dirty"] is None
     assert len(revision["sourceFingerprint"]) == 64
     assert forecast_evaluation._code_commit() == "test-image-revision"
+
+
+def test_failed_refresh_is_unhealthy_and_preserves_last_success(tmp_path, monkeypatch):
+    from scripts import scheduled_refresh as worker
+    from types import SimpleNamespace
+    path = tmp_path / "status.json"
+    worker.write_status({"lastSuccess": "2026-01-01T00:00:00+00:00"}, path)
+    monkeypatch.setattr(worker.subprocess, "run", lambda *a, **kw: SimpleNamespace(returncode=1))
+    result = worker.run_once(path)
+    assert result["state"] == "failed"
+    assert result["lastSuccess"] == "2026-01-01T00:00:00+00:00"
+    assert not worker.healthy(path)
+    monkeypatch.setattr(worker.subprocess, "run", lambda *a, **kw: SimpleNamespace(returncode=0))
+    assert worker.run_once(path)["state"] == "succeeded"
+    assert worker.healthy(path)
+
+
+def test_refresh_timeout_and_overdue_schedule_are_unhealthy(tmp_path, monkeypatch):
+    from scripts import scheduled_refresh as worker
+    path = tmp_path / "status.json"
+    def timeout(*args, **kwargs):
+        raise worker.subprocess.TimeoutExpired("refresh", 3600)
+    monkeypatch.setattr(worker.subprocess, "run", timeout)
+    assert worker.run_once(path)["state"] == "failed"
+    assert not worker.healthy(path)
+    worker.write_status({"state": "running", "nextRun": "2026-01-01T19:37:00+00:00"}, path)
+    assert worker.healthy(path, datetime(2026, 1, 1, 20, 0, tzinfo=timezone.utc))
+    assert not worker.healthy(path, datetime(2026, 1, 1, 21, 0, tzinfo=timezone.utc))
