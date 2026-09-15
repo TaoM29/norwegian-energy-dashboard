@@ -259,3 +259,8 @@ frontend/*.tsbuildinfo
 
 # Reproducible forecast results and local experiment job state
 data/forecasts/
+
+# Offline demonstration snapshots and browser test output
+data/fixture/
+frontend/test-results/
+frontend/playwright-report/
