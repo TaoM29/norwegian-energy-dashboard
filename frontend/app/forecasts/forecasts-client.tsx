@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type FormEvent,
 } from "react";
@@ -380,6 +381,7 @@ function ResultStatus({ job }: { job: Job }) {
 
 export default function ForecastsClient() {
   const [view, setView] = useState<ViewState | null>(null);
+  const viewRef = useRef<ViewState | null>(null);
   const [results, setResults] = useState<ResultSummary[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [detail, setDetail] = useState<ForecastResult | null>(null);
@@ -393,26 +395,27 @@ export default function ForecastsClient() {
 
   const updateView = useCallback(
     (patch: Partial<ViewState>, replace = false) => {
-      setView((current) => {
-        if (!current) return current;
-        const next = { ...current, ...patch };
-        const params = new URLSearchParams();
-        if (next.result) params.set("result", next.result);
-        if (next.job) params.set("job", next.job);
-        params.set("area", next.area);
-        if (next.start) params.set("start", next.start);
-        if (next.end) params.set("end", next.end);
-        if (next.models.length) params.set("models", next.models.join(","));
-        params.set("split", next.split);
-        params.set("dimension", next.dimension);
-        if (next.origin) params.set("origin", next.origin);
-        window.history[replace ? "replaceState" : "pushState"](
-          null,
-          "",
-          `?${params}`,
-        );
-        return next;
-      });
+      const current = viewRef.current;
+      if (!current) return;
+      const next = { ...current, ...patch };
+      // History updates notify Next’s router, so keep them outside React updaters.
+      viewRef.current = next;
+      setView(next);
+      const params = new URLSearchParams();
+      if (next.result) params.set("result", next.result);
+      if (next.job) params.set("job", next.job);
+      params.set("area", next.area);
+      if (next.start) params.set("start", next.start);
+      if (next.end) params.set("end", next.end);
+      if (next.models.length) params.set("models", next.models.join(","));
+      params.set("split", next.split);
+      params.set("dimension", next.dimension);
+      if (next.origin) params.set("origin", next.origin);
+      window.history[replace ? "replaceState" : "pushState"](
+        null,
+        "",
+        `?${params}`,
+      );
     },
     [],
   );
@@ -434,7 +437,11 @@ export default function ForecastsClient() {
   }, []);
 
   useEffect(() => {
-    const restore = () => setView(initialView());
+    const restore = () => {
+      const next = initialView();
+      viewRef.current = next;
+      setView(next);
+    };
     restore();
     window.addEventListener("popstate", restore);
     return () => window.removeEventListener("popstate", restore);

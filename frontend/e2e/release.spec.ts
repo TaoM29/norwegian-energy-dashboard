@@ -75,6 +75,11 @@ test("prepared forecasts are readable with public custom jobs disabled", async (
   page,
   request,
 }, testInfo) => {
+  const renderErrors: string[] = [];
+  page.on("console", (message) => {
+    if (/Cannot update a component|setState.*render/.test(message.text()))
+      renderErrors.push(message.text());
+  });
   const response = await request.post("/api/forecasts/jobs", {
     data: { kind: "sarimax" },
   });
@@ -93,6 +98,18 @@ test("prepared forecasts are readable with public custom jobs disabled", async (
   await expect(
     page.getByRole("button", { name: "Run SARIMAX job" }),
   ).toHaveCount(0);
+  const area = page
+    .getByRole("form", { name: "Stored result filters" })
+    .getByRole("combobox", { name: "Area", exact: true });
+  await area.selectOption("NO2");
+  await expect(page).toHaveURL(/area=NO2/);
+  await area.selectOption("NO3");
+  await expect(page).toHaveURL(/area=NO3/);
+  await page.goBack();
+  await expect(area).toHaveValue("NO2");
+  await page.reload();
+  await expect(area).toHaveValue("NO2");
+  expect(renderErrors).toEqual([]);
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download metadata JSON" }).click();
   const file = await download;
