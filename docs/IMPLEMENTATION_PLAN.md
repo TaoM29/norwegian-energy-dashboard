@@ -178,7 +178,7 @@ Completed 2026-09-15: `/forecasts` serves immutable local results and bounded, c
 
 Gate: a visitor can understand and use the dashboard without configuration, developers can reproduce it, and all original capabilities have a verified replacement.
 
-Release candidate implemented 2026-09-15: Streamlit is retired after the Phase 3/4 parity gates. Methods & Data, model cards, three recorded case studies, offline fixtures, container deployment, health checks, refresh scheduling, public job limits and browser CI are in place. Local real-data and synthetic Docker deployments were validated. The [Phase 5 validation](PHASE5_VALIDATION.md) records measurements and the remaining public-hosting/CI release gate; the phase is not yet marked complete.
+Release candidate implemented 2026-09-15: Streamlit is retired after the Phase 3/4 parity gates. Methods & Data, model cards, three recorded case studies, offline fixtures, container deployment, health checks, refresh scheduling, public job limits and browser CI are in place. Local real-data and synthetic Docker deployments were validated. The [Phase 5 validation](PHASE5_VALIDATION.md) records measurements and the remaining public-hosting release gate (the committed candidate passed CI; follow-up changes passed local browser checks); the phase is not yet marked complete.
 
 ## 5. Additional analyses to explore
 

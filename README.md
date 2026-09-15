@@ -2,7 +2,7 @@
 
 A Norwegian energy and weather analysis project evolving into a **Next.js / React frontend with a Python backend**.
 
-**Status:** The dashboard now runs in Next.js and FastAPI. Overview, exploration, diagnostics, regional/snow and forecasting workflows are implemented. Phase 5 retires Streamlit and adds Methods & Data, an offline fixture, container release setup and browser CI. Public hosting remains a separate, unconfigured release step. Changes and validation are tracked in [Phase 5 validation](docs/PHASE5_VALIDATION.md).
+**Status:** The dashboard now runs in Next.js and FastAPI. Overview, exploration, diagnostics, regional/snow and forecasting workflows are implemented. Phase 5 retires Streamlit and adds Methods & Data, an offline fixture, container release setup and browser CI. Public hosting remains a separate, unconfigured release step. Changes and validation are tracked in [Phase 5 validation](docs/PHASE5_VALIDATION.md); see the [synthetic desktop/mobile gallery](docs/screenshots/README.md).
 
 ## Implementation plan
 
