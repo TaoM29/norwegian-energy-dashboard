@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
+import { ExportMenu } from "./export-menu";
 import * as echarts from "echarts/core";
 import {
   BarChart,
@@ -312,11 +313,13 @@ export default function AnalysisChart({
   label,
   height = 340,
   onReady,
+  exports,
 }: {
   option: EChartsCoreOption;
   label: string;
   height?: number;
   onReady?: (chart: EChartsType) => void;
+  exports?: ReactNode;
 }) {
   const { resolvedTheme } = useTheme();
   const node = useRef<HTMLDivElement>(null);
@@ -379,14 +382,19 @@ export default function AnalysisChart({
         role="img"
         aria-label={label}
       />
-      <button
-        className="chart-download"
-        type="button"
-        onClick={saveImage}
-        aria-label={`Download ${label} as PNG`}
-      >
-        Download chart PNG
-      </button>
+      <div className="chart-export">
+        <ExportMenu>
+          <button
+            className="chart-download"
+            type="button"
+            onClick={saveImage}
+            aria-label={`Download ${label} as PNG`}
+          >
+            Chart image (PNG)
+          </button>
+          {exports}
+        </ExportMenu>
+      </div>
     </div>
   );
 }

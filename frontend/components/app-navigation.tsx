@@ -9,6 +9,8 @@ import {
   Compass,
   LayoutDashboard,
   Map,
+  Menu,
+  X,
   Waves,
   type LucideIcon,
 } from "lucide-react";
@@ -56,6 +58,7 @@ const destinations = navigationGroups.flatMap((group) => group.destinations);
 
 export function AppNavigation() {
   const path = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
   const [links, setLinks] = useState(destinations.map(({ href }) => href));
   useEffect(() => {
     const update = () =>
@@ -78,18 +81,55 @@ export function AppNavigation() {
 
   return (
     <>
-      <aside className="site-sidebar">
-        <a href="/" className="site-brand" aria-label="Norwegian energy home">
-          <span className="site-mark">
-            <Waves size={20} strokeWidth={1.5} aria-hidden="true" />
-          </span>
-          <span>
-            norwegian energy
-            <span className="site-subtitle">Data workspace</span>
-          </span>
-        </a>
+      <aside
+        className={`site-sidebar${menuOpen ? " navigation-open" : ""}`}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            setMenuOpen(false);
+            event.currentTarget
+              .querySelector<HTMLButtonElement>(".mobile-menu-toggle")
+              ?.focus();
+          }
+        }}
+      >
+        <div className="site-brand-row">
+          <a
+            href={links[0]}
+            onClick={(event) => {
+              event.currentTarget.href = dashboardDestination("/");
+            }}
+            className="site-brand"
+            aria-label="Norwegian energy home"
+          >
+            <span className="site-mark">
+              <Waves size={20} strokeWidth={1.5} aria-hidden="true" />
+            </span>
+            <span>
+              norwegian energy
+              <span className="site-subtitle">Data workspace</span>
+            </span>
+          </a>
 
-        <nav aria-label="Main navigation" className="site-navigation">
+          <button
+            type="button"
+            className="mobile-menu-toggle"
+            aria-expanded={menuOpen}
+            aria-controls="main-navigation"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            {menuOpen ? (
+              <X size={18} aria-hidden="true" />
+            ) : (
+              <Menu size={18} aria-hidden="true" />
+            )}{" "}
+            Menu
+          </button>
+        </div>
+        <nav
+          id="main-navigation"
+          aria-label="Main navigation"
+          className="site-navigation"
+        >
           {navigationGroups.map((group) => (
             <div className="site-navigation-group" key={group.label}>
               <span className="site-navigation-label">{group.label}</span>
@@ -105,6 +145,7 @@ export function AppNavigation() {
                       aria-current={path === href ? "page" : undefined}
                       onClick={(event) => {
                         event.currentTarget.href = dashboardDestination(href);
+                        setMenuOpen(false);
                       }}
                     >
                       <Icon size={16} strokeWidth={1.5} aria-hidden="true" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { CalendarDays, ChevronDown } from "lucide-react";
 import { DayPicker, type DateRange as CalendarRange } from "react-day-picker";
@@ -55,6 +55,10 @@ export function DateRangePicker({
   presets?: boolean;
   applyLabel?: string;
 }) {
+  const trigger = useRef<HTMLButtonElement>(null);
+  const [portalContainer, setPortalContainer] = useState<
+    HTMLElement | undefined
+  >();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(value);
   const [month, setMonth] = useState(() => parseDate(value.start));
@@ -123,7 +127,11 @@ export function DateRangePicker({
       modal
       open={open}
       onOpenChange={(next) => {
-        if (next) choose(value);
+        if (next) {
+          choose(value);
+          // Native modal drawers make body-level portals inert.
+          setPortalContainer(trigger.current?.closest("dialog") || undefined);
+        }
         setOpen(next);
       }}
     >
@@ -133,6 +141,7 @@ export function DateRangePicker({
         </span>
         <Popover.Trigger asChild>
           <button
+            ref={trigger}
             type="button"
             className="date-range-trigger"
             disabled={disabled}
@@ -144,7 +153,7 @@ export function DateRangePicker({
           </button>
         </Popover.Trigger>
       </div>
-      <Popover.Portal>
+      <Popover.Portal container={portalContainer}>
         <Popover.Content
           className="date-range-popover"
           sideOffset={8}
