@@ -1,0 +1,57 @@
+.export-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  background: var(--surface);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.export-popover {
+  z-index: 100;
+  width: 240px;
+  max-width: calc(100vw - 24px);
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 12px 36px #0003;
+}
+.export-caption {
+  display: block;
+  padding: 7px 9px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.export-popover button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px;
+  margin: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  text-decoration: none;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.export-popover button:hover {
+  background: var(--surface-muted);
+}
+.chart-export {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
