@@ -54,19 +54,19 @@ For a real-data deployment, enable the daily 19:37 UTC refresh worker:
 docker compose --profile refresh up -d
 ```
 
-The worker uses the same persistent volume and existing atomic refresh implementation. It logs failures and retains the last validated snapshots. The GitHub scheduled workflow separately publishes downloadable data artifacts; it does not update this host. Forecast benchmarks remain explicit versioned analyses: refreshes do not silently rewrite their historical results. Run `docker compose run --rm api python scripts/run_forecast_benchmark.py` with the chosen predeclared configuration when publishing another evaluation.
+The worker uses the same persistent volume and existing atomic refresh implementation. It logs failures and retains the last validated snapshots. Its container health reports failed, timed-out or overdue refreshes through `data/refresh-status.json`, retaining the last successful run time. Restarting does not clear a failed run. To retry immediately, stop the scheduled worker, run `docker compose run --rm refresh python scripts/scheduled_refresh.py --once`, then restart the worker; this avoids overlapping writers. The GitHub scheduled workflow separately publishes downloadable data artifacts; it does not update this host. Forecast benchmarks remain explicit versioned analyses: refreshes do not silently rewrite their historical results. Run `docker compose run --rm api python scripts/run_forecast_benchmark.py` with the chosen predeclared configuration when publishing another evaluation.
 
 ## Health, logging and limits
 
 - `/api/health`: process liveness and published/fixture mode.
-- `/api/ready`: checks the required energy-series coverage and reports the current snapshot. Weather and forecast availability are reported by their own endpoints; energy readiness is not a guarantee that every historical point request is cached.
+- `/api/ready`: checks that required energy series are readable and reports their common date envelope. Internal missing hours remain visible as gaps in the analytical views; readiness does not certify complete observations. Weather and forecast availability are reported by their own endpoints; energy readiness is not a guarantee that every historical point request is cached.
 - `docker compose ps` and `docker compose logs --tail=100 api frontend refresh`: service status and request/refresh logs. Container logs rotate at 10 MB, three files.
 - Queries have date/parameter bounds; forecasting has one active worker, four queued jobs and a 30-minute timeout. `FORECAST_JOBS_ENABLED=false` rejects both job submission and cancellation and hides the experiment controls. Keep this setting on a public deployment. Local operators can run the CLI or a separate private API for experiments.
 - Credentials remain backend-only environment variables. The new dashboard requires no MongoDB connection. Optional retained research loaders use `MONGO_URI` and `MONGO_DB` from the environment and require separately installed `pymongo`.
 
 ## Rollback
 
-Retain the previous frontend/API image tags and a copy of the previous published data directory before a release. To roll back code, set `RELEASE_TAG` to the previous tag and run `docker compose up -d --no-build`; confirm `/api/ready`, `/api/forecasts/results` and the main views. If the data publication is the problem, stop the refresh service, select the retained data directory with `DATA_DIR`, and recreate the API and refresh services. Keep the same volume for routine code rollbacks. Immutable forecast artifacts remain readable across restarts.
+Retain the previous frontend/API image tags and a copy of the previous published data directory before a release. To roll back code, set `RELEASE_TAG` to the previous tag and run `docker compose --profile refresh up -d --no-build` when the deployment uses scheduled refresh, so the worker also rolls back. Omit `--profile refresh` when no worker is deployed (including fixture deployments). Then confirm `/api/ready`, `/api/forecasts/results` and the main views. If the data publication is the problem, stop the refresh service, select the retained data directory with `DATA_DIR`, and recreate the API and refresh services. Keep the same volume for routine code rollbacks. Immutable forecast artifacts remain readable across restarts.
 
 Streamlit was retired after the Phase 3/4 parity checks. To investigate the old application or rerun `scripts/benchmark_overview.py`, use a separate checkout of commit `b2c46c0dcdcd7ab343470d022f7394d0e71b3646` with the historical environment in `docs/baseline/requirements-py311-macos.txt`. Do not merge pre-sanitization history into the current repository. Existing notebooks and analytical tests remain in the current tree.
 
@@ -84,10 +84,11 @@ The focused browser journeys use the offline fixture and isolated ports 8100/310
 ```sh
 python scripts/create_fixture.py
 cd frontend
-ENERGY_API_URL=http://127.0.0.1:8100 npm run build
 npx playwright install chromium
 PYTHON="$(pwd)/../.venv/bin/python" npm run test:e2e
 ```
+
+The test command builds into `.next-e2e`, leaving the normal `.next` build intact. CI retains screenshots and failure traces for seven days; a small reviewed [fixture gallery](screenshots/README.md) is included in the repository.
 
 Use an absolute Python executable path for `PYTHON` if the environment differs; the API command runs from the repository root. CI installs Chromium, generates the fixture, checks types, builds and runs the journeys without live external data calls. Python CI retains 3.11 and 3.12.
 

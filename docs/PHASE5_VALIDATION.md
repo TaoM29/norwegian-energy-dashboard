@@ -1,6 +1,6 @@
 # Phase 5 — Release candidate and Streamlit retirement
 
-Recorded 2026-09-15. Streamlit retirement and the local release candidate are implemented. The full public-release gate remains open: no Internet deployment host/domain is configured, and the newly added GitHub browser CI has not run on a pushed revision. No commit or push was made by the implementation agent.
+Recorded 2026-09-15. Streamlit retirement and the local release candidate are implemented. The full public-release gate remains open: no Internet deployment host/domain is configured. [GitHub CI passed for revision `441dbf8`](https://github.com/TaoM29/norwegian-energy-dashboard/actions/runs/34965254001), including the four Chromium journeys and Python 3.11/3.12. The additional changes recorded below are locally verified and remain uncommitted. No commit or push was made by the implementation agent.
 
 ## Retirement decisions
 
@@ -26,7 +26,7 @@ Removed `app.py`, the 13 Streamlit pages, their framework/unused map dependencie
 - Added process liveness and energy readiness endpoints. Image-generated artifacts retain a supplied base commit and source fingerprint without requiring Git inside the runtime image.
 - Added deterministic, explicitly labeled offline fixtures: 438,000 hourly energy rows across all areas/base groups, area weather, default-point snow weather, geography and 240 calculated seasonal-naive forecast rows. All generated files stay ignored under one `data/fixture/` directory. Fixture mode never falls through to an upstream weather request.
 - Published `/methods` with live snapshot coverage, source attribution, four model cards, the short walkthrough, architecture, uncertainty caveats and three recorded findings. The numerical findings come directly from the Phase 2–4 validation evidence; fixture values are not presented as observations.
-- Added four focused Playwright journeys to CI: overview filters/export, exploration/diagnostics/regional snow, prepared forecasts with public job rejection, and mobile methods/keyboard navigation. The workflows install offline fixtures and retain failure traces. CI still tests Python 3.11 and 3.12.
+- Added four focused Playwright journeys to CI: overview filters/export, exploration/diagnostics/regional snow, prepared forecasts with public job rejection, and mobile methods/keyboard navigation. The workflows install offline fixtures and retain screenshots and failure traces for seven days. CI still tests Python 3.11 and 3.12.
 
 ## Local validation
 
@@ -41,12 +41,16 @@ The recorded HTTP timings include the Next.js proxy and API over host loopback. 
 | Stored forecast list | 13.4 | 5.4 | 39,145 |
 | Full Phase 4 benchmark | 50.6 | 26.0 | 881,161 |
 
-Final Python suite: **175 passed**, with two existing dependency deprecation warnings. TypeScript checking and production builds passed both locally and in the frontend image. Compose configuration validated, both real/fixture deployments became healthy, and the runtime image confirmed that Streamlit is absent. Public job mutations returned 403 while stored results remained available.
+Latest local Python suite: **177 passed**, with two existing dependency deprecation warnings. TypeScript checking and production builds passed both locally and in the frontend image. Compose configuration validated, both real/fixture deployments became healthy, and the runtime image confirmed that Streamlit is absent. Public job mutations returned 403 while stored results remained available.
 
-Browser checks against the container deployment verified fixture labeling, overview area selection, exploration, rolling correlation, the default regional map/snow result, prepared forecasts with custom controls hidden, and Methods & Data source links/keyboard focus. Desktop and 820-pixel layouts were inspected. The browser tool did not apply the requested 390-pixel viewport to this session; that breakpoint is covered by the added CI journey and is not claimed as locally verified here. Browser screenshots were inspected in-session; a published release screenshot gallery remains part of the public-release checklist.
+Browser checks against the container deployment verified fixture labeling, overview area selection, exploration, rolling correlation, the default regional map/snow result, prepared forecasts with custom controls hidden, and Methods & Data source links/keyboard focus. Desktop and 820-pixel layouts were inspected in that session.
 
-The checks caught and fixed a mismatched fixture point-cache key, an uncaught unavailable-weather exception, defaults outside fixture snow coverage, and observation-date navigation that hid prepared forecast points. The fixture API test explicitly rejects upstream network access. The four automated browser journeys are authored and type-checked but have not been executed by GitHub CI; the equivalent local interaction checks above are recorded separately.
+The follow-up ran all **four automated Chromium journeys successfully** against the isolated production test build and fixture API, including the **390-pixel mobile** layout and keyboard focus. Overview CSV checks compare row counts and exported MWh values with the selected API response. Forecast JSON checks cover fixture provenance, horizon, matched origins, calibration and frozen selection. Test builds now use `.next-e2e` so they cannot replace the normal application build. Screenshot inspection also caught and fixed a fixture banner hidden behind the desktop sidebar; the overview status label now says “Energy snapshot” rather than calling synthetic data observed. A reviewed [desktop/mobile gallery](screenshots/README.md) explicitly identifies its synthetic inputs.
+
+Earlier checks caught and fixed a mismatched fixture point-cache key, an uncaught unavailable-weather exception, defaults outside fixture snow coverage, and observation-date navigation that hid prepared forecast points. The fixture API test explicitly rejects upstream network access.
+
+Release review added container health for refresh failures, timeouts and overdue execution, with the last successful timestamp retained. Focused tests cover failure, recovery, timeout and stale status without making upstream calls. Rollback instructions now include the active refresh profile so code rollback also replaces the scheduler image. Energy readiness remains a readability/date-envelope check; internal observation gaps are supported rather than hidden or treated as application startup failures.
 
 ## Remaining public-release gate
 
-Configure the actual host/domain and HTTPS proxy, publish the chosen real snapshots and prepared result artifacts there, enable its scheduled refresh, and measure the externally deployed journeys. Run the new browser CI on the revision the user commits, publish the final deployment screenshots/walkthrough, and verify the documented rollback on that host. The repository provides the runnable candidate and operations procedure; a loopback deployment is not an Internet release.
+Configure the actual host/domain and HTTPS proxy, publish the chosen real snapshots and prepared result artifacts there, enable its scheduled refresh, and measure the externally deployed journeys. Run CI again on the revision the user commits, capture the final public deployment screenshots, and verify the documented rollback on that host. The repository provides the runnable candidate and operations procedure; a loopback deployment is not an Internet release.
