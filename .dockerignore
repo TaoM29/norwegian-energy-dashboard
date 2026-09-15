@@ -1,0 +1,16 @@
+.git
+.venv
+.env*
+.streamlit
+**/__pycache__
+**/.pytest_cache
+frontend/node_modules
+frontend/.next
+frontend/test-results
+frontend/playwright-report
+frontend/*.tsbuildinfo
+frontend/.env*
+data
+!data/file.geojson
+notebooks
+.agents

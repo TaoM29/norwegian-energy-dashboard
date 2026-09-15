@@ -1,0 +1,53 @@
+name: norwegian-energy-dashboard
+services:
+  api:
+    image: norwegian-energy-api:${RELEASE_TAG:-local}
+    build:
+      context: .
+      args:
+        VCS_REF: ${VCS_REF:-}
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    environment:
+      FORECAST_JOBS_ENABLED: "false"
+      ENERGY_DATA_MODE: ${ENERGY_DATA_MODE:-published}
+      ENERGY_DATABASE: /app/data/energy.sqlite
+      WEATHER_SNAPSHOT_DIR: /app/data/weather
+      FORECAST_ARTIFACT_ROOT: /app/data/forecasts
+    volumes:
+      - ${DATA_DIR:-./data}:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/ready', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    logging: &logging
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+  frontend:
+    image: norwegian-energy-frontend:${RELEASE_TAG:-local}
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports: ["127.0.0.1:${PORT:-3001}:3000"]
+    depends_on:
+      api: {condition: service_healthy}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging: *logging
+  refresh:
+    image: norwegian-energy-api:${RELEASE_TAG:-local}
+    profiles: [refresh]
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    environment:
+      WEATHER_SNAPSHOT_DIR: /app/data/weather
+    volumes:
+      - ${DATA_DIR:-./data}:/app/data
+    command: ["python", "scripts/scheduled_refresh.py"]
+    restart: unless-stopped
+    logging: *logging
