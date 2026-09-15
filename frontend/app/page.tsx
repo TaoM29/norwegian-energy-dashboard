@@ -29,6 +29,7 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { downloadJson } from "@/lib/download";
 import {
   areas,
   Coverage,
@@ -185,6 +186,7 @@ export default function Page() {
     URL.revokeObjectURL(url);
   }
 
+  const navigationQuery = filters ? `?${new URLSearchParams(filters)}` : "";
   const selectedArea = overview?.query.area || filters?.area || "NO1";
   const production = overview?.headline.production;
   const consumption = overview?.headline.consumption;
@@ -230,11 +232,14 @@ export default function Page() {
           <a className="nav-item active" href="#main" aria-current="page">
             <LayoutDashboard size={18} /> Overview <span className="nav-dot" />
           </a>
-          <a className="nav-item" href="#regions">
-            <MapPin size={18} /> Price areas
+          <a className="nav-item" href={`/explore${navigationQuery}`}>
+            <Layers3 size={18} /> Explore
           </a>
-          <a className="nav-item" href="#production">
-            <Layers3 size={18} /> Production mix
+          <a className="nav-item" href={`/diagnostics${navigationQuery}`}>
+            <BarChart3 size={18} /> Diagnostics
+          </a>
+          <a className="nav-item" href={`/regional${navigationQuery}`}>
+            <MapPin size={18} /> Regional
           </a>
         </nav>
         <div className="sidebar-bottom">
@@ -721,6 +726,16 @@ export default function Page() {
             </div>
             <details>
               <summary>Methods & snapshot</summary>
+              <Button
+                variant="outline"
+                disabled={!overview || loading || !!error}
+                onClick={() =>
+                  overview &&
+                  downloadJson(`${overview.query.area}-overview.json`, overview)
+                }
+              >
+                Download data & metadata
+              </Button>
               <p>
                 Production and consumption include base groups only. Unspecified
                 and overlapping aggregate groups are excluded. Missing

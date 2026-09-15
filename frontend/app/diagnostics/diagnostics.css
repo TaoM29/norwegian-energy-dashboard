@@ -1,0 +1,107 @@
+.diagnostics-tabs {
+  display: flex;
+  gap: 7px;
+  margin-bottom: 15px;
+  overflow-x: auto;
+}
+.diagnostics-tabs button {
+  border: 1px solid #ccd8ce;
+  border-radius: 7px;
+  background: #fff;
+  color: #53685d;
+  padding: 10px 15px;
+  white-space: nowrap;
+}
+.diagnostics-tabs button[aria-selected="true"] {
+  border-color: #176b59;
+  background: #e7f0e6;
+  color: #176b59;
+  font-weight: 650;
+}
+.analysis-controls .check-control {
+  flex-direction: row;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 5px;
+}
+.diagnostics-state {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 22px;
+  margin: 0 0 22px;
+  border: 1px solid #dce3dc;
+  border-radius: 10px;
+  background: #fff;
+  color: #53685d;
+}
+.diagnostics-error {
+  border-color: #e4c4c2;
+  background: #fff8f7;
+  color: #7d3939;
+}
+.analysis-metrics span,
+.analysis-metrics small {
+  display: block;
+  color: #607069;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.analysis-metrics strong {
+  display: block;
+  margin: 7px 0 2px;
+  color: #253b32;
+  font-size: 22px;
+  font-weight: 550;
+}
+.diagnostics-notice {
+  display: flex;
+  gap: 12px;
+  padding: 15px 18px;
+  margin-bottom: 22px;
+  border-left: 4px solid #d18d2f;
+  background: #fff9ee;
+  line-height: 1.55;
+}
+.diagnostics-notice span {
+  color: #685b43;
+}
+.diagnostics-coverage {
+  display: flex;
+  gap: 9px;
+  align-items: baseline;
+  padding: 12px 15px;
+  margin-bottom: 12px;
+  border-radius: 7px;
+  background: #f1f4ef;
+  color: #53685d;
+  line-height: 1.55;
+}
+.diagnostics-coverage strong {
+  color: #344c40;
+  white-space: nowrap;
+}
+.diagnostics-table-wrap {
+  overflow-x: auto;
+}
+.diagnostics-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.diagnostics-table-wrap th,
+.diagnostics-table-wrap td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e2e8e1;
+  text-align: left;
+  white-space: nowrap;
+}
+@media (max-width: 760px) {
+  .diagnostics-tabs {
+    margin-inline: -3px;
+  }
+  .diagnostics-notice,
+  .diagnostics-coverage {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

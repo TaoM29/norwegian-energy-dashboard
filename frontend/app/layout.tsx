@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 export const metadata: Metadata = {
-  title: "Norwegian Energy · Overview",
+  title: "Norwegian Energy Dashboard",
   description:
-    "Explore observed Norwegian energy production and consumption, sourced from Elhub.",
+    "Explore Norwegian energy, weather, regional patterns and analytical diagnostics.",
 };
 export default function RootLayout({
   children,

@@ -1,0 +1,1232 @@
+"use client";
+
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
+import type { EChartsCoreOption } from "echarts/core";
+
+import AnalysisChart from "@/components/analysis-chart";
+import { AnalysisShell } from "@/components/analysis-shell";
+import { areas, getJson, number, shiftDay, type Coverage } from "@/lib/api";
+import { downloadCsv, downloadJson } from "@/lib/download";
+import "./diagnostics.css";
+
+type View = "correlation" | "decomposition" | "quality";
+type Row = { time: string } & Record<string, number | boolean | null | string>;
+type Metadata = {
+  analyzedPoints: number;
+  returnedChartPoints: number;
+  chartPayloadLimited: boolean;
+  interval: { start: string; end: string; bounds: string };
+  provenance: unknown;
+  coverage?: {
+    expectedHours: number;
+    pairedHours?: number;
+    observedHours?: number;
+    weatherRows?: number;
+  };
+  [key: string]: unknown;
+};
+type Correlation = {
+  query: Record<string, unknown>;
+  units: { weather: string; energy: string; correlation: string };
+  summary: {
+    pairedHours: number;
+    correlationHours: number;
+    meanCorrelation: number | null;
+    latestCorrelation: number | null;
+  };
+  values: Row[];
+  metadata: Metadata;
+};
+type Decomposition = {
+  query: Record<string, unknown>;
+  effectiveParameters: Record<string, number | boolean>;
+  units: Record<string, string>;
+  components: Row[];
+  spectrogram: {
+    times: string[];
+    frequencies: number[];
+    magnitude: (number | null)[][];
+  };
+  metadata: Metadata;
+};
+type Quality = {
+  query: Record<string, unknown>;
+  units: Record<string, string>;
+  spc: {
+    summary: {
+      points: number;
+      flags: number;
+      flagPercent: number;
+      robustSigma: number;
+      keptCoefficients: number;
+      maxAbsSatv: number;
+    };
+    values: Row[];
+    flaggedValues: Row[];
+  };
+  lof: {
+    summary: {
+      points: number;
+      flags: number;
+      flagPercent: number;
+      effectiveNeighbors: number;
+    };
+    values: Row[];
+    flaggedValues: Row[];
+  };
+  metadata: Metadata;
+};
+
+const productionGroups = ["hydro", "other", "solar", "thermal", "wind"];
+const consumptionGroups = [
+  "cabin",
+  "household",
+  "primary",
+  "secondary",
+  "tertiary",
+];
+const weatherVariables = [
+  "temperature_2m (°C)",
+  "precipitation (mm)",
+  "wind_speed_10m (m/s)",
+  "wind_gusts_10m (m/s)",
+  "wind_direction_10m (°)",
+];
+const palette = {
+  green: "#176b59",
+  gold: "#d18d2f",
+  red: "#c55252",
+  slate: "#526a60",
+  pale: "rgba(23,107,89,.14)",
+};
+
+function queryValue(params: URLSearchParams, key: string, fallback: string) {
+  return params.get(key) || fallback;
+}
+
+function asNumber(params: URLSearchParams, key: string, fallback: number) {
+  const raw = params.get(key);
+  if (raw == null || raw.trim() === "") return fallback;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function lineOption(
+  rows: Row[],
+  series: { key: string; name: string; color: string; axis?: number }[],
+  units: string[],
+): EChartsCoreOption {
+  return {
+    color: series.map((item) => item.color),
+    tooltip: { trigger: "axis" },
+    legend: { top: 2 },
+    grid: { left: 58, right: units.length > 1 ? 58 : 20, top: 46, bottom: 62 },
+    dataZoom: [{ type: "inside" }, { type: "slider", bottom: 8, height: 20 }],
+    xAxis: { type: "time", axisLabel: { hideOverlap: true } },
+    yAxis: units.map((unit, index) => ({
+      type: "value",
+      name: unit,
+      position: index ? "right" : "left",
+      scale: true,
+    })),
+    series: series.map((item) => ({
+      type: "line",
+      name: item.name,
+      yAxisIndex: item.axis || 0,
+      showSymbol: false,
+      connectNulls: false,
+      lineStyle: { width: 1.5 },
+      data: rows.map((row) => [row.time, row[item.key]]),
+    })),
+  };
+}
+
+function Metric({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string;
+  detail?: string;
+}) {
+  return (
+    <div>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      {detail && <small>{detail}</small>}
+    </div>
+  );
+}
+
+function CoverageNote({ metadata, view }: { metadata: Metadata; view: View }) {
+  const coverage = metadata.coverage;
+  if (!coverage) return null;
+  const observed =
+    view === "correlation"
+      ? coverage.pairedHours
+      : view === "decomposition"
+        ? coverage.observedHours
+        : coverage.weatherRows;
+  if (observed == null || observed >= coverage.expectedHours) return null;
+  const policy =
+    view === "correlation"
+      ? "Correlation uses observed energy/weather pairs; missing values are not replaced with zero."
+      : view === "quality"
+        ? "SPC follows its documented interpolation policy; LOF never treats missing rain as dry weather."
+        : "STL and the spectrogram require a complete hourly energy series.";
+  return (
+    <div className="diagnostics-coverage" role="status">
+      <strong>Partial observed coverage</strong>
+      <span>
+        {observed.toLocaleString("en-GB")} of{" "}
+        {coverage.expectedHours.toLocaleString("en-GB")} expected hours entered
+        this analysis. {policy}
+      </span>
+    </div>
+  );
+}
+
+function FlagTable({
+  title,
+  rows,
+  columns,
+}: {
+  title: string;
+  rows: Row[];
+  columns: string[];
+}) {
+  return (
+    <details>
+      <summary>
+        {title} ({rows.length.toLocaleString("en-GB")})
+      </summary>
+      <div className="diagnostics-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Time (UTC)</th>
+              {columns.map((column) => (
+                <th key={column}>{column}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.slice(0, 30).map((row) => (
+              <tr key={row.time}>
+                <td>{row.time.replace("T", " ").slice(0, 16)}</td>
+                {columns.map((column) => (
+                  <td key={column}>
+                    {typeof row[column] === "number"
+                      ? number(row[column] as number, 3)
+                      : String(row[column])}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {rows.length > 30 && (
+        <p>
+          Showing the first 30 flags. The CSV download includes every returned
+          flag.
+        </p>
+      )}
+    </details>
+  );
+}
+
+export default function DiagnosticsWorkbench() {
+  const [view, setView] = useState<View>("correlation");
+  const [area, setArea] = useState("NO1");
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [kind, setKind] = useState<"production" | "consumption">("production");
+  const [group, setGroup] = useState("hydro");
+  const [weather, setWeather] = useState(weatherVariables[0]);
+  const [windowHours, setWindowHours] = useState(168);
+  const [lagHours, setLagHours] = useState(0);
+  const [normalize, setNormalize] = useState(true);
+  const [period, setPeriod] = useState(24);
+  const [seasonal, setSeasonal] = useState(13);
+  const [trend, setTrend] = useState(365);
+  const [robust, setRobust] = useState(true);
+  const [spectrogramWindow, setSpectrogramWindow] = useState(168);
+  const [spectrogramOverlap, setSpectrogramOverlap] = useState(84);
+  const [dctFraction, setDctFraction] = useState(0.01);
+  const [k, setK] = useState(3);
+  const [contamination, setContamination] = useState(0.01);
+  const [neighbors, setNeighbors] = useState(60);
+  const [result, setResult] = useState<
+    Correlation | Decomposition | Quality | null
+  >(null);
+  const [status, setStatus] = useState("Loading available dates…");
+  const [error, setError] = useState("");
+  const [restoreTick, setRestoreTick] = useState(0);
+  const request = useRef(0);
+
+  const groups = kind === "production" ? productionGroups : consumptionGroups;
+
+  const restore = useCallback(
+    (
+      params: URLSearchParams,
+      fallbackDates?: { start: string; end: string },
+    ) => {
+      const restoredView = queryValue(params, "view", "correlation");
+      setView(
+        (["correlation", "decomposition", "quality"].includes(restoredView)
+          ? restoredView
+          : "correlation") as View,
+      );
+      setArea(queryValue(params, "area", "NO1"));
+      setStart(queryValue(params, "start", fallbackDates?.start || ""));
+      setEnd(queryValue(params, "end", fallbackDates?.end || ""));
+      const restoredKind =
+        queryValue(params, "kind", "production") === "consumption"
+          ? "consumption"
+          : "production";
+      setKind(restoredKind);
+      setGroup(
+        queryValue(
+          params,
+          "group",
+          restoredKind === "production" ? "hydro" : "household",
+        ),
+      );
+      setWeather(queryValue(params, "weather", weatherVariables[0]));
+      setWindowHours(asNumber(params, "window", 168));
+      setLagHours(asNumber(params, "lag", 0));
+      setNormalize(queryValue(params, "normalize", "true") !== "false");
+      setPeriod(asNumber(params, "period", 24));
+      setSeasonal(asNumber(params, "seasonal", 13));
+      setTrend(asNumber(params, "trend", 365));
+      setRobust(queryValue(params, "robust", "true") !== "false");
+      setSpectrogramWindow(asNumber(params, "specWindow", 168));
+      setSpectrogramOverlap(asNumber(params, "overlap", 84));
+      setDctFraction(asNumber(params, "dct", 0.01));
+      setK(asNumber(params, "k", 3));
+      setContamination(asNumber(params, "contamination", 0.01));
+      setNeighbors(asNumber(params, "neighbors", 60));
+      setRestoreTick((value) => value + 1);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const current = new URLSearchParams(window.location.search);
+    getJson<Coverage>("/api/coverage")
+      .then((coverage) => {
+        restore(current, {
+          start: coverage.suggestedRange.start,
+          end: shiftDay(coverage.suggestedRange.end, -1),
+        });
+      })
+      .catch(() =>
+        restore(current, { start: "2026-08-01", end: "2026-08-28" }),
+      );
+    const back = () => restore(new URLSearchParams(window.location.search));
+    window.addEventListener("popstate", back);
+    return () => window.removeEventListener("popstate", back);
+  }, [restore]);
+
+  const load = useCallback(
+    async (replaceUrl = false) => {
+      if (!start || !end) return;
+      const shared = new URLSearchParams({ view, area, start, end });
+      if (view !== "quality") {
+        shared.set("kind", kind);
+        shared.set("group", group);
+      }
+      if (view === "correlation") {
+        shared.set("weather", weather);
+        shared.set("window", String(windowHours));
+        shared.set("lag", String(lagHours));
+        shared.set("normalize", String(normalize));
+      }
+      if (view === "decomposition") {
+        shared.set("period", String(period));
+        shared.set("seasonal", String(seasonal));
+        shared.set("trend", String(trend));
+        shared.set("robust", String(robust));
+        shared.set("specWindow", String(spectrogramWindow));
+        shared.set("overlap", String(spectrogramOverlap));
+      }
+      if (view === "quality") {
+        shared.set("dct", String(dctFraction));
+        shared.set("k", String(k));
+        shared.set("contamination", String(contamination));
+        shared.set("neighbors", String(neighbors));
+      }
+      window.history[replaceUrl ? "replaceState" : "pushState"](
+        {},
+        "",
+        `${window.location.pathname}?${shared}`,
+      );
+      const api = new URLSearchParams({ area, start, end: shiftDay(end, 1) });
+      if (view !== "quality") {
+        api.set("kind", kind);
+        api.set("group", group);
+      }
+      if (view === "correlation") {
+        api.set("weather", weather);
+        api.set("windowHours", String(windowHours));
+        api.set("lagHours", String(lagHours));
+        api.set("normalize", String(normalize));
+      }
+      if (view === "decomposition") {
+        api.set("period", String(period));
+        api.set("seasonalSmoother", String(seasonal));
+        api.set("trendSmoother", String(trend));
+        api.set("robust", String(robust));
+        api.set("spectrogramWindow", String(spectrogramWindow));
+        api.set("spectrogramOverlap", String(spectrogramOverlap));
+      }
+      if (view === "quality") {
+        api.set("dctFraction", String(dctFraction));
+        api.set("k", String(k));
+        api.set("contamination", String(contamination));
+        api.set("neighbors", String(neighbors));
+      }
+      const sequence = ++request.current;
+      setStatus("Analyzing the complete hourly series…");
+      setError("");
+      setResult(null);
+      try {
+        const data = await getJson<Correlation | Decomposition | Quality>(
+          `/api/diagnostics/${view}?${api}`,
+        );
+        if (sequence === request.current) {
+          setResult(data);
+          setStatus("");
+        }
+      } catch (problem) {
+        if (sequence === request.current) {
+          setError(
+            problem instanceof Error
+              ? problem.message
+              : "The analysis could not be loaded.",
+          );
+          setStatus("");
+        }
+      }
+    },
+    [
+      area,
+      contamination,
+      dctFraction,
+      end,
+      group,
+      k,
+      kind,
+      lagHours,
+      neighbors,
+      normalize,
+      period,
+      robust,
+      seasonal,
+      spectrogramOverlap,
+      spectrogramWindow,
+      start,
+      trend,
+      view,
+      weather,
+      windowHours,
+    ],
+  );
+
+  useEffect(() => {
+    if (start && end && restoreTick) void load(true);
+  }, [restoreTick]); // Initial dates and browser history restore the complete view.
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    void load();
+  }
+  function chooseView(next: View) {
+    request.current += 1;
+    setView(next);
+    setResult(null);
+    setStatus("");
+    setError("");
+  }
+  const fileStem = `${area}-${start}-${end}-${view}`;
+
+  return (
+    <AnalysisShell
+      title="Patterns & anomalies"
+      description="Compare weather and energy rhythms, separate seasonal structure, and inspect statistical signals in observed data. Parameters and dates remain in the URL for reproducible views."
+    >
+      <div
+        className="diagnostics-tabs"
+        role="tablist"
+        aria-label="Diagnostic method"
+      >
+        {(["correlation", "decomposition", "quality"] as View[]).map((item) => (
+          <button
+            key={item}
+            type="button"
+            role="tab"
+            aria-selected={view === item}
+            onClick={() => chooseView(item)}
+          >
+            {item === "correlation"
+              ? "Sliding correlation"
+              : item === "decomposition"
+                ? "STL & spectrogram"
+                : "SPC & LOF"}
+          </button>
+        ))}
+      </div>
+      <form className="analysis-controls" onSubmit={submit}>
+        <label>
+          Price area
+          <select
+            value={area}
+            onChange={(event) => setArea(event.target.value)}
+          >
+            {Object.entries(areas).map(([code, name]) => (
+              <option key={code} value={code}>
+                {code} · {name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Start date
+          <input
+            type="date"
+            value={start}
+            onChange={(event) => setStart(event.target.value)}
+            required
+          />
+        </label>
+        <label>
+          End date, inclusive
+          <input
+            type="date"
+            value={end}
+            onChange={(event) => setEnd(event.target.value)}
+            required
+          />
+        </label>
+        {view !== "quality" && (
+          <>
+            <label>
+              Energy kind
+              <select
+                value={kind}
+                onChange={(event) => {
+                  const next = event.target.value as
+                    | "production"
+                    | "consumption";
+                  setKind(next);
+                  setGroup(next === "production" ? "hydro" : "household");
+                }}
+              >
+                <option value="production">Production</option>
+                <option value="consumption">Consumption</option>
+              </select>
+            </label>
+            <label>
+              Energy group
+              <select
+                value={group}
+                onChange={(event) => setGroup(event.target.value)}
+              >
+                {groups.map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+          </>
+        )}
+        {view === "correlation" && (
+          <>
+            <label>
+              Weather variable
+              <select
+                value={weather}
+                onChange={(event) => setWeather(event.target.value)}
+              >
+                {weatherVariables.map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Window, hours
+              <input
+                type="number"
+                min={12}
+                max={720}
+                step={6}
+                value={windowHours}
+                onChange={(event) => setWindowHours(Number(event.target.value))}
+              />
+            </label>
+            <label>
+              Lag, hours
+              <input
+                type="number"
+                min={-240}
+                max={240}
+                value={lagHours}
+                onChange={(event) => setLagHours(Number(event.target.value))}
+              />
+            </label>
+            <label className="check-control">
+              <input
+                type="checkbox"
+                checked={normalize}
+                onChange={(event) => setNormalize(event.target.checked)}
+              />{" "}
+              Normalize comparison
+            </label>
+          </>
+        )}
+        {view === "decomposition" && (
+          <>
+            <label>
+              STL period, hours
+              <input
+                type="number"
+                min={2}
+                max={2000}
+                value={period}
+                onChange={(event) => setPeriod(Number(event.target.value))}
+              />
+            </label>
+            <label>
+              Seasonal smoother
+              <input
+                type="number"
+                min={3}
+                max={9999}
+                value={seasonal}
+                onChange={(event) => setSeasonal(Number(event.target.value))}
+              />
+            </label>
+            <label>
+              Trend smoother
+              <input
+                type="number"
+                min={3}
+                max={9999}
+                value={trend}
+                onChange={(event) => setTrend(Number(event.target.value))}
+              />
+            </label>
+            <label className="check-control">
+              <input
+                type="checkbox"
+                checked={robust}
+                onChange={(event) => setRobust(event.target.checked)}
+              />{" "}
+              Robust STL
+            </label>
+            <label>
+              Spectral window, hours
+              <input
+                type="number"
+                min={8}
+                max={4096}
+                value={spectrogramWindow}
+                onChange={(event) =>
+                  setSpectrogramWindow(Number(event.target.value))
+                }
+              />
+            </label>
+            <label>
+              Overlap, hours
+              <input
+                type="number"
+                min={0}
+                max={4095}
+                value={spectrogramOverlap}
+                onChange={(event) =>
+                  setSpectrogramOverlap(Number(event.target.value))
+                }
+              />
+            </label>
+          </>
+        )}
+        {view === "quality" && (
+          <>
+            <label>
+              DCT fraction
+              <input
+                type="number"
+                min={0.001}
+                max={0.05}
+                step={0.001}
+                value={dctFraction}
+                onChange={(event) => setDctFraction(Number(event.target.value))}
+              />
+            </label>
+            <label>
+              Band width, robust σ
+              <input
+                type="number"
+                min={1}
+                max={6}
+                step={0.1}
+                value={k}
+                onChange={(event) => setK(Number(event.target.value))}
+              />
+            </label>
+            <label>
+              LOF contamination
+              <input
+                type="number"
+                min={0.001}
+                max={0.05}
+                step={0.001}
+                value={contamination}
+                onChange={(event) =>
+                  setContamination(Number(event.target.value))
+                }
+              />
+            </label>
+            <label>
+              LOF neighbors
+              <input
+                type="number"
+                min={10}
+                max={120}
+                step={5}
+                value={neighbors}
+                onChange={(event) => setNeighbors(Number(event.target.value))}
+              />
+            </label>
+          </>
+        )}
+        <button type="submit">Run analysis</button>
+      </form>
+      {status && (
+        <div className="diagnostics-state" role="status">
+          {status}
+        </div>
+      )}
+      {error && (
+        <div className="diagnostics-state diagnostics-error" role="alert">
+          <strong>Analysis unavailable</strong>
+          <span>{error}</span>
+        </div>
+      )}
+      {result && (
+        <>
+          <CoverageNote metadata={result.metadata} view={view} />
+          <div className="analysis-actions">
+            <button
+              onClick={() =>
+                downloadJson(`${fileStem}-metadata.json`, {
+                  query: result.query,
+                  units: result.units,
+                  metadata: result.metadata,
+                  ...(view === "decomposition"
+                    ? {
+                        effectiveParameters: (result as Decomposition)
+                          .effectiveParameters,
+                      }
+                    : {}),
+                })
+              }
+            >
+              Download metadata JSON
+            </button>
+            <span>
+              {result.metadata.analyzedPoints.toLocaleString("en-GB")} hourly
+              points analyzed
+              {result.metadata.chartPayloadLimited
+                ? `; chart payload reduced to ${result.metadata.returnedChartPoints.toLocaleString("en-GB")}`
+                : ""}
+              .
+            </span>
+          </div>
+        </>
+      )}
+      {view === "correlation" && result && (
+        <CorrelationView data={result as Correlation} fileStem={fileStem} />
+      )}
+      {view === "decomposition" && result && (
+        <DecompositionView data={result as Decomposition} fileStem={fileStem} />
+      )}
+      {view === "quality" && result && (
+        <QualityView data={result as Quality} fileStem={fileStem} />
+      )}
+    </AnalysisShell>
+  );
+}
+
+function CorrelationView({
+  data,
+  fileStem,
+}: {
+  data: Correlation;
+  fileStem: string;
+}) {
+  const comparison = useMemo(
+    () =>
+      lineOption(
+        data.values,
+        [
+          { key: "weather", name: "Weather", color: palette.green },
+          {
+            key: "energy",
+            name: "Energy",
+            color: palette.gold,
+            axis: data.units.energy === data.units.weather ? 0 : 1,
+          },
+        ],
+        data.units.energy === data.units.weather
+          ? [data.units.energy]
+          : [data.units.weather, data.units.energy],
+      ),
+    [data],
+  );
+  const correlation = useMemo(
+    () =>
+      ({
+        ...lineOption(
+          data.values,
+          [
+            {
+              key: "correlation",
+              name: "Rolling Pearson r",
+              color: palette.green,
+            },
+          ],
+          ["Pearson r"],
+        ),
+        yAxis: { type: "value", name: "Pearson r", min: -1.05, max: 1.05 },
+        series: [
+          {
+            type: "line",
+            name: "Rolling Pearson r",
+            showSymbol: false,
+            connectNulls: false,
+            data: data.values.map((row) => [row.time, row.correlation]),
+            markLine: {
+              symbol: "none",
+              lineStyle: { color: "#9caaa2", type: "dashed" },
+              data: [{ yAxis: 0 }],
+            },
+          },
+        ],
+      }) as EChartsCoreOption,
+    [data],
+  );
+  return (
+    <>
+      <div className="analysis-metrics">
+        <Metric
+          label="Paired hours"
+          value={data.summary.pairedHours.toLocaleString("en-GB")}
+        />
+        <Metric
+          label="Mean rolling r"
+          value={number(data.summary.meanCorrelation, 3)}
+        />
+        <Metric
+          label="Latest rolling r"
+          value={number(data.summary.latestCorrelation, 3)}
+        />
+      </div>
+      <section className="analysis-panel">
+        <h2>Aligned hourly series</h2>
+        <p>
+          Positive lag moves weather forward in time. Normalization changes this
+          comparison view only.
+        </p>
+        <AnalysisChart
+          option={comparison}
+          label="Aligned weather and energy series"
+        />
+        <button
+          onClick={() => downloadCsv(`${fileStem}-values.csv`, data.values)}
+        >
+          Download displayed values CSV
+        </button>
+      </section>
+      <section className="analysis-panel">
+        <h2>Centered rolling correlation</h2>
+        <p>
+          Each value uses a complete centered window. Correlation shows linear
+          association and does not establish causation.
+        </p>
+        <AnalysisChart
+          option={correlation}
+          label="Sliding Pearson correlation"
+        />
+      </section>
+      <details>
+        <summary>Method and provenance</summary>
+        <pre>{JSON.stringify(data.metadata, null, 2)}</pre>
+      </details>
+    </>
+  );
+}
+
+function DecompositionView({
+  data,
+  fileStem,
+}: {
+  data: Decomposition;
+  fileStem: string;
+}) {
+  const observed = useMemo(
+    () =>
+      lineOption(
+        data.components,
+        [
+          { key: "observed", name: "Observed", color: palette.slate },
+          { key: "trend", name: "Trend", color: palette.green },
+        ],
+        ["kWh"],
+      ),
+    [data],
+  );
+  const remainder = useMemo(
+    () =>
+      lineOption(
+        data.components,
+        [
+          { key: "seasonal", name: "Seasonal", color: palette.gold },
+          { key: "resid", name: "Residual", color: palette.red },
+        ],
+        ["kWh"],
+      ),
+    [data],
+  );
+  const heatmap = useMemo(
+    () =>
+      ({
+        tooltip: { position: "top" },
+        grid: { left: 68, right: 25, top: 72, bottom: 70 },
+        dataZoom: [
+          { type: "inside", xAxisIndex: 0 },
+          { type: "slider", xAxisIndex: 0, bottom: 10, height: 20 },
+        ],
+        xAxis: {
+          type: "category",
+          name: "Time (UTC)",
+          data: data.spectrogram.times,
+          axisLabel: {
+            formatter: (value: string) => value.slice(0, 10),
+            hideOverlap: true,
+          },
+        },
+        yAxis: {
+          type: "category",
+          name: "cycles/day",
+          data: data.spectrogram.frequencies.map((value) => number(value, 2)),
+        },
+        visualMap: {
+          min: 0,
+          max: Math.max(
+            1,
+            ...data.spectrogram.magnitude
+              .flat()
+              .filter((value): value is number => value != null),
+          ),
+          calculable: true,
+          orient: "horizontal",
+          left: "center",
+          top: 8,
+          inRange: { color: ["#eef4ef", "#7baa75", "#176b59", "#d18d2f"] },
+        },
+        series: [
+          {
+            type: "heatmap",
+            data: data.spectrogram.magnitude.flatMap((row, y) =>
+              row.map((value, x) => [x, y, value]),
+            ),
+            progressive: 5000,
+          },
+        ],
+      }) as EChartsCoreOption,
+    [data],
+  );
+  const spectralRows = data.spectrogram.frequencies.flatMap((frequency, y) =>
+    data.spectrogram.times.map((time, x) => ({
+      time,
+      frequency_cpd: frequency,
+      magnitude: data.spectrogram.magnitude[y][x],
+    })),
+  );
+  return (
+    <>
+      <div className="analysis-metrics">
+        <Metric
+          label="Analyzed hours"
+          value={data.metadata.analyzedPoints.toLocaleString("en-GB")}
+        />
+        <Metric
+          label="STL period"
+          value={`${data.effectiveParameters.period} h`}
+        />
+        <Metric
+          label="Effective smoothers"
+          value={`${data.effectiveParameters.seasonalSmoother} / ${data.effectiveParameters.trendSmoother}`}
+          detail="seasonal / trend"
+        />
+      </div>
+      <section className="analysis-panel">
+        <h2>Observed and trend</h2>
+        <AnalysisChart
+          option={observed}
+          label="STL observed energy and trend"
+        />
+        <div className="analysis-actions">
+          <button
+            onClick={() =>
+              downloadCsv(`${fileStem}-components.csv`, data.components)
+            }
+          >
+            Download components CSV
+          </button>
+        </div>
+      </section>
+      <section className="analysis-panel">
+        <h2>Seasonal pattern and residual</h2>
+        <AnalysisChart
+          option={remainder}
+          label="STL seasonal and residual components"
+        />
+      </section>
+      <section className="analysis-panel">
+        <h2>Frequency through time</h2>
+        <p>
+          Brighter regions show stronger repeating behavior. Frequencies are
+          shown from 0 to 12 cycles per day.
+        </p>
+        <AnalysisChart
+          option={heatmap}
+          label="Energy spectrogram"
+          height={440}
+        />
+        <button
+          onClick={() =>
+            downloadCsv(`${fileStem}-spectrogram.csv`, spectralRows)
+          }
+        >
+          Download spectral values CSV
+        </button>
+      </section>
+      <details>
+        <summary>Effective parameters and provenance</summary>
+        <pre>
+          {JSON.stringify(
+            {
+              effectiveParameters: data.effectiveParameters,
+              metadata: data.metadata,
+            },
+            null,
+            2,
+          )}
+        </pre>
+      </details>
+    </>
+  );
+}
+
+function QualityView({ data, fileStem }: { data: Quality; fileStem: string }) {
+  const spc = useMemo(
+    () =>
+      ({
+        ...lineOption(
+          data.spc.values,
+          [
+            { key: "lo", name: "Lower band", color: "#a2aea5" },
+            { key: "hi", name: "Upper band", color: "#a2aea5" },
+            { key: "trend", name: "DCT trend", color: palette.green },
+            { key: "value", name: "Temperature", color: palette.slate },
+          ],
+          ["°C"],
+        ),
+        legend: { type: "scroll", top: 2 },
+        grid: { left: 62, right: 20, top: 62, bottom: 62 },
+        yAxis: {
+          type: "value",
+          name: "°C",
+          nameLocation: "middle",
+          nameGap: 42,
+          scale: true,
+        },
+        series: [
+          {
+            type: "line",
+            name: "Lower band",
+            showSymbol: false,
+            data: data.spc.values.map((row) => [row.time, row.lo]),
+            lineStyle: { opacity: 0.65 },
+          },
+          {
+            type: "line",
+            name: "Upper band",
+            showSymbol: false,
+            data: data.spc.values.map((row) => [row.time, row.hi]),
+            areaStyle: { color: palette.pale, origin: "start" },
+            lineStyle: { opacity: 0.65 },
+          },
+          {
+            type: "line",
+            name: "DCT trend",
+            showSymbol: false,
+            data: data.spc.values.map((row) => [row.time, row.trend]),
+            lineStyle: { color: palette.green, type: "dashed" },
+          },
+          {
+            type: "line",
+            name: "Temperature",
+            showSymbol: false,
+            data: data.spc.values.map((row) => [row.time, row.value]),
+            lineStyle: { color: palette.slate },
+          },
+          {
+            type: "scatter",
+            name: "Flags",
+            data: data.spc.flaggedValues.map((row) => [row.time, row.value]),
+            itemStyle: { color: palette.red },
+            symbolSize: 7,
+          },
+        ],
+      }) as EChartsCoreOption,
+    [data],
+  );
+  const lof = useMemo(
+    () =>
+      ({
+        ...lineOption(
+          data.lof.values,
+          [{ key: "precip", name: "Precipitation", color: palette.green }],
+          ["mm"],
+        ),
+        series: [
+          {
+            type: "line",
+            name: "Precipitation",
+            showSymbol: false,
+            data: data.lof.values.map((row) => [row.time, row.precip]),
+            lineStyle: { color: palette.green },
+          },
+          {
+            type: "scatter",
+            name: "Flags",
+            data: data.lof.flaggedValues.map((row) => [row.time, row.precip]),
+            itemStyle: { color: palette.red },
+            symbolSize: 7,
+          },
+        ],
+      }) as EChartsCoreOption,
+    [data],
+  );
+  return (
+    <>
+      <div className="diagnostics-notice">
+        <strong>Inspection candidates</strong>
+        <span>
+          These flags are statistical signals. Cold snaps, storms, and heavy
+          rain can be real observations; a flag is not a verified data fault.
+        </span>
+      </div>
+      <div className="analysis-grid">
+        <section className="analysis-panel">
+          <h2>Temperature control band</h2>
+          <div className="analysis-metrics">
+            <Metric
+              label="SPC flags"
+              value={data.spc.summary.flags.toLocaleString("en-GB")}
+              detail={`${number(data.spc.summary.flagPercent, 2)}% of points`}
+            />
+            <Metric
+              label="Robust σ"
+              value={number(data.spc.summary.robustSigma, 3)}
+            />
+            <Metric
+              label="Max |SATV|"
+              value={number(data.spc.summary.maxAbsSatv, 2)}
+            />
+          </div>
+          <AnalysisChart
+            option={spc}
+            label="Temperature SPC control band and flags"
+          />
+          <div className="analysis-actions">
+            <button
+              onClick={() =>
+                downloadCsv(`${fileStem}-spc-values.csv`, data.spc.values)
+              }
+            >
+              Download displayed SPC values
+            </button>
+            <button
+              onClick={() =>
+                downloadCsv(`${fileStem}-spc-flags.csv`, data.spc.flaggedValues)
+              }
+            >
+              Download SPC flags
+            </button>
+          </div>
+          <FlagTable
+            title="SPC flag table"
+            rows={data.spc.flaggedValues}
+            columns={["value", "trend", "satv"]}
+          />
+        </section>
+        <section className="analysis-panel">
+          <h2>Precipitation anomalies</h2>
+          <div className="analysis-metrics">
+            <Metric
+              label="LOF flags"
+              value={data.lof.summary.flags.toLocaleString("en-GB")}
+              detail={`${number(data.lof.summary.flagPercent, 2)}% of points`}
+            />
+            <Metric
+              label="Neighbors used"
+              value={String(data.lof.summary.effectiveNeighbors)}
+            />
+            <Metric
+              label="Analyzed points"
+              value={data.lof.summary.points.toLocaleString("en-GB")}
+            />
+          </div>
+          <AnalysisChart option={lof} label="Precipitation LOF anomalies" />
+          <div className="analysis-actions">
+            <button
+              onClick={() =>
+                downloadCsv(`${fileStem}-lof-values.csv`, data.lof.values)
+              }
+            >
+              Download displayed LOF values
+            </button>
+            <button
+              onClick={() =>
+                downloadCsv(`${fileStem}-lof-flags.csv`, data.lof.flaggedValues)
+              }
+            >
+              Download LOF flags
+            </button>
+          </div>
+          <FlagTable
+            title="LOF flag table"
+            rows={data.lof.flaggedValues}
+            columns={["precip", "roll24", "lof_score"]}
+          />
+        </section>
+      </div>
+      <details>
+        <summary>Method and provenance</summary>
+        <pre>{JSON.stringify(data.metadata, null, 2)}</pre>
+      </details>
+    </>
+  );
+}

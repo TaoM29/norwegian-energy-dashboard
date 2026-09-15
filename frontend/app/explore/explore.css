@@ -1,0 +1,148 @@
+.explore-controls {
+  align-items: flex-end;
+}
+.explore-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  min-width: min(100%, 350px);
+  padding: 8px 12px 10px;
+  border: 1px solid #ccd8ce;
+  border-radius: 6px;
+}
+.explore-options legend {
+  padding: 0 5px;
+  color: #4b6352;
+  font-size: 12px;
+}
+.explore-options label,
+.analysis-controls .explore-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  color: #253b32;
+}
+.explore-coverage {
+  flex-basis: 100%;
+  color: #607069;
+  line-height: 1.5;
+}
+.explore-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 130px;
+}
+.explore-state p {
+  margin: 0;
+}
+.explore-error {
+  flex-direction: column;
+  color: #7a4038;
+}
+.explore-spin {
+  animation: explore-spin 1s linear infinite;
+}
+.explore-panel-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+}
+.explore-panel-heading h2,
+.explore-panel-heading p {
+  margin-top: 0;
+}
+.analysis-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.analysis-metrics strong,
+.analysis-metrics small,
+.analysis-metrics span {
+  display: block;
+}
+.analysis-metrics strong {
+  margin: 5px 0;
+  font-size: clamp(18px, 2.4vw, 25px);
+}
+.analysis-metrics span,
+.analysis-metrics small {
+  color: #607069;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.explore-note {
+  margin: 4px 0 0;
+  font-size: 11px;
+}
+.explore-table-wrap {
+  overflow-x: auto;
+}
+.explore-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.explore-table-wrap th,
+.explore-table-wrap td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8e2;
+  text-align: right;
+  white-space: nowrap;
+}
+.explore-table-wrap th:first-child,
+.explore-table-wrap td:first-child {
+  text-align: left;
+}
+.explore-table-wrap thead th {
+  color: #607069;
+  font-weight: 600;
+}
+.explore-section-heading {
+  margin: 12px 0 16px;
+}
+.explore-section-heading h2 {
+  margin-bottom: 4px;
+}
+.explore-section-heading p {
+  margin: 0;
+  color: #607069;
+}
+.analysis-panel h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+.explore-sector-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+.explore-sector-values span {
+  padding: 6px 9px;
+  border-radius: 5px;
+  background: #edf3ea;
+  color: #52665b;
+  font-size: 11px;
+}
+@keyframes explore-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .explore-spin {
+    animation: none;
+  }
+}
+@media (max-width: 760px) {
+  .explore-panel-heading {
+    flex-direction: column;
+  }
+  .explore-options {
+    min-width: 100%;
+  }
+}

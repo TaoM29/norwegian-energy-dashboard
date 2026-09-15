@@ -1,0 +1,75 @@
+.hint {
+  color: #7b8981;
+  font-size: 10px;
+}
+.error {
+  padding: 12px;
+  border-left: 3px solid #a43f35;
+  background: #fff1ef;
+  color: #7c2d25 !important;
+}
+.methodNote {
+  padding: 11px 13px;
+  border-left: 3px solid #b88627;
+  background: #fff8e8;
+  color: #5e5030 !important;
+}
+.metrics > div {
+  display: grid;
+  gap: 5px;
+}
+.metrics strong {
+  display: block;
+  font-size: 22px;
+}
+.metrics small {
+  color: #607069;
+}
+.areaButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 8px;
+}
+.areaButtons button {
+  padding: 7px 12px;
+  border: 1px solid #b9cbbb;
+  border-radius: 5px;
+  background: white;
+  color: #315d48;
+}
+.areaButtons button[aria-pressed="true"] {
+  border-color: #b88627;
+  box-shadow: inset 0 0 0 1px #b88627;
+  background: #fff8e8;
+}
+.tableWrap {
+  width: 100%;
+  overflow-x: auto;
+}
+.tableWrap table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.tableWrap th,
+.tableWrap td {
+  padding: 10px 9px;
+  border-bottom: 1px solid #e4e9e2;
+  text-align: left;
+  white-space: nowrap;
+}
+.tableWrap thead th {
+  color: #607069;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+.tableWrap tbody th {
+  font-weight: 600;
+}
+@media (max-width: 760px) {
+  .tableWrap th,
+  .tableWrap td {
+    padding: 9px 7px;
+  }
+}
