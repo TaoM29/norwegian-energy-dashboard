@@ -217,6 +217,7 @@ class EnergyStore:
     def publish(self, staging: "EnergyStore") -> None:
         if staging.path.parent != self.path.parent:
             raise ValueError("staging database must be in the destination directory")
+        staging.rebuild_summaries()
         os.replace(staging.path, self.path)
 
     def initialize(self) -> None:
@@ -262,7 +263,40 @@ class EnergyStore:
         """
         with self._connect() as connection:
             connection.executemany(sql, values)
+            # Derived summaries are rebuilt once before atomic publication.
+            connection.execute("DROP TABLE IF EXISTS energy_daily")
+            connection.execute("DROP TABLE IF EXISTS energy_daily_totals")
         return len(values)
+
+    def rebuild_summaries(self) -> None:
+        """Materialize exact UTC day aggregates in the snapshot being published."""
+        with self._connect() as connection:
+            connection.execute("DROP TABLE IF EXISTS energy_daily")
+            connection.execute("DROP TABLE IF EXISTS energy_daily_totals")
+            connection.execute("""
+                CREATE TABLE energy_daily AS
+                SELECT SUBSTR(timestamp, 1, 10) AS day, area, kind, energy_group,
+                       SUM(value) AS value, COUNT(value) AS observed_hours,
+                       MIN(value) AS minimum, MAX(value) AS maximum
+                FROM energy_observations
+                GROUP BY day, area, kind, energy_group
+            """)
+            connection.execute("CREATE UNIQUE INDEX daily_filter_idx ON energy_daily(kind, area, energy_group, day)")
+            connection.execute("""
+                CREATE TABLE energy_daily_totals AS
+                WITH hourly AS (
+                    SELECT SUBSTR(timestamp, 1, 10) AS day, timestamp, area, kind,
+                           SUM(value) AS value, COUNT(value) AS observed_groups
+                    FROM energy_observations
+                    WHERE (kind = 'production' AND energy_group IN ('hydro','other','solar','thermal','wind'))
+                       OR (kind = 'consumption' AND energy_group IN ('cabin','household','primary','secondary','tertiary'))
+                    GROUP BY day, timestamp, area, kind
+                )
+                SELECT day, area, kind, SUM(value) AS value,
+                       SUM(CASE WHEN observed_groups = 5 THEN 1 ELSE 0 END) AS observed_hours
+                FROM hourly GROUP BY day, area, kind
+            """)
+            connection.execute("CREATE UNIQUE INDEX daily_totals_idx ON energy_daily_totals(area, day, kind)")
 
     def record_run(
         self,
