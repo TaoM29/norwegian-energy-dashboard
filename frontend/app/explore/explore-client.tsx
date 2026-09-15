@@ -7,6 +7,8 @@ import AnalysisChart from "@/components/analysis-chart";
 import { AnalysisShell } from "@/components/analysis-shell";
 import { AppliedFilters } from "@/components/applied-filters";
 import { DateRangePicker, parseDate } from "@/components/date-range-picker";
+import { HelpPanel, HelpTip } from "@/components/help";
+import { Select } from "@/components/ui/select";
 import { downloadCsv, downloadJson } from "@/lib/download";
 import { areas, getJson, number, shiftDay, type Coverage } from "@/lib/api";
 import { writeDashboardUrl } from "@/lib/navigation-state";
@@ -495,17 +497,19 @@ export default function ExploreClient() {
         <form className="analysis-controls explore-controls" onSubmit={submit}>
           <label>
             View
-            <select
+            <Select
+              aria-label="View"
               value={draft.view}
               onChange={(event) => update({ view: event.target.value as View })}
             >
               <option value="energy">Energy</option>
               <option value="weather">Weather</option>
-            </select>
+            </Select>
           </label>
           <label>
             Price area
-            <select
+            <Select
+              aria-label="Price area"
               value={draft.area}
               onChange={(event) => update({ area: event.target.value })}
             >
@@ -514,7 +518,7 @@ export default function ExploreClient() {
                   {area} · {areas[area]}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <DateRangePicker
             value={{ start: draft.start, end: draft.end }}
@@ -525,7 +529,8 @@ export default function ExploreClient() {
           />
           <label>
             Time detail
-            <select
+            <Select
+              aria-label="Time detail"
               value={draft.aggregation}
               onChange={(event) =>
                 update({ aggregation: event.target.value as Aggregation })
@@ -534,13 +539,14 @@ export default function ExploreClient() {
               <option value="hourly">Hourly</option>
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
-            </select>
+            </Select>
           </label>
           {draft.view === "energy" ? (
             <>
               <label>
                 Energy kind
-                <select
+                <Select
+                  aria-label="Energy kind"
                   value={draft.kind}
                   onChange={(event) => {
                     const kind = event.target.value as Kind;
@@ -555,7 +561,7 @@ export default function ExploreClient() {
                 >
                   <option value="production">Production</option>
                   <option value="consumption">Consumption</option>
-                </select>
+                </Select>
               </label>
               <fieldset className="explore-options">
                 <legend>Groups</legend>
@@ -642,10 +648,13 @@ export default function ExploreClient() {
             </label>
           </details>
           <button type="submit">Apply view</button>
-          <small className="explore-coverage">
-            Published common energy coverage: {coverage.coverage.start} to{" "}
-            {shiftDay(coverage.coverage.end, -1)} UTC. End date is inclusive.
-          </small>
+          <div className="explore-coverage">
+            <HelpTip label="Data coverage">
+              Published common energy coverage runs from {coverage.coverage.start}{" "}
+              through {shiftDay(coverage.coverage.end, -1)}. Dates are inclusive
+              and use UTC.
+            </HelpTip>
+          </div>
         </form>
       ) : null}
 
@@ -717,11 +726,14 @@ function CapNote({
   renderedPoints: number;
 }) {
   return stride > 1 ? (
-    <p className="explore-note">
-      The chart renders {number(renderedPoints, 0)} of {number(sourcePoints, 0)}{" "}
-      exact aggregated points (every {stride}th UTC interval plus the final
-      interval). Calculations and downloads use all points.
-    </p>
+    <div className="explore-note">
+      <HelpTip label="Chart sampling">
+        The chart renders {number(renderedPoints, 0)} of{" "}
+        {number(sourcePoints, 0)} exact aggregated points: every {stride}th UTC
+        interval plus the final interval. Calculations and downloads use every
+        point.
+      </HelpTip>
+    </div>
   ) : null;
 }
 
@@ -817,10 +829,10 @@ function EnergyView({
       <section className="analysis-grid">
         <div className="analysis-panel">
           <h2>Group totals</h2>
-          <p>
+          <HelpTip label="How totals are calculated">
             Totals include every finite selected observation before chart
-            rendering.
-          </p>
+            sampling.
+          </HelpTip>
           <AnalysisChart
             option={totalsOption}
             label={`${response.query.kind} group totals`}
@@ -856,10 +868,9 @@ function EnergyView({
           </div>
         </div>
       </section>
-      <details className="analysis-panel">
-        <summary>Method and provenance</summary>
+      <HelpPanel label="Energy method and provenance">
         <pre>{JSON.stringify(response.metadata, null, 2)}</pre>
-      </details>
+      </HelpPanel>
     </>
   );
 }
@@ -940,10 +951,10 @@ function WeatherView({
         <div className="explore-panel-heading">
           <div>
             <h2>Weather explorer</h2>
-            <p>
-              {response.valueLabel}. Circular wind averages preserve the north
-              boundary.
-            </p>
+            <p>{response.valueLabel}.</p>
+            <HelpTip label="Wind averages">
+              Circular wind averages preserve the north boundary.
+            </HelpTip>
           </div>
         </div>
         <AnalysisChart
@@ -982,11 +993,11 @@ function WeatherView({
       </section>
       <section className="analysis-panel">
         <h2>Summary for selected dates</h2>
-        <p>
+        <HelpTip label="Summary and scaling">
           Summary values retain their original units. “Compare shapes” scales
           each chart series from 0 to 1, so its axis no longer shows physical
           quantities.
-        </p>
+        </HelpTip>
         <div className="explore-table-wrap">
           <table>
             <thead>
@@ -1017,10 +1028,10 @@ function WeatherView({
       <section>
         <div className="explore-section-heading">
           <h2>Monthly patterns</h2>
-          <p>
+          <HelpTip label="Monthly aggregation">
             Precipitation is summed; temperature, wind speed and gusts are
             arithmetic means. Missing months remain blank.
-          </p>
+          </HelpTip>
         </div>
         <div className="analysis-grid">
           {(
@@ -1049,10 +1060,10 @@ function WeatherView({
       </section>
       <section className="analysis-panel">
         <h2>Wind direction · 16 sectors</h2>
-        <p>
+        <HelpTip label="Direction sectors">
           Raw observation counts match the retained page convention; 360° is
           treated as 0°.
-        </p>
+        </HelpTip>
         <AnalysisChart
           option={windOption}
           label="Wind direction frequency in 16 sectors"
@@ -1070,10 +1081,9 @@ function WeatherView({
           ))}
         </div>
       </section>
-      <details className="analysis-panel">
-        <summary>Method and provenance</summary>
+      <HelpPanel label="Weather method and provenance">
         <pre>{JSON.stringify(response.metadata, null, 2)}</pre>
-      </details>
+      </HelpPanel>
     </>
   );
 }

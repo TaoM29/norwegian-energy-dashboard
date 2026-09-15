@@ -14,6 +14,8 @@ import AnalysisChart from "@/components/analysis-chart";
 import { AnalysisShell } from "@/components/analysis-shell";
 import { AppliedFilters } from "@/components/applied-filters";
 import { DateRangePicker, parseDate } from "@/components/date-range-picker";
+import { HelpPanel, HelpTip } from "@/components/help";
+import { Select } from "@/components/ui/select";
 import { areas, getJson, number, shiftDay, type Coverage } from "@/lib/api";
 import { ExportMenu } from "@/components/export-menu";
 import { downloadCsv, downloadJson } from "@/lib/download";
@@ -295,10 +297,10 @@ function FlagTable({
         </table>
       </div>
       {rows.length > 30 && (
-        <p>
+        <HelpTip label="Rows shown">
           Showing the first 30 flags. The CSV download includes every returned
           flag.
-        </p>
+        </HelpTip>
       )}
     </details>
   );
@@ -659,7 +661,8 @@ export default function DiagnosticsWorkbench() {
       <form className="analysis-controls" onSubmit={submit}>
         <label>
           Price area
-          <select
+          <Select
+            aria-label="Price area"
             value={area}
             onChange={(event) => setArea(event.target.value)}
           >
@@ -668,7 +671,7 @@ export default function DiagnosticsWorkbench() {
                 {code} · {name}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
         <DateRangePicker
           value={{ start, end }}
@@ -684,7 +687,8 @@ export default function DiagnosticsWorkbench() {
           <>
             <label>
               Energy kind
-              <select
+              <Select
+                aria-label="Energy kind"
                 value={kind}
                 onChange={(event) => {
                   const next = event.target.value as
@@ -695,39 +699,38 @@ export default function DiagnosticsWorkbench() {
               >
                 <option value="production">Production</option>
                 <option value="consumption">Consumption</option>
-              </select>
+              </Select>
             </label>
             <label>
               Energy group
-              <select
+              <Select
+                aria-label="Energy group"
                 value={group}
                 onChange={(event) => setGroup(event.target.value)}
               >
                 {groups.map((item) => (
                   <option key={item}>{item}</option>
                 ))}
-              </select>
+              </Select>
             </label>
           </>
         )}
         <details className="method-settings">
-          <summary>
-            Method settings{" "}
-            <span>Windows, model parameters and comparison options</span>
-          </summary>
+          <summary>Method settings</summary>
           <div className="method-settings-fields">
             {view === "correlation" && (
               <>
                 <label>
                   Weather variable
-                  <select
+                  <Select
+                    aria-label="Weather variable"
                     value={weather}
                     onChange={(event) => setWeather(event.target.value)}
                   >
                     {weatherVariables.map((item) => (
                       <option key={item}>{item}</option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
                 <label>
                   Window, hours
@@ -1046,11 +1049,11 @@ function CorrelationView({
       </div>
       <section className="analysis-panel">
         <h2>Aligned hourly series</h2>
-        <p>
+        <HelpTip label="Alignment and scaling">
           Positive lag moves weather forward in time. “Compare shapes” puts both
           series on a standard-deviation scale, without physical units. It
           changes this chart only, not the correlation calculation.
-        </p>
+        </HelpTip>
         <AnalysisChart
           option={comparison}
           label="Aligned weather and energy series"
@@ -1066,19 +1069,18 @@ function CorrelationView({
       </section>
       <section className="analysis-panel">
         <h2>Centered rolling correlation</h2>
-        <p>
-          Each value uses a complete centered window. Correlation shows linear
-          association and does not establish causation.
-        </p>
+        <p>Correlation shows association, not causation.</p>
+        <HelpTip label="Rolling window">
+          Each value uses a complete centered window.
+        </HelpTip>
         <AnalysisChart
           option={correlation}
           label="Sliding Pearson correlation"
         />
       </section>
-      <details>
-        <summary>Method and provenance</summary>
+      <HelpPanel label="Correlation method and provenance">
         <pre>{JSON.stringify(data.metadata, null, 2)}</pre>
-      </details>
+      </HelpPanel>
     </>
   );
 }
@@ -1215,10 +1217,10 @@ function DecompositionView({
       </section>
       <section className="analysis-panel">
         <h2>Frequency through time</h2>
-        <p>
+        <HelpTip label="Reading the spectrum">
           Brighter regions show stronger repeating behavior. Frequencies are
           shown from 0 to 12 cycles per day.
-        </p>
+        </HelpTip>
         <AnalysisChart
           option={heatmap}
           label="Energy spectrogram"
@@ -1235,8 +1237,7 @@ function DecompositionView({
           }
         />
       </section>
-      <details>
-        <summary>Effective parameters and provenance</summary>
+      <HelpPanel label="Decomposition parameters and provenance">
         <pre>
           {JSON.stringify(
             {
@@ -1247,7 +1248,7 @@ function DecompositionView({
             2,
           )}
         </pre>
-      </details>
+      </HelpPanel>
     </>
   );
 }
@@ -1451,10 +1452,9 @@ function QualityView({ data, fileStem }: { data: Quality; fileStem: string }) {
           />
         </section>
       </div>
-      <details>
-        <summary>Method and provenance</summary>
+      <HelpPanel label="Anomaly methods and provenance">
         <pre>{JSON.stringify(data.metadata, null, 2)}</pre>
-      </details>
+      </HelpPanel>
     </>
   );
 }
