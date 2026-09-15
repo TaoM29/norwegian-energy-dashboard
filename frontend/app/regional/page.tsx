@@ -12,7 +12,7 @@ import type { EChartsCoreOption, EChartsType } from "echarts/core";
 import AnalysisChart from "@/components/analysis-chart";
 import { AnalysisShell } from "@/components/analysis-shell";
 import { downloadCsv, downloadJson } from "@/lib/download";
-import { areas, getJson, number, shiftDay } from "@/lib/api";
+import { areas, getJson, number, shiftDay, type Coverage } from "@/lib/api";
 import styles from "./regional.module.css";
 
 const productionGroups = [
@@ -118,23 +118,18 @@ type SnowResult = {
   method: Record<string, string>;
 };
 
-function initialFilters(): Filters {
+function initialFilters(coverage?: Coverage): Filters {
   const query = new URLSearchParams(window.location.search);
   const numeric = (name: string, fallback: number) => {
     const value = Number(query.get(name));
     return query.has(name) && Number.isFinite(value) ? value : fallback;
   };
-  const today = new Date();
-  const defaultEnd = new Date(
-    Date.UTC(
-      today.getUTCFullYear(),
-      today.getUTCMonth(),
-      today.getUTCDate() - 1,
-    ),
-  )
-    .toISOString()
-    .slice(0, 10);
-  const defaultStart = shiftDay(defaultEnd, -29);
+  const today = coverage
+    ? new Date(`${coverage.coverage.end}T00:00:00Z`)
+    : new Date();
+  const defaultEnd = shiftDay(today.toISOString().slice(0, 10), -1);
+  const defaultStart =
+    coverage?.suggestedRange.start || shiftDay(defaultEnd, -29);
   const completeSeason =
     today.getUTCMonth() >= 6
       ? today.getUTCFullYear() - 1
@@ -155,7 +150,7 @@ function initialFilters(): Filters {
     groups: groups.length ? groups : [allowed[0]],
     latitude: numeric("lat", 61.5),
     longitude: numeric("lon", 9.0),
-    seasonStart: numeric("seasonStart", Math.max(2000, completeSeason - 4)),
+    seasonStart: numeric("seasonStart", Math.max(2021, completeSeason - 4)),
     seasonEnd: numeric("seasonEnd", completeSeason),
     transportDistanceM: numeric("T", 3000),
     fetchDistanceM: numeric("F", 30000),
@@ -211,14 +206,27 @@ export default function RegionalPage() {
   const [snowLoading, setSnowLoading] = useState(true);
 
   useEffect(() => {
+    let live = true;
+    let coverage: Coverage | undefined;
     const restore = () => {
-      const value = initialFilters();
+      const value = initialFilters(coverage);
       setFilters(value);
       setDraft(value);
     };
-    restore();
+    getJson<Coverage>("/api/coverage")
+      .then((value) => {
+        if (!live) return;
+        coverage = value;
+        restore();
+      })
+      .catch(() => {
+        if (live) restore();
+      });
     window.addEventListener("popstate", restore);
-    return () => window.removeEventListener("popstate", restore);
+    return () => {
+      live = false;
+      window.removeEventListener("popstate", restore);
+    };
   }, []);
 
   useEffect(() => {

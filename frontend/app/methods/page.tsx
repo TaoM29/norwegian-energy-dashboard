@@ -1,0 +1,243 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { AnalysisShell } from "@/components/analysis-shell";
+import styles from "./methods.module.css";
+import { Coverage, getJson } from "@/lib/api";
+
+const models = [
+  [
+    "Seasonal naive",
+    "Repeat the latest eligible observation at a 168-hour seasonal lag.",
+    "A transparent weekly reference; changing weather and holidays can break repetition.",
+  ],
+  [
+    "Ridge",
+    "Regularized regression with calendar, eligible demand lags, rolling summaries and historical weather.",
+    "Fold-local imputation and scaling; linear relationships can miss interactions.",
+  ],
+  [
+    "Gradient boosting",
+    "Trees using the same information available at issue time; validation selects the configuration.",
+    "Nonlinear associations, not causal weather effects. Performance outside the training range is uncertain.",
+  ],
+  [
+    "SARIMAX",
+    "State-space forecasting with configurable orders and optional projected weather. The benchmark fixes ARMA(1,1).",
+    "Convergence failures are reported. Custom nominal 95% intervals omit future-weather uncertainty.",
+  ],
+];
+
+export default function Methods() {
+  const [coverage, setCoverage] = useState<Coverage | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    getJson<Coverage>("/api/coverage")
+      .then(setCoverage)
+      .catch(() =>
+        setError(
+          "The published snapshot is unavailable. Coverage cannot be confirmed.",
+        ),
+      );
+  }, []);
+  return (
+    <AnalysisShell
+      title="Methods & data"
+      description="Where the observations come from, what the models can tell us, and where their evidence ends."
+    >
+      <div className={styles.content}>
+        <section className="analysis-panel">
+          <h2>Published data coverage</h2>
+          {coverage ? (
+            <>
+              <p>
+                <strong>
+                  {coverage.coverage.start} to {coverage.coverage.end}{" "}
+                  (exclusive, UTC)
+                </strong>{" "}
+                — the common date envelope across required series in NO1–NO5.
+                Internal gaps are reported in each view.
+              </p>
+              <p>
+                Source: {coverage.snapshot.source}. Snapshot retrieved:{" "}
+                {coverage.snapshot.retrievedAt}. This is a saved snapshot, not a
+                live feed; check the end date before interpreting recent
+                conditions.
+              </p>
+            </>
+          ) : (
+            <p role="status">{error || "Checking the published snapshot…"}</p>
+          )}
+          <p>
+            Energy is hourly kWh from <a href="https://api.elhub.no/">Elhub</a>.
+            Overview totals use MWh and chart axes may use GWh. Production and
+            consumption sum disjoint base groups. Their difference is not a
+            measure of cross-border flows.
+          </p>
+          <p>
+            Weather comes from{" "}
+            <a href="https://open-meteo.com/en/docs/historical-weather-api">
+              Open-Meteo historical weather
+            </a>
+            , using ERA5-Seamless. Area views use one fixed city proxy per area,
+            not spatial averages. Snow drift uses the selected coordinate.
+            Reanalysis and revised energy records do not reconstruct what was
+            known historically.
+          </p>
+        </section>
+        <section className="analysis-panel">
+          <h2>A two-minute walkthrough</h2>
+          <ol>
+            <li>
+              <a href="/">Overview</a>: choose an area and dates; compare
+              production, consumption, mix and coverage.
+            </li>
+            <li>
+              <a href="/explore">Explore</a>: inspect individual energy groups
+              and weather. Daily energy and precipitation are summed; direction
+              uses circular means.
+            </li>
+            <li>
+              <a href="/diagnostics">Diagnostics</a>: examine rolling
+              correlation, STL/spectra and candidate anomalies. Flags invite
+              investigation; they do not verify faults.
+            </li>
+            <li>
+              <a href="/regional">Regional & snow</a>: compare areas, select a
+              coordinate and inspect seasonal transport assumptions.
+            </li>
+            <li>
+              <a href="/forecasts">Forecasts</a>: inspect saved predictions and
+              matched errors. Download values and metadata to reproduce a view.
+            </li>
+          </ol>
+        </section>
+        <section className="analysis-panel">
+          <h2>Forecast model cards</h2>
+          <p>
+            The flagship task predicts 24 hours of household demand in all five
+            areas. Energy becomes eligible after the interval ends plus an
+            assumed 48-hour publication lag; historical weather uses 120 hours.
+            These are experimental assumptions, not verified publication
+            archives.
+          </p>
+          <div className="analysis-grid">
+            {models.map(([name, method, limit]) => (
+              <article key={name}>
+                <h3>{name}</h3>
+                <p>{method}</p>
+                <p>{limit}</p>
+              </article>
+            ))}
+          </div>
+          <p>
+            Parameters are selected on chronological validation dates. Residual
+            quantiles are calibrated before the final holdout. Later origins can
+            refit using earlier observations once eligible, while selection and
+            calibration remain frozen. Failed fits are recorded; comparison uses
+            the same successful origins for every model.
+          </p>
+          <p>
+            MAE and RMSE measure held-out error. MASE uses training seasonal
+            changes as its denominator; MASE below one does not prove a model
+            beat the held-out baseline. Benchmark intervals use empirical
+            10th/50th/90th residual quantiles. Evaluate coverage, width and
+            pinball loss together. Realized future weather is available only as
+            a separately labeled upper-bound experiment.
+          </p>
+        </section>
+        <section className="analysis-panel">
+          <h2>Three findings from recorded observations</h2>
+          <p>
+            These are fixed examples from the September 2026 validation
+            snapshots. Refreshing source data may change a rerun. Synthetic
+            fixture mode does not reproduce these scientific findings.
+          </p>
+          <div className="analysis-grid">
+            <article>
+              <h3>How much did NO1 produce in 2025?</h3>
+              <p>
+                Summing disjoint hourly production groups gives{" "}
+                <strong>19,717,508.644 MWh</strong>. The new daily-summary path
+                matches the migration reference. This measures production, not
+                net exports.
+              </p>
+              <a href="/explore?area=NO1&start=2025-01-01&end=2025-12-31">
+                Inspect the production year →
+              </a>
+            </article>
+            <article>
+              <h3>Does complexity beat weekly repetition?</h3>
+              <p>
+                On 19 matched area-days, gradient boosting achieved{" "}
+                <strong>61,991.89 kWh MAE</strong> versus{" "}
+                <strong>88,508.58</strong> for seasonal naive, a 29.96%
+                reduction. Ridge was 1.71% worse. The small four-date holdout
+                does not establish broad superiority; nominal 80%
+                gradient-boosting intervals covered only 61.6%.
+              </p>
+              <a href="/forecasts?result=phase4-household-24h">
+                Inspect the held-out benchmark →
+              </a>
+            </article>
+            <article>
+              <h3>What does the Bergen snow model estimate?</h3>
+              <p>
+                At 60.3913° N, 5.3221° E for July 2024–June 2025, the validated
+                run estimated <strong>44.7 tonnes per metre</strong> of
+                snowfall-controlled transport and an indicative{" "}
+                <strong>2.13 m</strong> Wyoming fence height. It used 3,000 m
+                transport distance, 30,000 m fetch and relocation coefficient
+                0.5.
+              </p>
+              <p>
+                The retained Tabler model is sensitive to the selected weather
+                point and parameters. This is a model illustration, not a
+                site-specific engineering design.
+              </p>
+              <a href="/regional?lat=60.3913&lon=5.3221&seasonStart=2024&seasonEnd=2024">
+                Explore the regional model →
+              </a>
+            </article>
+          </div>
+        </section>
+        <section className="analysis-panel">
+          <h2>Architecture and reproducibility</h2>
+          <p>
+            Public sources → validated hourly SQLite and weather snapshots →
+            FastAPI analysis and stored forecast artifacts → Next.js charts and
+            tables. Refreshes publish atomically; ordinary area views read local
+            snapshots. Only explicit custom jobs fit forecasting models, with
+            one worker, a bounded queue, timeout and cancellation.
+          </p>
+          <p>
+            UTC intervals use an exclusive end; browser date controls include
+            both selected dates. Forecast calendar features use Europe/Oslo,
+            including daylight saving. Missing hours remain on the regular grid.
+            Aggregation and display sampling are disclosed alongside each
+            analysis.
+          </p>
+          <p>
+            Exports carry source versions, parameters and units. Forecast
+            artifacts also record training windows, issue times, code
+            fingerprints, dependencies, failed folds and calibration.
+            Reproducing an exact result requires the same source snapshots and
+            environment.
+          </p>
+          <p>
+            This independent continuation of{" "}
+            <a href="https://github.com/TaoM29/data-to-descision-dashboard">
+              the original IND320 project
+            </a>{" "}
+            preserves its notebooks, source attribution and historical
+            validation in{" "}
+            <a href="https://github.com/TaoM29/norwegian-energy-dashboard">
+              the repository
+            </a>
+            . See its validation reports for full methods and recorded checks.
+          </p>
+        </section>
+      </div>
+    </AnalysisShell>
+  );
+}

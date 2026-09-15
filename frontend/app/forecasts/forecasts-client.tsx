@@ -387,6 +387,7 @@ export default function ForecastsClient() {
   const [error, setError] = useState("");
   const [jobError, setJobError] = useState("");
   const [runningAction, setRunningAction] = useState(false);
+  const [customJobsEnabled, setCustomJobsEnabled] = useState(false);
   const [evaluation, setEvaluation] = useState(defaultEvaluation);
   const [sarimax, setSarimax] = useState(defaultSarimax);
 
@@ -415,6 +416,12 @@ export default function ForecastsClient() {
     },
     [],
   );
+
+  useEffect(() => {
+    apiJson<{ customJobsEnabled: boolean }>("/api/forecasts/capabilities")
+      .then((value) => setCustomJobsEnabled(value.customJobsEnabled))
+      .catch(() => setCustomJobsEnabled(false));
+  }, []);
 
   const loadLists = useCallback(async () => {
     const [resultResponse, jobResponse] = await Promise.all([
@@ -1677,31 +1684,43 @@ export default function ForecastsClient() {
         </>
       )}
 
-      <section
-        className={styles.jobsSection}
-        aria-labelledby="experiments-title"
-      >
-        <span className={styles.sectionKicker}>Bounded compute</span>
-        <h2 id="experiments-title">Run an experiment</h2>
-        <p>
-          Compare a prepared set of areas and models, or configure a focused
-          SARIMAX forecast. Submitted runs report progress and can be cancelled.
-        </p>
-        <div className="analysis-grid">
-          <EvaluationForm
-            value={evaluation}
-            onChange={setEvaluation}
-            onSubmit={runEvaluation}
-            disabled={runningAction}
-          />
-          <SarimaxForm
-            value={sarimax}
-            onChange={setSarimax}
-            onSubmit={runSarimax}
-            disabled={runningAction}
-          />
-        </div>
-      </section>
+      {customJobsEnabled ? (
+        <section
+          className={styles.jobsSection}
+          aria-labelledby="experiments-title"
+        >
+          <span className={styles.sectionKicker}>Bounded compute</span>
+          <h2 id="experiments-title">Run an experiment</h2>
+          <p>
+            Compare a prepared set of areas and models, or configure a focused
+            SARIMAX forecast. Submitted runs report progress and can be
+            cancelled.
+          </p>
+          <div className="analysis-grid">
+            <EvaluationForm
+              value={evaluation}
+              onChange={setEvaluation}
+              onSubmit={runEvaluation}
+              disabled={runningAction}
+            />
+            <SarimaxForm
+              value={sarimax}
+              onChange={setSarimax}
+              onSubmit={runSarimax}
+              disabled={runningAction}
+            />
+          </div>
+        </section>
+      ) : (
+        <section className="analysis-panel">
+          <h2>Prepared results</h2>
+          <p>
+            Custom runs are disabled on this deployment. You can explore and
+            download the saved results above. Run your own experiments with the
+            local installation.
+          </p>
+        </section>
+      )}
     </AnalysisShell>
   );
 }

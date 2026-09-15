@@ -1071,3 +1071,5 @@ footer code {
     animation: none !important;
   }
 }
+
+.fixture-banner { padding: 12px 4vw; background: #fff0c4; color: #594414; font-size: 14px; line-height: 1.5; }

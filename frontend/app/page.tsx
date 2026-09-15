@@ -235,7 +235,10 @@ export default function Page() {
           <a className="nav-item" href={`/explore${navigationQuery}`}>
             <Layers3 size={18} /> Explore
           </a>
-          <a className="nav-item" href={`/forecasts${navigationQuery}`}>
+          <a
+            className="nav-item"
+            href={`/forecasts?area=${filters?.area || "NO1"}`}
+          >
             <BarChart3 size={18} /> Forecasts
           </a>
           <a className="nav-item" href={`/diagnostics${navigationQuery}`}>
@@ -243,6 +246,9 @@ export default function Page() {
           </a>
           <a className="nav-item" href={`/regional${navigationQuery}`}>
             <MapPin size={18} /> Regional
+          </a>
+          <a className="nav-item" href="/methods">
+            <CircleHelp size={18} /> Methods & data
           </a>
         </nav>
         <div className="sidebar-bottom">

@@ -1,0 +1,21 @@
+.content {
+  max-width: 1100px;
+}
+.content p + p,
+.content p + div {
+  margin-top: 12px;
+}
+.content a {
+  color: #176b59;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.content ol {
+  padding-left: 22px;
+  list-style: decimal;
+  line-height: 1.8;
+}
+.content h3 {
+  margin: 8px 0;
+  font-size: 18px;
+}

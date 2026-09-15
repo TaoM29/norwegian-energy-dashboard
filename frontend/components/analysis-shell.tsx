@@ -10,6 +10,7 @@ const navigation = [
   ["/forecasts", "Forecasts"],
   ["/diagnostics", "Diagnostics"],
   ["/regional", "Regional & snow"],
+  ["/methods", "Methods & data"],
 ];
 
 export function AnalysisShell({
@@ -41,7 +42,9 @@ export function AnalysisShell({
   function destination(href: string) {
     const current = new URLSearchParams(window.location.search);
     const shared = new URLSearchParams();
-    for (const key of ["area", "start", "end"])
+    for (const key of href === "/forecasts"
+      ? ["area"]
+      : ["area", "start", "end"])
       if (current.has(key)) shared.set(key, current.get(key)!);
     return href + (shared.size ? `?${shared}` : "");
   }
@@ -59,7 +62,14 @@ export function AnalysisShell({
           {navigation.map(([href, label]) => (
             <a
               key={href}
-              href={href + query}
+              href={
+                href +
+                (href === "/forecasts"
+                  ? new URLSearchParams(query).has("area")
+                    ? `?area=${encodeURIComponent(new URLSearchParams(query).get("area")!)}`
+                    : ""
+                  : query)
+              }
               aria-current={path === href ? "page" : undefined}
               onClick={(event) => {
                 event.currentTarget.href = destination(href);
