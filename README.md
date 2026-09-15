@@ -4,6 +4,8 @@ Norwegian energy and weather analytics, delivered as a Next.js dashboard with a 
 
 The current application covers energy exploration, weather, regional maps, snow drift, diagnostics, and forecast evaluation. The former Streamlit app is retired.
 
+Live dashboard: <https://norwegian-energy-dashboard.vercel.app>
+
 ## Features
 
 - Production and consumption across Norwegian price areas (NO1–NO5)
@@ -12,7 +14,7 @@ The current application covers energy exploration, weather, regional maps, snow 
 - Forecast benchmarks, uncertainty metrics, and bounded custom jobs
 - Transparent methods, data freshness, and provenance
 
-## Quick start
+## Local development (optional)
 
 Requirements: Python 3.11 or 3.12 and Node.js 22.
 
