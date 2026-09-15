@@ -13,6 +13,7 @@ from app_core.ingestion.models import AREAS, BASE_GROUPS
 from backend.explore import router as explore_router
 from backend.diagnostics import router as diagnostics_router
 from backend.regional import router as regional_router
+from backend.forecast import router as forecast_router
 
 
 DEFAULT_DATABASE = Path(__file__).resolve().parents[1] / "data" / "energy.sqlite"
@@ -367,3 +368,4 @@ def overview(
 app.include_router(explore_router)
 app.include_router(diagnostics_router)
 app.include_router(regional_router)
+app.include_router(forecast_router)
