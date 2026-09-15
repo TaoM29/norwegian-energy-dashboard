@@ -90,6 +90,7 @@ test("applied filters, navigation hrefs and Back preserve the observation worksp
   await page.goForward();
   await expect(trigger).toContainText("20 Nov 2025");
   await nav.getByRole("link", { name: "Forecasts", exact: true }).click();
+  await page.getByText("Metric details and downloads", { exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Accuracy and interval quality" }),
   ).toBeVisible();
@@ -136,7 +137,10 @@ test("diagnostic drafts retain applied results and regional groups need no modif
   await expect(
     page.getByRole("heading", { name: "Regional values" }),
   ).toBeVisible();
-  const groups = page.getByRole("group", { name: "Groups", exact: true });
+  const groups = page.getByRole("group", {
+    name: "Energy groups",
+    exact: true,
+  });
   await groups.getByRole("checkbox", { name: "hydro", exact: true }).check();
   await expect(
     groups.getByRole("checkbox", { name: "solar", exact: true }),
@@ -144,7 +148,7 @@ test("diagnostic drafts retain applied results and regional groups need no modif
   await expect(
     page.getByText("Changes not applied", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Apply analysis" }).click();
+  await page.getByRole("button", { name: "Compare energy" }).click();
   await expect(page).toHaveURL(/groups=hydro%2Csolar/);
 });
 
@@ -213,4 +217,178 @@ test("forecast target dates select a matching saved origin and preserve it on re
   await expect(
     filters.getByRole("button", { name: /^Target dates:/ }),
   ).toContainText("1 Nov 2025");
+});
+
+test("chart exports stay together and preserve downloadable values", async ({
+  page,
+}) => {
+  await page.goto("/explore?area=NO1&start=2025-11-01&end=2025-11-28");
+  const panel = page.locator("section").filter({
+    has: page.getByRole("heading", {
+      name: "Production through time",
+      exact: true,
+    }),
+  });
+  await expect(panel.getByRole("button", { name: "Data CSV" })).toBeHidden();
+  await panel.getByRole("button", { name: "Export", exact: true }).click();
+  const options = page.getByRole("dialog", { name: "Export options" });
+  await expect(options.getByRole("button", { name: /as PNG/ })).toBeVisible();
+  const download = page.waitForEvent("download");
+  await options.getByRole("button", { name: "Data CSV" }).click();
+  expect((await download).suggestedFilename()).toMatch(
+    /NO1-production.*\.csv$/,
+  );
+  await page.keyboard.press("Escape");
+  await expect(
+    panel.getByRole("button", { name: "Export", exact: true }),
+  ).toBeFocused();
+});
+
+test("overview compares equal UTC windows and preserves history", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/?area=NO1&start=2025-02-01&end=2025-02-28");
+  const comparison = page.getByRole("region", {
+    name: "What changed from the previous period?",
+  });
+  await expect(comparison).toContainText("2025-01-04–2025-01-31");
+  const current = await (
+    await request.get("/api/overview?area=NO1&start=2025-02-01&end=2025-03-01")
+  ).json();
+  const previous = await (
+    await request.get("/api/overview?area=NO1&start=2025-01-04&end=2025-02-01")
+  ).json();
+  const change =
+    ((current.headline.production.mwh - previous.headline.production.mwh) /
+      previous.headline.production.mwh) *
+    100;
+  await expect(comparison).toContainText(
+    `${change < 0 ? "−" : change > 0 ? "+" : ""}${new Intl.NumberFormat("en-GB", { maximumFractionDigits: 2 }).format(Math.abs(change))} %`,
+  );
+  await comparison
+    .getByRole("button", { name: "View previous period" })
+    .click();
+  await expect(page).toHaveURL(/start=2025-01-04&end=2025-01-31/);
+  await page.goBack();
+  await expect(page).toHaveURL(/start=2025-02-01&end=2025-02-28/);
+  await page.goto("/?area=NO1&start=2025-01-01&end=2025-01-28");
+  await expect(comparison).toContainText("Choose a later or shorter period");
+});
+
+test("forecast settings drawer keeps training dates usable and preserves API boundaries", async ({
+  page,
+}) => {
+  await page.route("**/api/forecasts/capabilities", (route) =>
+    route.fulfill({ json: { customJobsEnabled: true } }),
+  );
+  let submitted: { config: { start: string; end: string } } | undefined;
+  await page.route("**/api/forecasts/jobs", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    submitted = route.request().postDataJSON();
+    await route.fulfill({
+      status: 400,
+      json: { detail: "Test intercepted submission" },
+    });
+  });
+  await page.goto("/forecasts");
+  const trigger = page.getByRole("button", {
+    name: "Experiment settings",
+    exact: true,
+  });
+  await expect(
+    page.getByRole("dialog", { name: "Experiment settings", exact: true }),
+  ).toBeHidden();
+  await trigger.click();
+  const drawer = page.getByRole("dialog", {
+    name: "Experiment settings",
+    exact: true,
+  });
+  await drawer
+    .getByRole("combobox", { name: "Experiment type" })
+    .selectOption({ label: "Custom SARIMAX" });
+  await expect(
+    drawer.getByRole("button", { name: "Run evaluation job" }),
+  ).toHaveCount(0);
+  await drawer.getByRole("button", { name: /^Training dates:/ }).click();
+  const calendar = page.getByRole("dialog", { name: "Choose training dates" });
+  await calendar.getByLabel("Start date", { exact: true }).fill("2025-03-29");
+  await calendar.getByLabel("End date", { exact: true }).fill("2025-03-30");
+  await calendar.getByRole("button", { name: "Use dates" }).click();
+  await drawer.getByRole("button", { name: /^Training dates:/ }).click();
+  await page.keyboard.press("Escape");
+  await expect(calendar).toBeHidden();
+  await expect(drawer).toBeVisible();
+  await drawer.getByRole("button", { name: "Run SARIMAX job" }).click();
+  await expect.poll(() => submitted?.config.end).toBe("2025-03-31");
+  expect(submitted?.config.start).toBe("2025-03-29");
+  await page.keyboard.press("Escape");
+  await expect(drawer).toBeHidden();
+  await expect(trigger).toBeFocused();
+});
+
+test("regional tasks load independently and preserve mode history", async ({
+  page,
+}) => {
+  const calls: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/regional/")) calls.push(request.url());
+  });
+  await page.goto(
+    "/regional?mode=energy&area=NO1&start=2025-11-01&end=2025-11-28",
+  );
+  await expect(
+    page.getByRole("heading", { name: "Regional values", exact: true }),
+  ).toBeVisible();
+  expect(calls.some((url) => url.includes("snow-drift"))).toBe(false);
+  await expect(
+    page.getByRole("button", { name: "Run snow model" }),
+  ).toHaveCount(0);
+  await page.getByRole("tab", { name: "Snow model", exact: true }).click();
+  await expect(page).toHaveURL(/mode=snow/);
+  await expect(
+    page.getByRole("heading", { name: "Seasonal transport", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Date range:/ })).toHaveCount(
+    0,
+  );
+  calls.length = 0;
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Seasonal transport", exact: true }),
+  ).toBeVisible();
+  expect(calls.some((url) => url.includes("summary"))).toBe(false);
+  await page.goBack();
+  await expect(
+    page.getByRole("tab", { name: "Energy comparison", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
+  await expect(
+    page.getByRole("heading", { name: "Regional values", exact: true }),
+  ).toBeVisible();
+});
+
+test("period comparison withholds changes for incomplete observations", async ({
+  page,
+}) => {
+  await page.route("**/api/overview?**", async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    if (body.query.start === "2025-01-04")
+      body.headline.consumption.partial = true;
+    await route.fulfill({ response, json: body });
+  });
+  await page.goto("/?area=NO1&start=2025-02-01&end=2025-02-28");
+  const comparison = page.getByRole("region", {
+    name: "What changed from the previous period?",
+  });
+  const consumption = comparison
+    .getByRole("article")
+    .filter({
+      has: page.getByRole("heading", { name: "Energy consumed", exact: true }),
+    });
+  await expect(consumption).toContainText("Change unavailable");
+  await expect(consumption).not.toContainText("% from the previous period");
+  await expect(comparison).toContainText(
+    "Changes are withheld wherever either period is incomplete",
+  );
 });

@@ -18,6 +18,7 @@ test("overview filters survive reload and export values", async ({
   await expect(
     page.getByRole("button", { name: "NO2", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Export", exact: true }).click();
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export daily data" }).click();
   const file = await download;
@@ -68,6 +69,10 @@ test("analysis and regional workspaces use the offline snapshots", async ({
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Seasonal transport", exact: true }),
+  ).toBeHidden();
+  await page.getByRole("tab", { name: "Snow model", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Seasonal transport", exact: true }),
   ).toBeVisible({ timeout: 30000 });
 });
 
@@ -92,6 +97,7 @@ test("prepared forecasts are readable with public custom jobs disabled", async (
   await expect(
     page.getByRole("button", { name: /^Target dates:/ }),
   ).toContainText("1 Nov 2025");
+  await page.getByText("Metric details and downloads", { exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Accuracy and interval quality" }),
   ).toBeVisible();
@@ -114,6 +120,10 @@ test("prepared forecasts are readable with public custom jobs disabled", async (
   await page.reload();
   await expect(area).toHaveValue("NO3");
   expect(renderErrors).toEqual([]);
+  await page
+    .getByRole("button", { name: "Export", exact: true })
+    .first()
+    .click();
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download metadata JSON" }).click();
   const file = await download;
@@ -223,9 +233,20 @@ test("mobile pages keep navigation, guidance and theme controls usable", async (
     "/methods",
   ]) {
     await page.goto(path);
-    await expect(
-      page.getByRole("navigation", { name: "Main navigation" }),
-    ).toBeVisible();
+    const menu = page.getByRole("button", { name: "Menu", exact: true });
+    const navigation = page.getByRole("navigation", {
+      name: "Main navigation",
+    });
+    await expect(navigation).toBeHidden();
+    await menu.click();
+    await expect(navigation).toBeVisible();
+    await expect(menu).toHaveAttribute("aria-expanded", "true");
+    await navigation
+      .getByRole("link", { name: "Explore", exact: true })
+      .focus();
+    await page.keyboard.press("Escape");
+    await expect(navigation).toBeHidden();
+    await expect(menu).toBeFocused();
     await expect(
       page.getByRole("button", { name: "Dark", exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
