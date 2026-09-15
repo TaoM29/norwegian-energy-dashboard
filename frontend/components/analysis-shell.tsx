@@ -2,6 +2,7 @@
 
 import { type ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { HelpPanel } from "./help";
 import { AppNavigation } from "./app-navigation";
 import "./analysis.css";
 
@@ -38,18 +39,37 @@ export function AnalysisShell({
           <p>{description}</p>
         </header>
         {guides[path] && (
-          <details className="reading-guide">
-            <summary>How to read this page</summary>
-            <div>
+          <div className="reading-guide">
+            <HelpPanel label="How this works">
               <p>{guides[path]}</p>
-            </div>
-          </details>
+              <h3>Reading the results</h3>
+              <p>
+                Use the applied filters to check which region and dates you are
+                viewing. Gaps mean missing data, not zero. Open Export for the
+                chart image and available underlying values.
+              </p>
+              <a href="/methods">Methods, sources and recorded evidence →</a>
+            </HelpPanel>
+          </div>
         )}
         {children}
         <footer className="analysis-footer">
-          Elhub energy · Open-Meteo ERA5-Seamless weather · UTC intervals.
-          Weather area views use a fixed city proxy. Statistical flags are
-          candidates, not verified faults.
+          <HelpPanel label="Sources & interpretation">
+            <h3>Energy and weather</h3>
+            <p>
+              Energy observations come from Elhub. Weather uses Open-Meteo
+              ERA5-Seamless reanalysis, with a fixed city proxy for each price
+              area. Analytical intervals use UTC.
+            </p>
+            <h3>What the results mean</h3>
+            <p>
+              Statistical flags identify candidates for investigation, not
+              verified faults. Forecast uncertainty is conditional on the saved
+              model and assumptions. Snow transport is a model estimate, not a
+              site measurement.
+            </p>
+            <a href="/methods">Open methods and data coverage →</a>
+          </HelpPanel>
         </footer>
       </main>
     </div>
