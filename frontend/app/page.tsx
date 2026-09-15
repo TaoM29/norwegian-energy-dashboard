@@ -235,6 +235,9 @@ export default function Page() {
           <a className="nav-item" href={`/explore${navigationQuery}`}>
             <Layers3 size={18} /> Explore
           </a>
+          <a className="nav-item" href={`/forecasts${navigationQuery}`}>
+            <BarChart3 size={18} /> Forecasts
+          </a>
           <a className="nav-item" href={`/diagnostics${navigationQuery}`}>
             <BarChart3 size={18} /> Diagnostics
           </a>

@@ -7,6 +7,7 @@ import "./analysis.css";
 const navigation = [
   ["/", "Overview"],
   ["/explore", "Explore"],
+  ["/forecasts", "Forecasts"],
   ["/diagnostics", "Diagnostics"],
   ["/regional", "Regional & snow"],
 ];

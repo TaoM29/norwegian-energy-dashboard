@@ -1,0 +1,409 @@
+.selectorPanel,
+.jobsSection {
+  padding: 24px;
+  border: 1px solid #dce3dc;
+  border-radius: 10px;
+  background: #fff;
+  margin-bottom: 22px;
+}
+
+.selectorPanel {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(360px, 1.1fr);
+  gap: 28px;
+  align-items: end;
+}
+
+.selectorPanel h2,
+.jobsSection h2 {
+  margin: 7px 0 8px;
+  font-size: 24px;
+}
+
+.selectorPanel p,
+.jobsSection > p,
+.jobForm p {
+  color: #607069;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.sectionKicker {
+  color: #176b59;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.selectorGrid,
+.formGrid,
+.compactGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.selectorGrid label,
+.jobForm label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  color: #4b6352;
+  font-size: 12px;
+}
+
+.selectorGrid select,
+.jobForm select,
+.jobForm input:not([type="checkbox"]):not([type="range"]) {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #ccd8ce;
+  border-radius: 5px;
+  background: white;
+  padding: 7px 9px;
+  color: #253b32;
+}
+
+.selectorGrid select:focus-visible,
+.jobForm select:focus-visible,
+.runButton:focus-visible {
+  outline: 3px solid #357c66;
+  outline-offset: 3px;
+}
+
+.jobStatus {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px 12px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 8px;
+  background: #edf3ea;
+  color: #176b59;
+}
+
+.jobStatus > div:not(.progressTrack) {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.jobStatus span {
+  color: #607069;
+  font-size: 12px;
+}
+
+.jobStatus[data-state="failed"] {
+  background: #fff1ed;
+  color: #9e3d2f;
+}
+
+.progressValue {
+  font-variant-numeric: tabular-nums;
+}
+
+.progressTrack {
+  grid-column: 2 / 4;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #d3ded5;
+}
+
+.progressTrack span {
+  display: block;
+  height: 100%;
+  background: #176b59;
+}
+
+.error {
+  padding: 13px 15px;
+  border-left: 3px solid #b84b38;
+  background: #fff1ed;
+  color: #8d3428 !important;
+  line-height: 1.6;
+}
+
+.loading,
+.empty {
+  padding: 28px;
+  border: 1px dashed #cbd6cc;
+  border-radius: 8px;
+  color: #607069;
+  text-align: center;
+}
+
+.evidenceStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid #dce3dc;
+  border-radius: 10px;
+  background: #fff;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.evidenceStrip > div {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 5px 8px;
+  padding: 17px;
+  border-right: 1px solid #e4e9e2;
+}
+
+.evidenceStrip > div:last-child {
+  border-right: 0;
+}
+
+.evidenceStrip svg {
+  grid-row: 1 / 3;
+  color: #39816a;
+}
+
+.evidenceStrip span {
+  color: #687870;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.evidenceStrip strong {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.retrospective,
+.upperBound {
+  margin: 0 0 22px;
+  padding: 12px 15px;
+  border-radius: 7px;
+  line-height: 1.6;
+  font-size: 12px;
+}
+
+.retrospective {
+  color: #285e4c;
+  background: #eaf3ec;
+}
+
+.upperBound {
+  color: #775216;
+  background: #fff6dc;
+}
+
+.inlineChecks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 0;
+  border: 0;
+  min-width: 240px;
+}
+
+.inlineChecks legend {
+  width: 100%;
+  color: #4b6352;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.inlineChecks label {
+  flex-direction: row;
+  align-items: center;
+}
+
+.panelHeading,
+.formTitle {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.panelHeading h2,
+.formTitle h3 {
+  margin: 6px 0 10px;
+}
+
+.panelHeading > span,
+.formTitle > span {
+  flex: 0 0 auto;
+  padding: 7px 9px;
+  border-radius: 5px;
+  background: #edf3ea;
+  color: #416151;
+  font-size: 11px;
+}
+
+.tableWrap {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 18px;
+}
+
+.tableWrap table {
+  width: 100%;
+  border-collapse: collapse;
+  white-space: nowrap;
+}
+
+.tableWrap th,
+.tableWrap td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5ebe5;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tableWrap th:first-child,
+.tableWrap td:first-child {
+  text-align: left;
+}
+
+.tableWrap thead th {
+  color: #607069;
+  font-size: 10px;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.failures {
+  border-left: 3px solid #d4774d;
+  padding-left: 14px;
+}
+
+.jobsSection {
+  margin-top: 34px;
+  background: #f9fbf8;
+}
+
+.jobsSection > p {
+  max-width: 800px;
+  margin-bottom: 20px;
+}
+
+.jobForm {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #dce3dc;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.formTitle h3 {
+  font-size: 19px;
+}
+
+.jobForm fieldset {
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid #e0e7e0;
+  border-radius: 7px;
+}
+
+.jobForm legend {
+  padding: 0 6px;
+  color: #425c4e;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.checkGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.checkGrid label,
+.jobForm .legendCheck,
+.jobForm .comparisonToggle {
+  flex-direction: row;
+  align-items: center;
+}
+
+.comparisonToggle {
+  padding: 11px 13px;
+  border: 1px solid #dce3dc;
+  border-radius: 6px;
+  background: #fbfcfa;
+}
+
+.compactGrid {
+  grid-template-columns: repeat(4, minmax(70px, 1fr));
+}
+
+.jobForm input[type="range"] {
+  width: 100%;
+  accent-color: #176b59;
+}
+
+.limitNote {
+  padding: 11px 13px;
+  border-radius: 6px;
+  background: #f2f5f1;
+  font-size: 11px;
+}
+
+.runButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  border: 1px solid #176b59;
+  border-radius: 6px;
+  background: #176b59;
+  color: #fff;
+  font-weight: 600;
+}
+
+.runButton:disabled {
+  opacity: 0.5;
+}
+
+@media (max-width: 950px) {
+  .selectorPanel,
+  .evidenceStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .evidenceStrip > div:nth-child(2) {
+    border-right: 0;
+  }
+  .evidenceStrip > div:nth-child(-n + 2) {
+    border-bottom: 1px solid #e4e9e2;
+  }
+}
+
+@media (max-width: 620px) {
+  .selectorPanel,
+  .selectorGrid,
+  .formGrid,
+  .evidenceStrip {
+    grid-template-columns: 1fr;
+  }
+  .evidenceStrip > div {
+    border-right: 0;
+    border-bottom: 1px solid #e4e9e2;
+  }
+  .evidenceStrip > div:last-child {
+    border-bottom: 0;
+  }
+  .compactGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .panelHeading,
+  .formTitle {
+    flex-direction: column;
+    gap: 5px;
+  }
+  .selectorPanel,
+  .jobsSection,
+  .jobForm {
+    padding: 16px;
+  }
+}
