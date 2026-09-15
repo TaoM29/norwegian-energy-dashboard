@@ -5,7 +5,6 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   ArrowRight,
-  BarChart3,
   Check,
   ChevronDown,
   Download,
@@ -24,6 +23,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { RegionComparison } from "@/components/region-comparison";
 import { AppNavigation } from "@/components/app-navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -221,13 +221,10 @@ export default function Page() {
         <main id="main" ref={mainRef} tabIndex={-1}>
           <div className="page-heading">
             <div>
-              <div className="eyebrow">NORWAY, THROUGH THE DATA</div>
-              <h1>
-                A clearer view of energy<span>.</span>
-              </h1>
+              <h1>Energy overview</h1>
               <p>
-                Where does Norway’s electricity come from, and how do we use it?
-                Explore the big picture, then follow your curiosity.
+                Production, consumption and the balance across Norway’s five
+                regions.
               </p>
             </div>
             <Button
@@ -429,6 +426,10 @@ export default function Page() {
                   note="Of observed energy production"
                 />
               </section>
+              <RegionComparison
+                overview={overview}
+                onSelect={(area) => filters && apply({ ...filters, area })}
+              />
               <div className="main-grid">
                 <Card className="trend-panel panel">
                   <div className="panel-heading">
@@ -517,61 +518,6 @@ export default function Page() {
                     </span>
                     <span>{overview.daily.length} days</span>
                   </div>
-                </Card>
-                <Card className="panel regional-panel" id="regions">
-                  <div className="panel-heading">
-                    <div>
-                      <div className="eyebrow">ACROSS NORWAY</div>
-                      <h2>Regional consumption</h2>
-                    </div>
-                    <BarChart3 size={18} className="muted" />
-                  </div>
-                  <p className="panel-description">
-                    Same dates. All five price areas.
-                  </p>
-                  <ol className="rankings">
-                    {overview.regionalRanking.map((row) => (
-                      <li key={row.area}>
-                        <button
-                          onClick={() =>
-                            filters && apply({ ...filters, area: row.area })
-                          }
-                          aria-label={`View ${areas[row.area]}`}
-                          className={
-                            selectedArea === row.area ? "rank-selected" : ""
-                          }
-                        >
-                          <span className="rank-number">{row.rank ?? "—"}</span>
-                          <span className="rank-body">
-                            <span className="rank-top">
-                              <strong>
-                                {row.area} <span>{areas[row.area]}</span>
-                              </strong>
-                              <span>
-                                {number(
-                                  row.mwh == null ? null : row.mwh / 1000,
-                                  0,
-                                )}{" "}
-                                <small>GWh{row.partial ? "*" : ""}</small>
-                              </span>
-                            </span>
-                            <span className="rank-track">
-                              <span
-                                style={{
-                                  width: `${row.mwh == null ? 0 : (row.mwh / Math.max(...overview.regionalRanking.map((r) => r.mwh || 0), 1)) * 100}%`,
-                                }}
-                              />
-                            </span>
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ol>
-                  <p className="ranking-foot">
-                    Select a region to explore its energy picture.{" "}
-                    {overview.regionalRanking.some((r) => r.partial) &&
-                      "* Partial observation coverage."}
-                  </p>
                 </Card>
               </div>
               <div className="bottom-grid">
