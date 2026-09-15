@@ -90,8 +90,8 @@ test("prepared forecasts are readable with public custom jobs disabled", async (
     .getByRole("link", { name: "Forecasts" })
     .click();
   await expect(
-    page.getByLabel("Start target date (UTC)", { exact: true }),
-  ).toHaveValue("2025-11-01");
+    page.getByRole("button", { name: /^Target dates:/ }),
+  ).toContainText("1 Nov 2025");
   await expect(
     page.getByRole("heading", { name: "Accuracy and interval quality" }),
   ).toBeVisible();
@@ -106,9 +106,13 @@ test("prepared forecasts are readable with public custom jobs disabled", async (
   await area.selectOption("NO3");
   await expect(page).toHaveURL(/area=NO3/);
   await page.goBack();
-  await expect(area).toHaveValue("NO2");
+  await expect(
+    page.getByRole("heading", { name: "Energy overview", exact: true }),
+  ).toBeVisible();
+  await page.goForward();
+  await expect(area).toHaveValue("NO3");
   await page.reload();
-  await expect(area).toHaveValue("NO2");
+  await expect(area).toHaveValue("NO3");
   expect(renderErrors).toEqual([]);
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download metadata JSON" }).click();
