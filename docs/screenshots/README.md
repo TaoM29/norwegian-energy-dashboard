@@ -1,12 +1,18 @@
 # Release candidate screenshots
 
-Captured 2026-09-15 from the local production test build using the deterministic **synthetic offline fixture**. These images demonstrate the interface, not Norwegian observations or measured forecasting performance. They are not screenshots of a public deployment.
+Updated after the [portfolio UI refresh](../UI_DESIGN.md), 2026-09-15. Captured from the local production test build using the deterministic **synthetic offline fixture**. These images demonstrate the interface, not Norwegian observations or measured forecasting performance. They are not screenshots of a public deployment.
 
 ## Desktop overview
 
 NO2 selected, with daily supply/demand, regional comparison and production mix. The browser journey also checks the downloaded CSV against the selected API values.
 
 ![Synthetic NO2 overview at 1280-pixel desktop width](overview-desktop.png)
+
+## Dark overview
+
+A second NO2 date window, shown in dark mode. Theme choice also follows the operating system when System is selected.
+
+![Synthetic NO2 overview in dark mode](overview-dark.png)
 
 ## Mobile methods and keyboard navigation
 
