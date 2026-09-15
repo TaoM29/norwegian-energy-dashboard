@@ -31,6 +31,7 @@ WEATHER_MAX_ATTEMPTS = 3
 WEATHER_RETRY_BACKOFF_SECONDS = 0.5
 CURRENT_SNAPSHOT_TTL = timedelta(hours=6)
 WEATHER_SNAPSHOT_DIR = Path(__file__).resolve().parents[2] / "data" / "weather"
+WEATHER_SNAPSHOT_DIR_ENV = "WEATHER_SNAPSHOT_DIR"
 
 HOURLY_VARIABLES = (
     "temperature_2m",
@@ -109,7 +110,9 @@ def _identity(location: str, latitude: float, longitude: float, year: int) -> di
 def _snapshot_path(identity: dict[str, Any]) -> Path:
     raw_key = json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
     digest = hashlib.sha256(raw_key).hexdigest()[:20]
-    return WEATHER_SNAPSHOT_DIR / f"{identity['year']}-{digest}.json"
+    configured = os.environ.get(WEATHER_SNAPSHOT_DIR_ENV)
+    snapshot_dir = Path(configured).expanduser() if configured else WEATHER_SNAPSHOT_DIR
+    return snapshot_dir / f"{identity['year']}-{digest}.json"
 
 
 def _read_snapshot(path: Path, identity: dict[str, Any]) -> tuple[pd.DataFrame, dict[str, Any]] | None:
@@ -255,6 +258,12 @@ def _load_location_year(
     identity = _identity(location, latitude, longitude, year)
     snapshot_path = _snapshot_path(identity)
     snapshot = _read_snapshot(snapshot_path, identity)
+    if os.environ.get("ENERGY_DATA_MODE") == "fixture":
+        if snapshot is None or not snapshot[1].get("synthetic"):
+            raise ValueError("No synthetic weather fixture for this point/year. Use 61.5, 9.0 and seasons 2021–2025, or switch to published data.")
+        frame, metadata = snapshot
+        _attach_metadata(frame, {**metadata, "cache_status": "fixture"})
+        return frame
     requested_start = pd.Timestamp(year=year, month=1, day=1, tz="UTC")
     requested_end = pd.Timestamp(year=year + 1, month=1, day=1, tz="UTC")
     source_end = era5_available_end()

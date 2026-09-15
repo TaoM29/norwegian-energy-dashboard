@@ -8,8 +8,7 @@ from typing import Any, Iterable
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 import pandas as pd
-from pymongo import MongoClient
-import streamlit as st
+import os
 
 
 COLL_PROD_2021 = "prod_hour"
@@ -40,10 +39,13 @@ def _ensure_auth_source(uri: str) -> str:
     return urlunparse((p.scheme, p.netloc, p.path, p.params, urlencode(q), p.fragment))
 
 
-@st.cache_resource
+@lru_cache(maxsize=1)
 def get_db():
-    uri = _ensure_auth_source(st.secrets["MONGO_URI"].strip())
-    dbname = st.secrets.get("MONGO_DB", "ind320")
+    # Optional compatibility path for retained notebooks and legacy data tests.
+    from pymongo import MongoClient
+
+    uri = _ensure_auth_source(os.environ["MONGO_URI"].strip())
+    dbname = os.environ.get("MONGO_DB", "ind320")
     client = MongoClient(uri, serverSelectionTimeoutMS=8000)
     client.admin.command("ping")
     return client[dbname]
@@ -211,8 +213,7 @@ def load_energy_records(
     """Load normalized energy records for the UTC half-open interval ``[start, end)``.
 
     The atomically published SQLite snapshot is preferred when it has validated
-    coverage. MongoDB remains a compatibility fallback while Streamlit is kept
-    runnable during migration. Supplying ``db`` explicitly selects that fallback.
+    coverage. MongoDB remains an optional compatibility fallback for research workflows. Supplying ``db`` explicitly selects that fallback.
     """
     normalized_kinds = tuple(_kind_name(kind) for kind in kinds)
     if start is not None and end is not None and _utc_timestamp(start) >= _utc_timestamp(end):

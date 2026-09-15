@@ -56,7 +56,7 @@ def energy_frame(area: str, start: date | str, end: date | str, kind: str = "pro
     result = pd.DataFrame(rows, columns=ENERGY_COLUMNS)
     result["timestamp"] = pd.to_datetime(result["timestamp"], utc=True)
     result["value"] = pd.to_numeric(result["value"], errors="coerce")
-    result.attrs["provenance"] = {"source": "Elhub Energy Data API", "version": version, "unit": "kWh", "timezone": "UTC", "start": a.isoformat(), "end": b.isoformat()}
+    result.attrs["provenance"] = {"source": "Synthetic fixture — not observations" if os.environ.get("ENERGY_DATA_MODE") == "fixture" else "Elhub Energy Data API", "version": version, "unit": "kWh", "timezone": "UTC", "start": a.isoformat(), "end": b.isoformat()}
     return result
 
 
@@ -93,7 +93,7 @@ def weather_frame(area: str, start: date | str, end: date | str) -> pd.DataFrame
     result = result[(result["time"] >= a) & (result["time"] < b)].copy().reset_index(drop=True)
     expected = int((b-a).total_seconds() / 3600)
     metadata = {
-        "source": weather.SOURCE, "model": weather.MODEL, "units": weather.EXPECTED_UNITS,
+        "source": "Synthetic fixture — not observations" if os.environ.get("ENERGY_DATA_MODE") == "fixture" else weather.SOURCE, "model": weather.MODEL, "units": weather.EXPECTED_UNITS,
         "location": area, "latitude": lat, "longitude": lon,
         "spatialMeaning": "Fixed city proxy for the price area, not an area-average weather field.",
         "requested_start": a.isoformat(), "requested_end": b.isoformat(), "timezone": "UTC",
@@ -115,7 +115,7 @@ def provenance(area: str, start: date | str, end: date | str) -> dict:
         version = file_version(path)
     except OSError:
         version = None
-    return {"area": area, "start": str(start), "end": str(end), "timezone": "UTC", "interval": "[start, end)", "energy": {"source": "Elhub Energy Data API", "version": version}, "weather": {"source": weather.SOURCE, "model": weather.MODEL, "location": area, "cityProxy": weather.AREA_COORDS.get(area)}}
+    return {"area": area, "start": str(start), "end": str(end), "timezone": "UTC", "interval": "[start, end)", "energy": {"source": "Synthetic fixture — not observations" if os.environ.get("ENERGY_DATA_MODE") == "fixture" else "Elhub Energy Data API", "version": version}, "weather": {"source": "Synthetic fixture — not observations" if os.environ.get("ENERGY_DATA_MODE") == "fixture" else weather.SOURCE, "model": weather.MODEL, "location": area, "cityProxy": weather.AREA_COORDS.get(area)}}
 
 
 def energy_daily_frame(area: str, start: date | str, end: date | str, kind: str = "production", groups: list[str] | None = None) -> pd.DataFrame:
