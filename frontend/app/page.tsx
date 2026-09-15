@@ -23,9 +23,12 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { ExportMenu } from "@/components/export-menu";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { writeDashboardUrl } from "@/lib/navigation-state";
 import { RegionComparison } from "@/components/region-comparison";
+import { OverviewPeriodComparison } from "@/components/overview-period-comparison";
+import { OverviewCaseStudies } from "@/components/overview-case-studies";
 import { AppNavigation } from "@/components/app-navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -187,7 +190,6 @@ export default function Page() {
     URL.revokeObjectURL(url);
   }
 
-  const navigationQuery = filters ? `?${new URLSearchParams(filters)}` : "";
   const selectedArea = overview?.query.area || filters?.area || "NO1";
   const production = overview?.headline.production;
   const consumption = overview?.headline.consumption;
@@ -230,13 +232,25 @@ export default function Page() {
                 regions.
               </p>
             </div>
-            <Button
-              variant="outline"
-              onClick={download}
-              disabled={!overview || loading || !!error}
-            >
-              <Download size={15} /> Export daily data
-            </Button>
+            <ExportMenu>
+              <Button
+                variant="outline"
+                onClick={download}
+                disabled={!overview || loading || !!error}
+              >
+                <Download size={15} /> Export daily data
+              </Button>
+              <Button
+                variant="outline"
+                disabled={!overview || loading || !!error}
+                onClick={() =>
+                  overview &&
+                  downloadJson(`${overview.query.area}-overview.json`, overview)
+                }
+              >
+                Download data & metadata
+              </Button>
+            </ExportMenu>
           </div>
           <details className="reading-guide">
             <summary>New here? A 30-second guide</summary>
@@ -370,10 +384,6 @@ export default function Page() {
                   note="Of observed energy production"
                 />
               </section>
-              <RegionComparison
-                overview={overview}
-                onSelect={(area) => filters && apply({ ...filters, area })}
-              />
               <div className="main-grid">
                 <Card className="trend-panel panel">
                   <div className="panel-heading">
@@ -464,6 +474,14 @@ export default function Page() {
                   </div>
                 </Card>
               </div>
+              <OverviewPeriodComparison
+                overview={overview}
+                coverage={coverage}
+                updating={loading}
+                onSelectPrevious={(range) =>
+                  filters && apply({ ...filters, ...range })
+                }
+              />
               <div className="bottom-grid">
                 <Card className="panel mix-panel" id="production">
                   <div className="panel-heading">
@@ -528,33 +546,11 @@ export default function Page() {
                   </div>
                 </div>
               </div>
-              <section
-                className="exploration-paths"
-                aria-label="Continue exploring"
-              >
-                <div>
-                  <span className="eyebrow">FOLLOW YOUR CURIOSITY</span>
-                  <h2>There’s more behind the numbers.</h2>
-                </div>
-                <a href={`/explore${navigationQuery}`}>
-                  <span>01 · Explore</span>
-                  <strong>What drives energy use?</strong>
-                  <p>Compare sources, demand and weather.</p>
-                  <ArrowRight size={18} />
-                </a>
-                <a href={`/forecasts?area=${filters?.area || "NO1"}`}>
-                  <span>02 · Predict</span>
-                  <strong>Can we forecast demand?</strong>
-                  <p>See how models perform against real outcomes.</p>
-                  <ArrowRight size={18} />
-                </a>
-                <a href="/methods">
-                  <span>03 · Behind the work</span>
-                  <strong>How was this built?</strong>
-                  <p>Explore the methods, findings and limitations.</p>
-                  <ArrowRight size={18} />
-                </a>
-              </section>
+              <RegionComparison
+                overview={overview}
+                onSelect={(area) => filters && apply({ ...filters, area })}
+              />
+              <OverviewCaseStudies />
               <details id="daily-data" className="daily-table">
                 <summary>
                   Daily values{" "}
@@ -622,16 +618,7 @@ export default function Page() {
             </div>
             <details>
               <summary>Methods & snapshot</summary>
-              <Button
-                variant="outline"
-                disabled={!overview || loading || !!error}
-                onClick={() =>
-                  overview &&
-                  downloadJson(`${overview.query.area}-overview.json`, overview)
-                }
-              >
-                Download data & metadata
-              </Button>
+
               <p>
                 Production and consumption include base groups only. Unspecified
                 and overlapping aggregate groups are excluded. Missing

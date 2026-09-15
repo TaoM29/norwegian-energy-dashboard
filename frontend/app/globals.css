@@ -1268,3 +1268,37 @@ button:active:not(:disabled) {
     transform: none;
   }
 }
+
+.site-brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.mobile-menu-toggle {
+  display: none;
+}
+@media (max-width: 800px) {
+  .mobile-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+  }
+  .site-sidebar .site-navigation {
+    display: none;
+  }
+  .site-sidebar.navigation-open .site-navigation {
+    display: grid;
+  }
+  .site-navigation a {
+    min-height: 44px;
+  }
+}
