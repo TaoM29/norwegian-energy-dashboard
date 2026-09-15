@@ -1073,3 +1073,14 @@ footer code {
 }
 
 .fixture-banner { padding: 12px 4vw; background: #fff0c4; color: #594414; font-size: 14px; line-height: 1.5; }
+
+/* The overview's fixed sidebar must not cover the fixture disclosure. */
+@media (min-width: 651px) {
+  body:has(.sidebar) .fixture-banner { margin-left: 75px; }
+}
+@media (min-width: 951px) {
+  body:has(.sidebar) .fixture-banner { margin-left: 185px; }
+}
+@media (min-width: 1201px) {
+  body:has(.sidebar) .fixture-banner { margin-left: 215px; }
+}

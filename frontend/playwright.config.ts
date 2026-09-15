@@ -24,6 +24,7 @@ export default defineConfig({
     },
     {
       command: "npm run start -- --port 3100",
+      env: { ENERGY_E2E: "1" },
       url: "http://127.0.0.1:3100",
       reuseExistingServer: false,
     },

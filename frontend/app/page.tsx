@@ -272,7 +272,7 @@ export default function Page() {
             <strong>Overview</strong>
           </span>
           <span className="observed-tag">
-            <span /> Observed energy data
+            <span /> Energy snapshot
           </span>
         </header>
         <main id="main" ref={mainRef} tabIndex={-1}>
