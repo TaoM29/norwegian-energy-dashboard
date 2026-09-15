@@ -244,3 +244,40 @@ test("mobile pages keep navigation, guidance and theme controls usable", async (
     page.getByRole("tab", { name: "Seasonal patterns", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
 });
+
+test("regional table sorts and opens details without changing the selected view", async ({
+  page,
+}, testInfo) => {
+  await page.goto("/?area=NO1&start=2025-11-01&end=2025-11-28");
+  await page.getByRole("button", { name: "Dark", exact: true }).click();
+  await page.getByLabel("Sort regions").selectOption("region");
+  await expect(
+    page.locator(".region-comparison tbody tr").first(),
+  ).toContainText("NO1");
+  const trigger = page.getByRole("button", {
+    name: "Inspect Northern Norway",
+    exact: true,
+  });
+  await trigger.click();
+  const drawer = page.getByRole("dialog", {
+    name: "Northern Norway",
+    exact: true,
+  });
+  await expect(
+    drawer.getByRole("heading", { name: "Generation mix" }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/area=NO1/);
+  await page.screenshot({
+    path: testInfo.outputPath("region-drawer-dark.png"),
+    animations: "disabled",
+  });
+  await page.keyboard.press("Escape");
+  await expect(drawer).not.toBeVisible();
+  await expect(trigger).toBeFocused();
+  await trigger.press("Enter");
+  await drawer.getByRole("button", { name: "View this region" }).click();
+  await expect(page).toHaveURL(/area=NO4/);
+  await expect(
+    page.getByRole("button", { name: "NO4", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+});
