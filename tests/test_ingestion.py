@@ -265,6 +265,25 @@ class DroppedSeriesClient:
         return [row(kind=kind, group=group, revision="2026-09-15T08:00:00Z")]
 
 
+@pytest.mark.parametrize("mode", ["refresh", "backfill"])
+@pytest.mark.parametrize("instant, expected_end", [
+    (datetime(2026, 9, 14, 19, 37, tzinfo=timezone.utc), date(2026, 9, 13)),
+    (datetime(2026, 9, 14, 22, 42, tzinfo=timezone.utc), date(2026, 9, 14)),
+    (datetime(2026, 1, 1, 0, 10, tzinfo=timezone.utc), date(2025, 12, 31)),
+])
+def test_default_refresh_cutoff_respects_publication_delay(tmp_path, monkeypatch, mode, instant, expected_end):
+    service = RefreshService(EnergyStore(tmp_path / "energy.sqlite"), now=lambda: instant)
+    calls = []
+    monkeypatch.setattr(service, "_run", lambda *args: calls.append(args))
+
+    getattr(service, mode)()
+
+    assert calls[0][2] == expected_end
+    # Explicit historical cutoffs retain their end-exclusive meaning.
+    getattr(service, mode)(end=date(2025, 6, 1))
+    assert calls[1][2] == date(2025, 6, 1)
+
+
 def test_repeated_refresh_does_not_create_duplicates(tmp_path):
     store = EnergyStore(tmp_path / "energy.sqlite")
     service = RefreshService(

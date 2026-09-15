@@ -28,18 +28,17 @@ class RefreshService:
         self.logger = logger or logging.getLogger(__name__)
 
     def backfill(self, *, end: Optional[date] = None) -> int:
-        today_oslo = self.now().astimezone(OSLO).date()
         return self._run(
             "backfill",
             BACKFILL_START_LOCAL,
-            end or today_oslo,
+            end or self._published_end(),
         )
 
     def refresh(self, *, days: int = 7, end: Optional[date] = None) -> int:
         if days < 1:
             raise ValueError("days must be at least one")
-        today_oslo = end or self.now().astimezone(OSLO).date()
-        recent_start = today_oslo - timedelta(days=days)
+        published_end = end or self._published_end()
+        recent_start = published_end - timedelta(days=days)
         latest = self.store.latest_observation()
         if latest is not None:
             # Re-request the latest source day as well as all later missing days.
@@ -47,7 +46,12 @@ class RefreshService:
             start = min(recent_start, missing_start)
         else:
             start = recent_start
-        return self._run("refresh", start, today_oslo)
+        return self._run("refresh", start, published_end)
+
+    def _published_end(self) -> date:
+        # Elhub publishes after measurement. Exclude yesterday as well as today,
+        # including when a delayed scheduled run crosses Oslo midnight.
+        return self.now().astimezone(OSLO).date() - timedelta(days=1)
 
     def _run(
         self,

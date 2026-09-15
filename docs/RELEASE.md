@@ -87,6 +87,12 @@ To deploy the offline demonstration, set `DATA_DIR=./data/fixture ENERGY_DATA_MO
 
 For a real-data deployment, enable the daily 19:37 UTC refresh worker:
 
+Default energy refresh/backfill requests end at yesterday's Oslo midnight
+(exclusive), allowing for Elhub's publication delay. Explicit service cutoffs
+remain unchanged, and incomplete upstream responses still fail validation rather
+than replacing the last good snapshot. This also applies when GitHub delays a
+scheduled run past local midnight.
+
 ```sh
 docker compose --profile refresh up -d
 ```
