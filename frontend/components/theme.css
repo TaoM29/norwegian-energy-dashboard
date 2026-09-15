@@ -1,13 +1,16 @@
 :root {
   color-scheme: light;
-  --page: #f5f3ed;
-  --surface: #fffdfa;
-  --surface-muted: #ecefe9;
+  --action: #6842e8;
+  --on-action: #fff;
+  --control-shadow: 0 0 0 1px #00000012, 0 1px 2px #00000008;
+  --page: #f7f7f8;
+  --surface: #ffffff;
+  --surface-muted: #f0f0f2;
   --surface-raised: #ffffff;
-  --text: #1f2b26;
-  --text-muted: #5d6b64;
-  --border: #d5ddd6;
-  --border-strong: #b8c5bc;
+  --text: #202024;
+  --text-muted: #696970;
+  --border: #e4e4e7;
+  --border-strong: #d2d2d7;
   --accent: #286d5b;
   --accent-hover: #1f594b;
   --accent-contrast: #ffffff;
@@ -20,7 +23,7 @@
   --focus: #287966;
   --chart-grid: #dce3dc;
   --chart-text: #4f6058;
-  --chart-tooltip: #fffdfa;
+  --chart-tooltip: #ffffff;
   --chart-series-1: #26745f;
   --chart-series-2: #4c7fa8;
   --chart-series-3: #b27638;
@@ -31,27 +34,29 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --page: #171c1a;
-  --surface: #202724;
-  --surface-muted: #28312d;
-  --surface-raised: #252d29;
-  --text: #eef3ef;
-  --text-muted: #afbeb6;
-  --border: #3b4842;
-  --border-strong: #53635b;
-  --accent: #83bba7;
-  --accent-hover: #a0ccb9;
+  --action: #7350ff;
+  --control-shadow: 0 0 0 1px #ffffff18, inset 0 1px 0 #ffffff06;
+  --page: #131314;
+  --surface: #181819;
+  --surface-muted: #252527;
+  --surface-raised: #202022;
+  --text: #ededee;
+  --text-muted: #a1a1a8;
+  --border: #2c2c2f;
+  --border-strong: #49494f;
+  --accent: #57c4a0;
+  --accent-hover: #7bd9b8;
   --accent-contrast: #12231d;
   --on-accent: #12231d;
-  --accent-soft: #29473c;
+  --accent-soft: #18362c;
   --warning: #e0b36d;
   --warning-soft: #4a3922;
   --danger: #ea9891;
   --danger-soft: #4b2c2b;
   --focus: #9bd2bd;
-  --chart-grid: #3a4641;
-  --chart-text: #c2cec7;
-  --chart-tooltip: #252d29;
+  --chart-grid: #303035;
+  --chart-text: #bdbdc5;
+  --chart-tooltip: #202022;
   --chart-series-1: #79bca3;
   --chart-series-2: #79a9d1;
   --chart-series-3: #d2a267;
@@ -121,4 +126,10 @@
   .theme-toggle__option span {
     display: none;
   }
+}
+
+.theme-changing *,
+.theme-changing *::before,
+.theme-changing *::after {
+  transition: none !important;
 }

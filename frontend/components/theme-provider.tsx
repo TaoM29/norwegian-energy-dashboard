@@ -30,6 +30,18 @@ function systemTheme(query: MediaQueryList): ResolvedTheme {
   return query.matches ? "dark" : "light";
 }
 
+function applyDocumentTheme(resolved: ResolvedTheme, mode: ThemeMode) {
+  const root = document.documentElement;
+  root.classList.add("theme-changing");
+  root.dataset.theme = resolved;
+  root.dataset.themeMode = mode;
+  root.style.colorScheme = resolved;
+  void root.offsetHeight;
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => root.classList.remove("theme-changing")),
+  );
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeMode>("system");
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("light");
@@ -39,9 +51,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
     const applyTheme = (mode: ThemeMode) => {
       const resolved = mode === "system" ? systemTheme(query) : mode;
-      document.documentElement.dataset.theme = resolved;
-      document.documentElement.dataset.themeMode = mode;
-      document.documentElement.style.colorScheme = resolved;
+      applyDocumentTheme(resolved, mode);
       setResolvedTheme(resolved);
     };
 
@@ -89,9 +99,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const query = window.matchMedia("(prefers-color-scheme: dark)");
         const resolved =
           nextTheme === "system" ? systemTheme(query) : nextTheme;
-        document.documentElement.dataset.theme = resolved;
-        document.documentElement.dataset.themeMode = nextTheme;
-        document.documentElement.style.colorScheme = resolved;
+        applyDocumentTheme(resolved, nextTheme);
         setResolvedTheme(resolved);
       },
     }),
