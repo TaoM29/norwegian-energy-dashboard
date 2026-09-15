@@ -2,7 +2,7 @@
 
 A Norwegian energy and weather analysis project evolving into a **Next.js / React frontend with a Python backend**.
 
-**Status:** Phase 1 data loading and correctness are implemented. Public energy data has been backfilled from 2021 through available 2026 observations, with validated UTC intervals, coverage-aware controls and atomic refreshes. The overview and Phase 3 exploration, regional/snow-drift and diagnostics workspaces now run in Next.js with a Python API. Streamlit remains runnable; forecasting migration is next in Phase 4.
+**Status:** Phase 1 data loading and correctness are implemented. Public energy data has been backfilled from 2021 through available 2026 observations, with validated UTC intervals, coverage-aware controls and atomic refreshes. The overview and Phase 3 exploration, regional/snow-drift and diagnostics workspaces now run in Next.js with a Python API. Phase 4 adds stored forecasts, bounded custom SARIMAX jobs and a five-area household-demand benchmark. Streamlit remains runnable; Phase 5 release and retirement work is next.
 
 ## Implementation plan
 
@@ -36,7 +36,7 @@ python -m pytest -q
 
 See the [Phase 0 baseline](docs/BASELINE.md) for the tested environment, representative timings and historical capture evidence. The [feature-control inventory](docs/FEATURE_CONTROL_INVENTORY.md) records controls, exports and calculations that must be considered during migration.
 
-## New overview
+## React dashboard
 
 With the public-data snapshot above available, start the API from the repository root:
 
@@ -56,7 +56,7 @@ Open http://localhost:3000. The overview includes area/date filters, daily produ
 
 `GET /api/coverage` returns the shared date envelope and suggested range. `GET /api/overview?area=NO1&start=2026-08-01&end=2026-09-01` returns the headline, daily series, mix and regional ranking together, with missingness and snapshot provenance. See http://127.0.0.1:8000/docs for query documentation. The API reads `data/energy.sqlite`; set `ENERGY_DATABASE` to use another published snapshot. Set `ENERGY_API_URL` before starting/building Next.js if the API runs elsewhere.
 
-For frontend validation, run `npm run typecheck` and `npm run build` inside `frontend/`. The [Phase 2 validation](docs/PHASE2_VALIDATION.md) records the chart-library trial and matched performance comparison. The [Phase 3 validation](docs/PHASE3_VALIDATION.md) records exploration and diagnostics parity. Open `/explore` for energy/weather, `/diagnostics` for correlation, decomposition and statistical quality checks, and `/regional` for maps and snow drift. Open `/chart-trial` for the isolated, explicitly synthetic chart examples. Recharts remains in the overview; ECharts is selected for the richer analytical views.
+For frontend validation, run `npm run typecheck` and `npm run build` inside `frontend/`. The [Phase 2 validation](docs/PHASE2_VALIDATION.md) records the chart-library trial and matched performance comparison. The [Phase 3 validation](docs/PHASE3_VALIDATION.md) records exploration and diagnostics parity. Open `/explore` for energy/weather, `/diagnostics` for correlation, decomposition and statistical quality checks, and `/regional` for maps and snow drift. Open `/forecasts` for saved benchmarks, uncertainty metrics and cancellable custom jobs. The [Phase 4 validation](docs/PHASE4_VALIDATION.md) records the benchmark, availability assumptions and reproduction command. Forecast artifacts are stored locally under ignored `data/forecasts/`; use one API worker for its bounded job queue. Open `/chart-trial` for the isolated, explicitly synthetic chart examples. Recharts remains in the overview; ECharts is selected for the richer analytical views.
 
 ## Current structure
 
@@ -64,8 +64,8 @@ For frontend validation, run `npm run typecheck` and `npm run build` inside `fro
 | --- | --- |
 | `app.py`, `pages/` | Existing Streamlit application, retained during migration |
 | `app_core/` | Data loading and reusable statistical functions |
-| `backend/` | FastAPI overview and coverage endpoints |
-| `frontend/` | Next.js overview with shadcn/ui primitives and Recharts |
+| `backend/` | FastAPI data, analysis, forecast artifacts and bounded jobs |
+| `frontend/` | Next.js analytical workspaces with shadcn/ui, Recharts and ECharts |
 | `tests/` | Python data, analysis and API tests |
 | `data/` | Tracked sample data and geographical boundaries |
 | `notebooks/` | Original exploratory research |

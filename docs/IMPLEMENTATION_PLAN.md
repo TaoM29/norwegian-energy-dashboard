@@ -164,6 +164,8 @@ Completed 2026-09-15: `/explore`, `/diagnostics` and `/regional` provide the Pha
 
 Gate: reproducible evaluation, no known availability leakage, and claims supported by held-out results. Improvement over a baseline is an experimental result, not a delivery guarantee.
 
+Completed 2026-09-15: `/forecasts` serves immutable local results and bounded, cancellable SARIMAX/evaluation jobs. The all-five-area benchmark compares four models on 19 matched area-days, with frozen selection, publication-lag assumptions, logged failures and measured interval quality. The [Phase 4 validation](PHASE4_VALIDATION.md) records the reproducible configuration, held-out results and limitations. Latest revised snapshots make this a retrospective availability-assumed experiment; archived operational weather is not claimed. Streamlit remains runnable until Phase 5.
+
 ### Phase 5 — Release and retirement of the old UI
 
 - Finish all parity rows; remove Streamlit pages/dependencies and obsolete deployment configuration only after replacements pass their gates.

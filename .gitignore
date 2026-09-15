@@ -256,3 +256,6 @@ frontend/*.tsbuildinfo
 # Frontend source, distinct from Python build output.
 !frontend/lib/
 !frontend/lib/**
+
+# Reproducible forecast results and local experiment job state
+data/forecasts/
