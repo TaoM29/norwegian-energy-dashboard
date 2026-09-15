@@ -8,36 +8,48 @@ This release candidate uses Next.js and FastAPI. Deployments that enable custom 
 - FastAPI: https://norwegian-energy-api.vercel.app
 - Vercel scope: `taom29s-projects`.
 
-The frontend and API are separate Vercel projects. The frontend's production
-`ENERGY_API_URL` points to the API; Next.js rewrites keep browser requests on the
-same origin. No local server or MongoDB connection is needed.
+Both projects connect to `TaoM29/norwegian-energy-dashboard`, with `main` as
+production branch. Each push to `main` deploys both applications:
 
-The API bundles the real published observations and saved forecast results.
-`deploy/vercel/server.py` keeps SQLite read-only and copies weather/forecast caches
-to temporary writable storage. Custom background fitting remains disabled. The
-API uses Python 3.12 and Vercel Large Functions because the scientific dependencies
-and observation database exceed the standard Python bundle limit.
+| Vercel project | Root directory | Framework | Build command |
+| --- | --- | --- | --- |
+| norwegian-energy-dashboard | frontend | Next.js | npm run build |
+| norwegian-energy-api | repository root | FastAPI | python deploy/vercel/build.py |
 
-Deploy from a refreshed local snapshot (Vercel CLI authentication required):
+The dashboard's `ENERGY_API_URL` is `https://norwegian-energy-api.vercel.app`.
+Next.js rewrites keep browser requests on the same origin. Production and preview
+builds use that API. No local server or MongoDB connection is needed.
 
-```sh
-python scripts/prepare_vercel.py
-npx vercel deploy --cwd .vercel-deploy/api --project norwegian-energy-api --prod --yes --build-env VERCEL_SUPPORT_LARGE_FUNCTIONS=1 --env VERCEL_SUPPORT_LARGE_FUNCTIONS=1
-npx vercel deploy --cwd frontend --project norwegian-energy-dashboard --prod --yes
-```
+The API build downloads the public Vercel Blob archive pinned in
+`deploy/vercel/snapshot.json`, verifies its SHA-256, and unpacks the real published
+observations and saved forecast results. Git stores the manifest, not the large
+dataset. The public archive contains observations and scientific results only;
+it excludes local job records and configuration. Builds need no Blob write token.
 
-The staging script includes only application code and published data, excludes
-local job records, and takes a consistent SQLite backup. Staging and project links
-are ignored by Git. These commands do not commit or push.
+Root `server.py` keeps SQLite read-only and copies weather/forecast caches to
+temporary writable storage. Custom background fitting remains disabled. Python
+3.12 and Vercel Large Functions support the scientific dependencies and database.
+`VERCEL_SUPPORT_LARGE_FUNCTIONS=1` is configured on the API project.
 
-Snapshots are fixed for each deployment: run the existing local refresh and
-redeploy the API to publish new observations or saved forecast results. Temporary
-point-weather caches do not persist across instances. The container scheduler below
-is a separate self-hosted option, not a Vercel refresh service.
+To publish updated data:
+
+1. Run the existing local refresh and any explicitly requested forecast analysis.
+2. Run `python scripts/prepare_vercel.py` to package a consistent SQLite backup,
+   weather, geography, and saved forecasts in `.vercel-deploy/api/snapshots.tar.gz`.
+   The command prints the archive's SHA-256.
+3. Upload it to the `norwegian-energy-snapshots` Vercel Blob store under a new path
+   containing that hash. Keep previous archives for rollback; do not overwrite.
+4. Update the URL and SHA-256 in `deploy/vercel/snapshot.json`. Commit and push the
+   manifest with any code changes to `main` when ready.
+
+Snapshots are fixed per commit; pushing UI code reuses the pinned data. The GitHub
+refresh workflow publishes downloadable artifacts but does not change this pin.
+Temporary point-weather caches do not persist across function instances.
 
 Verify `/api/ready`, overview, weather, regional data, and saved forecasts through
 the dashboard domain after deployment. Roll back with Vercel's deployment history;
-API and frontend releases are promoted independently.
+API and frontend releases are promoted independently. The older pinned archives
+allow Git rebuilds to reproduce the same input data.
 
 ## Clean setup and offline demonstration
 
