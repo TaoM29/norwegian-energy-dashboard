@@ -11,6 +11,25 @@ test("range picker stages, validates, cancels and applies inclusive UTC dates", 
   await trigger.click();
   const calendar = page.getByRole("dialog", { name: "Choose date range" });
   await expect(calendar.locator(".rdp-month")).toHaveCount(2);
+  await calendar
+    .getByRole("combobox", { name: "Month, calendar 1", exact: true })
+    .click();
+  await page.getByRole("option", { name: "May", exact: true }).click();
+  await expect(
+    calendar.getByRole("combobox", { name: "Month, calendar 1", exact: true }),
+  ).toHaveText("May");
+  await expect(
+    calendar.getByRole("combobox", { name: "Month, calendar 2", exact: true }),
+  ).toHaveText("June");
+  await calendar
+    .getByRole("combobox", { name: "Month, calendar 2", exact: true })
+    .click();
+  await page.getByRole("option", { name: "August", exact: true }).click();
+  await expect(
+    calendar.getByRole("combobox", { name: "Month, calendar 1", exact: true }),
+  ).toHaveText("July");
+  await expect(page).toHaveURL(/start=2025-03-01&end=2025-03-28/);
+
   await calendar.getByLabel("Start date", { exact: true }).fill("2025-02-30");
   await expect(
     calendar.getByRole("button", { name: "Apply dates" }),
@@ -96,8 +115,9 @@ test("applied filters, navigation hrefs and Back preserve the observation worksp
   ).toBeVisible();
   await page
     .getByRole("form", { name: "Stored result filters" })
-    .getByRole("combobox", { name: "Area", exact: true })
-    .selectOption("NO3");
+    .getByRole("combobox", { name: "Forecast price area", exact: true })
+    .click();
+  await page.getByRole("option", { name: "NO3", exact: true }).click();
   await expect(
     nav.getByRole("link", { name: "Explore", exact: true }),
   ).toHaveAttribute(
@@ -199,7 +219,7 @@ test("forecast target dates select a matching saved origin and preserve it on re
   const origin = filters.getByRole("combobox", {
     name: "Matched forecast origin",
   });
-  await expect(origin).toHaveValue(/2025-12-01/);
+  await expect(origin).toHaveAttribute("data-value", /2025-12-01/);
   await expect(
     page
       .getByRole("navigation")
@@ -210,10 +230,10 @@ test("forecast target dates select a matching saved origin and preserve it on re
   await calendar.getByLabel("Start date", { exact: true }).fill("2025-11-01");
   await calendar.getByLabel("End date", { exact: true }).fill("2025-11-01");
   await calendar.getByRole("button", { name: "Apply dates" }).click();
-  await expect(origin).toHaveValue(/2025-11-01/);
+  await expect(origin).toHaveAttribute("data-value", /2025-11-01/);
   await expect(page).toHaveURL(/origin=2025-11-01/);
   await page.reload();
-  await expect(origin).toHaveValue(/2025-11-01/);
+  await expect(origin).toHaveAttribute("data-value", /2025-11-01/);
   await expect(
     filters.getByRole("button", { name: /^Target dates:/ }),
   ).toContainText("1 Nov 2025");
@@ -282,7 +302,8 @@ test("forecast settings drawer keeps training dates usable and preserves API bou
   await page.route("**/api/forecasts/capabilities", (route) =>
     route.fulfill({ json: { customJobsEnabled: true } }),
   );
-  let submitted: { config: { start: string; end: string } } | undefined;
+  let submitted:
+    { config: { start: string; end: string; horizon: number } } | undefined;
   await page.route("**/api/forecasts/jobs", async (route) => {
     if (route.request().method() !== "POST") return route.continue();
     submitted = route.request().postDataJSON();
@@ -304,9 +325,10 @@ test("forecast settings drawer keeps training dates usable and preserves API bou
     name: "Experiment settings",
     exact: true,
   });
-  await drawer
-    .getByRole("combobox", { name: "Experiment type" })
-    .selectOption({ label: "Custom SARIMAX" });
+  await drawer.getByRole("combobox", { name: "Experiment type" }).click();
+  await page
+    .getByRole("option", { name: "Custom SARIMAX", exact: true })
+    .click();
   await expect(
     drawer.getByRole("button", { name: "Run evaluation job" }),
   ).toHaveCount(0);
@@ -319,9 +341,25 @@ test("forecast settings drawer keeps training dates usable and preserves API bou
   await page.keyboard.press("Escape");
   await expect(calendar).toBeHidden();
   await expect(drawer).toBeVisible();
+  const setup = drawer.getByRole("region", {
+    name: "Training period to forecast horizon",
+  });
+  await expect(
+    setup
+      .getByRole("listitem")
+      .filter({ hasText: "2 · Forecast issue / start" }),
+  ).toContainText("2 Apr 2025, 00:00 UTC");
+  await expect(
+    setup.getByRole("listitem").filter({ hasText: "3 · Ahead horizon" }),
+  ).toContainText("3 Apr 2025, 00:00 UTC");
+  await setup.getByRole("button", { name: "72 hours", exact: true }).click();
+  await expect(
+    setup.getByRole("listitem").filter({ hasText: "3 · Ahead horizon" }),
+  ).toContainText("5 Apr 2025, 00:00 UTC");
   await drawer.getByRole("button", { name: "Run SARIMAX job" }).click();
   await expect.poll(() => submitted?.config.end).toBe("2025-03-31");
   expect(submitted?.config.start).toBe("2025-03-29");
+  expect(submitted?.config.horizon).toBe(72);
   await page.keyboard.press("Escape");
   await expect(drawer).toBeHidden();
   await expect(trigger).toBeFocused();
@@ -381,14 +419,63 @@ test("period comparison withholds changes for incomplete observations", async ({
   const comparison = page.getByRole("region", {
     name: "What changed from the previous period?",
   });
-  const consumption = comparison
-    .getByRole("article")
-    .filter({
-      has: page.getByRole("heading", { name: "Energy consumed", exact: true }),
-    });
+  const consumption = comparison.getByRole("article").filter({
+    has: page.getByRole("heading", { name: "Energy consumed", exact: true }),
+  });
   await expect(consumption).toContainText("Change unavailable");
   await expect(consumption).not.toContainText("% from the previous period");
   await expect(comparison).toContainText(
     "Changes are withheld wherever either period is incomplete",
   );
+});
+
+test("styled selectors support keyboard choice and help works by hover, focus and click", async ({
+  page,
+}) => {
+  await page.goto("/explore?area=NO1&start=2025-11-01&end=2025-11-28");
+  const area = page.getByRole("combobox", { name: "Price area", exact: true });
+  await area.focus();
+  await area.press("ArrowDown");
+  const northern = page.getByRole("option", {
+    name: "NO4 · Northern Norway",
+    exact: true,
+  });
+  await expect(northern).toBeVisible();
+  await expect(
+    page.getByRole("option", { name: "NO1 · Eastern Norway", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("End");
+  await expect(
+    page.getByRole("option", { name: "NO5 · Western Norway", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(area).toHaveAttribute("data-value", "NO5");
+  await expect(area).toBeFocused();
+  const coverage = page.getByRole("button", {
+    name: "About Data coverage",
+    exact: true,
+  });
+  await coverage.hover();
+  await expect(
+    page.getByRole("dialog", { name: "Data coverage", exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await coverage.focus();
+  await expect(
+    page.getByRole("dialog", { name: "Data coverage", exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  const sources = page.getByRole("button", {
+    name: "Sources & interpretation",
+    exact: true,
+  });
+  await sources.click();
+  const panel = page.getByRole("dialog", {
+    name: "Sources & interpretation",
+    exact: true,
+  });
+  await expect(panel).toContainText("fixed city proxy");
+  await page.keyboard.press("Escape");
+  await expect(panel).toBeHidden();
+  await expect(sources).toBeFocused();
 });

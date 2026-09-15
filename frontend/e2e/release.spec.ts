@@ -106,19 +106,21 @@ test("prepared forecasts are readable with public custom jobs disabled", async (
   ).toHaveCount(0);
   const area = page
     .getByRole("form", { name: "Stored result filters" })
-    .getByRole("combobox", { name: "Area", exact: true });
-  await area.selectOption("NO2");
+    .getByRole("combobox", { name: "Forecast price area", exact: true });
+  await area.click();
+  await page.getByRole("option", { name: "NO2", exact: true }).click();
   await expect(page).toHaveURL(/area=NO2/);
-  await area.selectOption("NO3");
+  await area.click();
+  await page.getByRole("option", { name: "NO3", exact: true }).click();
   await expect(page).toHaveURL(/area=NO3/);
   await page.goBack();
   await expect(
     page.getByRole("heading", { name: "Energy overview", exact: true }),
   ).toBeVisible();
   await page.goForward();
-  await expect(area).toHaveValue("NO3");
+  await expect(area).toHaveAttribute("data-value", "NO3");
   await page.reload();
-  await expect(area).toHaveValue("NO3");
+  await expect(area).toHaveAttribute("data-value", "NO3");
   expect(renderErrors).toEqual([]);
   await page
     .getByRole("button", { name: "Export", exact: true })
@@ -222,7 +224,7 @@ test("mobile pages keep navigation, guidance and theme controls usable", async (
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await page.getByRole("button", { name: "Dark", exact: true }).click();
-  await page.getByText("New here? A 30-second guide", { exact: true }).click();
+  await page.getByRole("button", { name: "New here? A 30-second guide", exact: true }).click();
   await expect(page.getByText(/one million kWh/)).toBeVisible();
   for (const path of [
     "/",
@@ -275,7 +277,8 @@ test("regional table sorts and opens details without changing the selected view"
 }, testInfo) => {
   await page.goto("/?area=NO1&start=2025-11-01&end=2025-11-28");
   await page.getByRole("button", { name: "Dark", exact: true }).click();
-  await page.getByLabel("Sort regions").selectOption("region");
+  await page.getByRole("combobox", { name: "Sort regions" }).click();
+  await page.getByRole("option", { name: "Region code" }).click();
   await expect(
     page.locator(".region-comparison tbody tr").first(),
   ).toContainText("NO1");
