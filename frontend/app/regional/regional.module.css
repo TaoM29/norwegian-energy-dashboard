@@ -73,3 +73,35 @@
     padding: 9px 7px;
   }
 }
+
+.groupChoices {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+.groupChoices legend {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.groupChoices > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 320px;
+}
+.groupChoices label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text);
+  text-transform: capitalize;
+}
+.groupChoices input {
+  width: 14px;
+  height: 14px;
+}

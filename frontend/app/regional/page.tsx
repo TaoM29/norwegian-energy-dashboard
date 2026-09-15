@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type FormEvent,
 } from "react";
@@ -13,6 +14,9 @@ import AnalysisChart from "@/components/analysis-chart";
 import { AnalysisShell } from "@/components/analysis-shell";
 import { downloadCsv, downloadJson } from "@/lib/download";
 import { areas, getJson, number, shiftDay, type Coverage } from "@/lib/api";
+import { DateRangePicker } from "@/components/date-range-picker";
+import { AppliedFilters } from "@/components/applied-filters";
+import { writeDashboardUrl } from "@/lib/navigation-state";
 import styles from "./regional.module.css";
 
 const productionGroups = [
@@ -161,7 +165,7 @@ function initialFilters(coverage?: Coverage): Filters {
   };
 }
 
-function writeUrl(filters: Filters) {
+function writeUrl(filters: Filters, replace = false) {
   const query = new URLSearchParams({
     area: filters.area,
     start: filters.start,
@@ -177,7 +181,7 @@ function writeUrl(filters: Filters) {
     theta: String(filters.relocationCoefficient),
     fenceType: filters.fenceType,
   });
-  window.history.pushState(null, "", `?${query}`);
+  writeDashboardUrl(`?${query}`, { replace });
 }
 
 function csvSnowRows(result: SnowResult) {
@@ -196,6 +200,8 @@ function csvSnowRows(result: SnowResult) {
 
 export default function RegionalPage() {
   const [filters, setFilters] = useState<Filters | null>(null);
+  const filtersRef = useRef<Filters | null>(null);
+  const [coverageBounds, setCoverageBounds] = useState<Coverage | null>(null);
   const [draft, setDraft] = useState<Filters | null>(null);
   const [summary, setSummary] = useState<RegionalSummary | null>(null);
   const [snow, setSnow] = useState<SnowResult | null>(null);
@@ -210,13 +216,16 @@ export default function RegionalPage() {
     let coverage: Coverage | undefined;
     const restore = () => {
       const value = initialFilters(coverage);
+      filtersRef.current = value;
       setFilters(value);
       setDraft(value);
+      writeUrl(value, true);
     };
     getJson<Coverage>("/api/coverage")
       .then((value) => {
         if (!live) return;
         coverage = value;
+        setCoverageBounds(value);
         restore();
       })
       .catch(() => {
@@ -323,6 +332,7 @@ export default function RegionalPage() {
   function apply(event: FormEvent) {
     event.preventDefault();
     if (!draft) return;
+    filtersRef.current = draft;
     setFilters(draft);
     writeUrl(draft);
   }
@@ -334,17 +344,17 @@ export default function RegionalPage() {
         ? { ...current, latitude, longitude, area: area || current.area }
         : current,
     );
-    setFilters((current) => {
-      if (!current) return current;
-      const next = {
-        ...current,
-        latitude,
-        longitude,
-        area: area || current.area,
-      };
-      writeUrl(next);
-      return next;
-    });
+    const current = filtersRef.current;
+    if (!current) return;
+    const next = {
+      ...current,
+      latitude,
+      longitude,
+      area: area || current.area,
+    };
+    filtersRef.current = next;
+    setFilters(next);
+    writeUrl(next);
   }
 
   const attachMap = useCallback((chart: EChartsType) => {
@@ -575,48 +585,41 @@ export default function RegionalPage() {
             <option value="consumption">Consumption</option>
           </select>
         </label>
-        <label>
-          Groups <span className={styles.hint}>Ctrl/Cmd for several</span>
-          <select
-            multiple
-            value={draft.groups}
-            onChange={(event) =>
-              setDraft({
-                ...draft,
-                groups: Array.from(
-                  event.target.selectedOptions,
-                  (option) => option.value,
-                ),
-              })
-            }
-          >
+        <fieldset className={styles.groupChoices}>
+          <legend>Groups</legend>
+          <div>
             {availableGroups.map((group) => (
-              <option key={group}>{group}</option>
+              <label key={group}>
+                <input
+                  type="checkbox"
+                  checked={draft.groups.includes(group)}
+                  onChange={(event) =>
+                    setDraft({
+                      ...draft,
+                      groups: event.target.checked
+                        ? availableGroups.filter(
+                            (item) =>
+                              item === group || draft.groups.includes(item),
+                          )
+                        : draft.groups.filter((item) => item !== group),
+                    })
+                  }
+                />
+                {group}
+              </label>
             ))}
-          </select>
-        </label>
-        <label>
-          Start (UTC)
-          <input
-            type="date"
-            required
-            value={draft.start}
-            onChange={(event) =>
-              setDraft({ ...draft, start: event.target.value })
-            }
-          />
-        </label>
-        <label>
-          End inclusive (UTC)
-          <input
-            type="date"
-            required
-            value={draft.end}
-            onChange={(event) =>
-              setDraft({ ...draft, end: event.target.value })
-            }
-          />
-        </label>
+          </div>
+        </fieldset>
+        <DateRangePicker
+          value={draft}
+          min={coverageBounds?.coverage.start}
+          max={
+            coverageBounds
+              ? shiftDay(coverageBounds.coverage.end, -1)
+              : undefined
+          }
+          onChange={(range) => setDraft({ ...draft, ...range })}
+        />
         <label>
           Latitude
           <input
@@ -736,6 +739,13 @@ export default function RegionalPage() {
           Apply analysis
         </button>
       </form>
+      <AppliedFilters
+        dirty={JSON.stringify(draft) !== JSON.stringify(filters)}
+        start={filters.start}
+        end={filters.end}
+        loading={regionalLoading || snowLoading}
+        onReset={() => setDraft(filters)}
+      />
 
       <div className="analysis-grid">
         <section className="analysis-panel">

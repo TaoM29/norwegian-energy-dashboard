@@ -13,14 +13,21 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock3,
+  CloudSun,
   Database,
   Play,
   Square,
+  Zap,
 } from "lucide-react";
 import AnalysisChart from "@/components/analysis-chart";
 import { AnalysisShell } from "@/components/analysis-shell";
-import { areas, number } from "@/lib/api";
+import {
+  DateRangePicker,
+  type DateRange,
+} from "@/components/date-range-picker";
+import { areas, number, shiftDay } from "@/lib/api";
 import { downloadCsv, downloadJson } from "@/lib/download";
+import { writeDashboardUrl } from "@/lib/navigation-state";
 import styles from "./forecasts.module.css";
 
 const benchmarkModels = [
@@ -394,7 +401,7 @@ export default function ForecastsClient() {
   const [sarimax, setSarimax] = useState(defaultSarimax);
 
   const updateView = useCallback(
-    (patch: Partial<ViewState>, replace = false) => {
+    (patch: Partial<ViewState>, replace = true) => {
       const current = viewRef.current;
       if (!current) return;
       const next = { ...current, ...patch };
@@ -411,11 +418,7 @@ export default function ForecastsClient() {
       params.set("split", next.split);
       params.set("dimension", next.dimension);
       if (next.origin) params.set("origin", next.origin);
-      window.history[replace ? "replaceState" : "pushState"](
-        null,
-        "",
-        `?${params}`,
-      );
+      writeDashboardUrl(`?${params}`, { replace });
     },
     [],
   );
@@ -649,14 +652,57 @@ export default function ForecastsClient() {
       [
         ...new Set(
           predictionRows
-            .filter((row) => !areaKey(row) || areaKey(row) === view?.area)
+            .filter((row) => {
+              const date = targetTime(row).slice(0, 10);
+              return (
+                (!areaKey(row) || areaKey(row) === view?.area) &&
+                (!view?.start || !date || date >= view.start) &&
+                (!view?.end || !date || date <= view.end) &&
+                (!availableSplits.includes(view?.split || "") ||
+                  splitKey(row) === view?.split)
+              );
+            })
             .map(originKey),
         ),
       ]
         .filter(Boolean)
         .sort(),
-    [predictionRows, view?.area],
+    [
+      predictionRows,
+      view?.area,
+      view?.start,
+      view?.end,
+      view?.split,
+      availableSplits,
+    ],
   );
+  const availableTargetDates = useMemo(
+    () =>
+      [
+        ...new Set(
+          predictionRows
+            .filter(
+              (row) =>
+                (!areaKey(row) || areaKey(row) === view?.area) &&
+                (!availableSplits.includes(view?.split || "") ||
+                  splitKey(row) === view?.split),
+            )
+            .map(targetTime)
+            .filter(Boolean)
+            .map((time) => time.slice(0, 10)),
+        ),
+      ].sort(),
+    [predictionRows, view?.area, view?.split, availableSplits],
+  );
+
+  useEffect(() => {
+    if (
+      availableOrigins.length &&
+      !availableOrigins.includes(view?.origin || "")
+    ) {
+      updateView({ origin: availableOrigins.at(-1)! });
+    }
+  }, [availableOrigins, view?.origin, updateView]);
 
   const filteredPredictions = useMemo(() => {
     if (!view) return [];
@@ -1056,7 +1102,7 @@ export default function ForecastsClient() {
       (Date.parse(sarimax.end) - Date.parse(sarimax.start)) / 86_400_000;
     if (!Number.isFinite(days) || days < 2 || days > 366) {
       setJobError(
-        "Training start must precede end by at least 2 days, and the API-exclusive interval is limited to 366 days.",
+        "Training dates must include at least 2 days and at most 366 days.",
       );
       return;
     }
@@ -1201,13 +1247,16 @@ export default function ForecastsClient() {
             <select
               value={view.result}
               onChange={(event) =>
-                updateView({
-                  result: event.target.value,
-                  start: "",
-                  end: "",
-                  models: [],
-                  origin: "",
-                })
+                updateView(
+                  {
+                    result: event.target.value,
+                    start: "",
+                    end: "",
+                    models: [],
+                    origin: "",
+                  },
+                  false,
+                )
               }
             >
               {results.map((item) => (
@@ -1251,13 +1300,16 @@ export default function ForecastsClient() {
               <button
                 type="button"
                 onClick={() =>
-                  updateView({
-                    result: selectedJob.resultId!,
-                    start: "",
-                    end: "",
-                    models: [],
-                    origin: "",
-                  })
+                  updateView(
+                    {
+                      result: selectedJob.resultId!,
+                      start: "",
+                      end: "",
+                      models: [],
+                      origin: "",
+                    },
+                    false,
+                  )
                 }
               >
                 Open result
@@ -1326,6 +1378,7 @@ export default function ForecastsClient() {
               <strong>{formatDateTime(issueTime)}</strong>
             </div>
             <div>
+              <Zap size={17} aria-hidden="true" />
               <span>
                 {detail.kind === "evaluation"
                   ? "Energy eligibility cutoff"
@@ -1334,6 +1387,7 @@ export default function ForecastsClient() {
               <strong>{formatDateTime(lastEnergy)}</strong>
             </div>
             <div>
+              <CloudSun size={17} aria-hidden="true" />
               <span>
                 {detail.kind === "evaluation"
                   ? "Weather eligibility cutoff"
@@ -1391,22 +1445,15 @@ export default function ForecastsClient() {
                 ))}
               </select>
             </label>
-            <label>
-              Start target date (UTC)
-              <input
-                type="date"
-                value={view.start}
-                onChange={(event) => updateView({ start: event.target.value })}
-              />
-            </label>
-            <label>
-              End target date (UTC)
-              <input
-                type="date"
-                value={view.end}
-                onChange={(event) => updateView({ end: event.target.value })}
-              />
-            </label>
+            <DateRangePicker
+              label="Target dates"
+              value={{ start: view.start, end: view.end }}
+              onChange={(range: DateRange) => updateView(range)}
+              min={availableTargetDates[0]}
+              max={availableTargetDates.at(-1)}
+              availableDates={availableTargetDates}
+              applyLabel="Apply dates"
+            />
             {availableSplits.length > 0 && (
               <label>
                 Evaluation cohort
@@ -1514,6 +1561,12 @@ export default function ForecastsClient() {
               The shaded band is the selected model&apos;s stored predictive
               interval. It represents conditional model uncertainty; weather
               uncertainty is included only when the artifact metadata says so.
+            </p>
+            <p className={styles.appliedScope}>
+              <strong>Applied to this chart:</strong> {view.area} · {view.start}{" "}
+              to {view.end}, inclusive · {view.models.length} model
+              {view.models.length === 1 ? "" : "s"}
+              {view.origin ? ` · origin ${formatDateTime(view.origin)}` : ""}.
             </p>
             {filteredPredictions.length ? (
               <AnalysisChart
@@ -1641,6 +1694,19 @@ export default function ForecastsClient() {
               change. MASE below 1 does not by itself prove a model beat the
               displayed held-out baseline; compare their errors on the same
               targets directly.
+            </p>
+            <p className={styles.appliedScope}>
+              <strong>Applied to these metrics:</strong>{" "}
+              {detail.kind === "evaluation" &&
+                `${view.split.replaceAll("_", " ")} cohort, `}
+              {view.models.length} selected model
+              {view.models.length === 1 ? "" : "s"}, and{" "}
+              {view.dimension === "overall"
+                ? "overall breakdown"
+                : `${view.dimension.replaceAll("isPeakPeriod", "peak period")} breakdown`}
+              . Target dates and forecast origin apply only to the chart. Area
+              applies when the saved metric rows are area-scoped; the Area
+              breakdown compares all regions.
             </p>
             <MetricTable rows={filteredMetrics} dimension={view.dimension} />
             <div className="analysis-actions">
@@ -2127,28 +2193,18 @@ function SarimaxForm({
             <option value="D">Daily</option>
           </select>
         </label>
-        <label>
-          Training start (UTC)
-          <input
-            type="date"
-            required
-            value={value.start}
-            onChange={(event) =>
-              onChange({ ...value, start: event.target.value })
-            }
-          />
-        </label>
-        <label>
-          Training end (UTC, exclusive)
-          <input
-            type="date"
-            required
-            value={value.end}
-            onChange={(event) =>
-              onChange({ ...value, end: event.target.value })
-            }
-          />
-        </label>
+        <DateRangePicker
+          label="Training dates"
+          value={{ start: value.start, end: shiftDay(value.end, -1) }}
+          onChange={(range: DateRange) =>
+            onChange({
+              ...value,
+              start: range.start,
+              end: shiftDay(range.end, 1),
+            })
+          }
+          disabled={disabled}
+        />
         <NumberField
           label={`Horizon (${value.frequency === "h" ? "hours" : "days"})`}
           min={1}
