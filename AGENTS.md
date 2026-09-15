@@ -4,7 +4,7 @@
 
 Work in `/Users/taom/Projects/norwegian-energy-dashboard`. This repository is an independent continuation of the IND320 project; implementation and pushes belong to `TaoM29/norwegian-energy-dashboard`. Work directly on `main`; commits and pushes for this project target `origin/main`. Create a separate branch only when the user explicitly requests one.
 
-The runnable application currently uses Streamlit. Next.js/React and a Python backend are planned. Consult [the implementation plan](docs/IMPLEMENTATION_PLAN.md) for architecture decisions, migration milestones, feature parity, or analytical acceptance criteria relevant to the change. Keep the Streamlit application runnable until replacement features pass their acceptance checks.
+The runnable application uses Next.js/React and a FastAPI Python backend. Streamlit was retired after the Phase 3/4 parity checks. Consult [the implementation plan](docs/IMPLEMENTATION_PLAN.md) for architecture decisions, migration milestones, feature parity, or analytical acceptance criteria relevant to the change. Consult [release operations](docs/RELEASE.md) for fixture setup, deployment and rollback; retain historical notebooks and scientific validation evidence.
 
 ## Creating or reworking agent guidance
 
@@ -18,7 +18,7 @@ For substantive work with independent parts, or an explicit Astra consultation, 
 
 ## Frontend design
 
-Use [dashboard-ui](.agents/skills/dashboard-ui/SKILL.md) for the planned React dashboard's layout and component work, with shadcn/ui as the preferred foundation. Use [dashboard-motion](.agents/skills/dashboard-motion/SKILL.md) when transitions help explain an interaction; Transitions.dev and selected beUI components are references. Preserve the plan's analytical meaning, accessibility, feature parity, and chart-library trial. Adding these skills does not scaffold the frontend or install runtime dependencies.
+Use [dashboard-ui](.agents/skills/dashboard-ui/SKILL.md) for the React dashboard's layout and component work, with shadcn/ui as the preferred foundation. Use [dashboard-motion](.agents/skills/dashboard-motion/SKILL.md) when transitions help explain an interaction; Transitions.dev and selected beUI components are references. Preserve the plan's analytical meaning, accessibility, feature parity, and chart-library trial. Reuse the existing frontend and dependencies.
 
 ## Project checks and credential handling
 

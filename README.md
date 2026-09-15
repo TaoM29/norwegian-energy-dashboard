@@ -2,7 +2,7 @@
 
 A Norwegian energy and weather analysis project evolving into a **Next.js / React frontend with a Python backend**.
 
-**Status:** Phase 1 data loading and correctness are implemented. Public energy data has been backfilled from 2021 through available 2026 observations, with validated UTC intervals, coverage-aware controls and atomic refreshes. The overview and Phase 3 exploration, regional/snow-drift and diagnostics workspaces now run in Next.js with a Python API. Phase 4 adds stored forecasts, bounded custom SARIMAX jobs and a five-area household-demand benchmark. Streamlit remains runnable; Phase 5 release and retirement work is next.
+**Status:** The dashboard now runs in Next.js and FastAPI. Overview, exploration, diagnostics, regional/snow and forecasting workflows are implemented. Phase 5 retires Streamlit and adds Methods & Data, an offline fixture, container release setup and browser CI. Public hosting remains a separate, unconfigured release step. Changes and validation are tracked in [Phase 5 validation](docs/PHASE5_VALIDATION.md).
 
 ## Implementation plan
 
@@ -17,24 +17,20 @@ The planned dashboard will combine:
 - Automated updates through the latest validated data, including available 2026 coverage.
 - A responsive, accessible public interface with transparent methods and data freshness.
 
-## Current application
+## Run locally
 
-The inherited application uses Streamlit, Plotly, MongoDB, Open-Meteo, statsmodels, SciPy and scikit-learn. Date selectors use validated observed coverage, including available 2026 data.
+See [release setup](docs/RELEASE.md) for a clean installation, a no-network synthetic demonstration, Docker deployment and rollback. To use real observations:
 
-```bash
-pip install -r requirements.txt
-streamlit run app.py
+```sh
+python -m venv .venv
+. .venv/bin/activate
+pip install -r requirements-dev.txt
+python scripts/refresh_data.py backfill
 ```
 
-Run `python scripts/refresh_data.py backfill` once to create the ignored local public-data snapshots; no credentials are needed. Energy pages use this snapshot, with optional MongoDB fallback via `.streamlit/secrets.toml` (`MONGO_URI`, optionally `MONGO_DB`). Weather retains the last validated snapshot during an outage. See [data pipeline commands and contracts](docs/DATA_PIPELINE.md). See the [preserved original README](docs/LEGACY_README.md) for the inherited project's documentation and original deployment links.
+No credentials are needed for the public data pipeline. The retained optional MongoDB research loaders use environment variables; they are not part of serving the dashboard. See [data pipeline commands and contracts](docs/DATA_PIPELINE.md).
 
-Run the existing Python tests from the repository root:
-
-```bash
-python -m pytest -q
-```
-
-See the [Phase 0 baseline](docs/BASELINE.md) for the tested environment, representative timings and historical capture evidence. The [feature-control inventory](docs/FEATURE_CONTROL_INVENTORY.md) records controls, exports and calculations that must be considered during migration.
+Run Python checks with `python -m pytest -q`. The [Phase 0 baseline](docs/BASELINE.md) and [feature-control inventory](docs/FEATURE_CONTROL_INVENTORY.md) retain the original scientific and migration evidence. The [original README](docs/LEGACY_README.md) preserves the inherited project documentation.
 
 ## React dashboard
 
@@ -56,13 +52,12 @@ Open http://localhost:3000. The overview includes area/date filters, daily produ
 
 `GET /api/coverage` returns the shared date envelope and suggested range. `GET /api/overview?area=NO1&start=2026-08-01&end=2026-09-01` returns the headline, daily series, mix and regional ranking together, with missingness and snapshot provenance. See http://127.0.0.1:8000/docs for query documentation. The API reads `data/energy.sqlite`; set `ENERGY_DATABASE` to use another published snapshot. Set `ENERGY_API_URL` before starting/building Next.js if the API runs elsewhere.
 
-For frontend validation, run `npm run typecheck` and `npm run build` inside `frontend/`. The [Phase 2 validation](docs/PHASE2_VALIDATION.md) records the chart-library trial and matched performance comparison. The [Phase 3 validation](docs/PHASE3_VALIDATION.md) records exploration and diagnostics parity. Open `/explore` for energy/weather, `/diagnostics` for correlation, decomposition and statistical quality checks, and `/regional` for maps and snow drift. Open `/forecasts` for saved benchmarks, uncertainty metrics and cancellable custom jobs. The [Phase 4 validation](docs/PHASE4_VALIDATION.md) records the benchmark, availability assumptions and reproduction command. Forecast artifacts are stored locally under ignored `data/forecasts/`; use one API worker for its bounded job queue. Open `/chart-trial` for the isolated, explicitly synthetic chart examples. Recharts remains in the overview; ECharts is selected for the richer analytical views.
+For frontend validation, run `npm run typecheck` and `npm run build` inside `frontend/`. The [Phase 2 validation](docs/PHASE2_VALIDATION.md) records the chart-library trial and matched performance comparison. The [Phase 3 validation](docs/PHASE3_VALIDATION.md) records exploration and diagnostics parity. Open `/explore` for energy/weather, `/diagnostics` for correlation, decomposition and statistical quality checks, and `/regional` for maps and snow drift. Open `/forecasts` for saved benchmarks, uncertainty metrics and cancellable custom jobs. The [Phase 4 validation](docs/PHASE4_VALIDATION.md) records the benchmark, availability assumptions and reproduction command. Forecast artifacts are stored locally under ignored `data/forecasts/`; use one API worker for its bounded job queue. Open `/methods` for sources, freshness, model cards and three recorded case studies. Open `/chart-trial` for the isolated, explicitly synthetic chart examples. Recharts remains in the overview; ECharts is selected for the richer analytical views.
 
 ## Current structure
 
 | Path | Purpose |
 | --- | --- |
-| `app.py`, `pages/` | Existing Streamlit application, retained during migration |
 | `app_core/` | Data loading and reusable statistical functions |
 | `backend/` | FastAPI data, analysis, forecast artifacts and bounded jobs |
 | `frontend/` | Next.js analytical workspaces with shadcn/ui, Recharts and ECharts |
@@ -71,7 +66,7 @@ For frontend validation, run `npm run typecheck` and `npm run build` inside `fro
 | `notebooks/` | Original exploratory research |
 | `docs/` | Migration plan and historical documentation |
 
-Existing features will be replaced in verified stages before obsolete UI code is removed.
+Streamlit pages and their framework dependency are retired. Useful notebooks, analytical helpers, tests, sample data and historical source remain available.
 
 ## Repository provenance
 
@@ -85,6 +80,6 @@ Data sources: [Elhub](https://api.elhub.no/) and [Open-Meteo](https://open-meteo
 
 On 2026-09-14, this repository's history was rewritten to remove exposed MongoDB credentials and the previously committed `.streamlit/secrets.toml`. Commit IDs differ from the original repository, whose history was not modified. The baseline hash above identifies the original project's source commit.
 
-The connection cell in `notebooks/part-2.ipynb` now requires `MONGO_URI` in the environment. Streamlit continues to use the ignored local secrets file. Never commit either source of credentials. Run `python scripts/check_secrets.py --history` before pushing; CI runs the same targeted check.
+The connection cell in `notebooks/part-2.ipynb` now requires `MONGO_URI` in the environment. Optional research loaders also use environment variables. Never commit credentials. Run `python scripts/check_secrets.py --history` before pushing; CI runs the same targeted check.
 
 Credential removal does not revoke exposed passwords or remove copies in other repositories. Rotate affected database-user passwords in MongoDB Atlas and update applications using them. After this rewrite, use a fresh clone or carefully reset local branches; do not merge old history back into this repository.
