@@ -8,10 +8,7 @@ import {
   BarChart3,
   Check,
   ChevronDown,
-  CircleHelp,
   Download,
-  Layers3,
-  LayoutDashboard,
   MapPin,
   RefreshCw,
   Waves,
@@ -27,6 +24,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { AppNavigation } from "@/components/app-navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { downloadJson } from "@/lib/download";
@@ -42,7 +40,7 @@ import {
 
 type Filters = { area: string; start: string; end: string };
 const mixColors: Record<string, string> = {
-  hydro: "#187566",
+  hydro: "var(--accent)",
   wind: "#8fbbad",
   solar: "#d8b454",
   thermal: "#958573",
@@ -218,71 +216,19 @@ export default function Page() {
       <a href="#main" className="skip-link">
         Skip to overview
       </a>
-      <aside className="sidebar">
-        <a href="/" className="brand">
-          <span className="brand-mark">
-            <Waves size={24} />
-          </span>
-          <span>
-            norwegian<span className="brand-sub">ENERGY OBSERVATORY</span>
-          </span>
-        </a>
-        <div className="nav-label">EXPLORE</div>
-        <nav aria-label="Main navigation">
-          <a className="nav-item active" href="#main" aria-current="page">
-            <LayoutDashboard size={18} /> Overview <span className="nav-dot" />
-          </a>
-          <a className="nav-item" href={`/explore${navigationQuery}`}>
-            <Layers3 size={18} /> Explore
-          </a>
-          <a
-            className="nav-item"
-            href={`/forecasts?area=${filters?.area || "NO1"}`}
-          >
-            <BarChart3 size={18} /> Forecasts
-          </a>
-          <a className="nav-item" href={`/diagnostics${navigationQuery}`}>
-            <BarChart3 size={18} /> Diagnostics
-          </a>
-          <a className="nav-item" href={`/regional${navigationQuery}`}>
-            <MapPin size={18} /> Regional
-          </a>
-          <a className="nav-item" href="/methods">
-            <CircleHelp size={18} /> Methods & data
-          </a>
-        </nav>
-        <div className="sidebar-bottom">
-          <span className="small-flag" aria-hidden="true">
-            🇳🇴
-          </span>
-          <p>
-            A clearer view of
-            <br />
-            Norway’s energy.
-          </p>
-          <a href="#methods">
-            <CircleHelp size={16} /> Methods & data
-          </a>
-        </div>
-      </aside>
+      <AppNavigation />
       <div className="workspace">
-        <header className="topbar">
-          <span>
-            Norway <span className="breadcrumb">/</span>{" "}
-            <strong>Overview</strong>
-          </span>
-          <span className="observed-tag">
-            <span /> Energy snapshot
-          </span>
-        </header>
         <main id="main" ref={mainRef} tabIndex={-1}>
           <div className="page-heading">
             <div>
-              <div className="eyebrow">THE ENERGY PICTURE</div>
+              <div className="eyebrow">NORWAY, THROUGH THE DATA</div>
               <h1>
-                Energy overview<span>.</span>
+                A clearer view of energy<span>.</span>
               </h1>
-              <p>Production, consumption and the balance between them.</p>
+              <p>
+                Where does Norway’s electricity come from, and how do we use it?
+                Explore the big picture, then follow your curiosity.
+              </p>
             </div>
             <Button
               variant="outline"
@@ -292,9 +238,28 @@ export default function Page() {
               <Download size={15} /> Export daily data
             </Button>
           </div>
+          <details className="reading-guide">
+            <summary>New here? A 30-second guide</summary>
+            <div>
+              <p>
+                Choose a region and time period. <strong>Production</strong> is
+                electricity generated; <strong>consumption</strong> is
+                electricity used. The chart compares them day by day.
+              </p>
+              <p>
+                NO1–NO5 are Norway’s five electricity price areas. GWh measures
+                energy: 1 GWh is one million kWh. Production minus consumption
+                is an energy balance, not a measurement of exports.
+              </p>
+              <a href="/methods">
+                See the methods, sources and project findings{" "}
+                <ArrowRight size={14} />
+              </a>
+            </div>
+          </details>
           <section className="filterbar" aria-label="Overview filters">
             <div className="area-filter">
-              <span className="field-label">PRICE AREA</span>
+              <span className="field-label">REGION · PRICE AREA</span>
               <div className="area-tabs" role="group" aria-label="Price area">
                 {Object.keys(areas).map((area) => (
                   <button
@@ -492,20 +457,23 @@ export default function Page() {
                         margin={{ top: 12, right: 10, bottom: 4, left: -16 }}
                         accessibilityLayer
                       >
-                        <CartesianGrid stroke="#e8eeea" vertical={false} />
+                        <CartesianGrid
+                          stroke="var(--chart-grid)"
+                          vertical={false}
+                        />
                         <XAxis
                           dataKey="date"
                           tickFormatter={shortDate}
                           tickLine={false}
                           axisLine={false}
                           minTickGap={36}
-                          tick={{ fill: "#6b7770", fontSize: 11 }}
+                          tick={{ fill: "var(--chart-text)", fontSize: 11 }}
                           dy={10}
                         />
                         <YAxis
                           tickLine={false}
                           axisLine={false}
-                          tick={{ fill: "#6b7770", fontSize: 11 }}
+                          tick={{ fill: "var(--chart-text)", fontSize: 11 }}
                         />
                         <Tooltip
                           labelFormatter={(value) => shortDate(String(value))}
@@ -513,7 +481,9 @@ export default function Page() {
                             `${number(Number(value), 2)} GWh`,
                           ]}
                           contentStyle={{
-                            border: "1px solid #dfe5df",
+                            border: "1px solid var(--border)",
+                            background: "var(--surface)",
+                            color: "var(--text)",
                             borderRadius: 8,
                             fontSize: 12,
                           }}
@@ -522,8 +492,8 @@ export default function Page() {
                           type="linear"
                           dataKey="production"
                           name="Production"
-                          stroke="#187566"
-                          fill="#e3efe9"
+                          stroke="var(--accent)"
+                          fill="var(--accent-soft)"
                           strokeWidth={2.4}
                           isAnimationActive={false}
                           connectNulls={false}
@@ -532,7 +502,7 @@ export default function Page() {
                           type="linear"
                           dataKey="consumption"
                           name="Consumption"
-                          stroke="#b28c3c"
+                          stroke="var(--chart-gold)"
                           strokeWidth={2}
                           dot={false}
                           isAnimationActive={false}
@@ -668,6 +638,33 @@ export default function Page() {
                   </div>
                 </div>
               </div>
+              <section
+                className="exploration-paths"
+                aria-label="Continue exploring"
+              >
+                <div>
+                  <span className="eyebrow">FOLLOW YOUR CURIOSITY</span>
+                  <h2>There’s more behind the numbers.</h2>
+                </div>
+                <a href={`/explore${navigationQuery}`}>
+                  <span>01 · Explore</span>
+                  <strong>What drives energy use?</strong>
+                  <p>Compare sources, demand and weather.</p>
+                  <ArrowRight size={18} />
+                </a>
+                <a href={`/forecasts?area=${filters?.area || "NO1"}`}>
+                  <span>02 · Predict</span>
+                  <strong>Can we forecast demand?</strong>
+                  <p>See how models perform against real outcomes.</p>
+                  <ArrowRight size={18} />
+                </a>
+                <a href="/methods">
+                  <span>03 · Behind the work</span>
+                  <strong>How was this built?</strong>
+                  <p>Explore the methods, findings and limitations.</p>
+                  <ArrowRight size={18} />
+                </a>
+              </section>
               <details id="daily-data" className="daily-table">
                 <summary>
                   Daily values{" "}

@@ -462,7 +462,7 @@ export default function DiagnosticsWorkbench() {
   return (
     <AnalysisShell
       title="Patterns & anomalies"
-      description="Compare weather and energy rhythms, separate seasonal structure, and inspect statistical signals in observed data. Parameters and dates remain in the URL for reproducible views."
+      description="What moves together, what repeats, and what stands out? Look for patterns in energy and weather, with the methods just a click away."
     >
       <div
         className="diagnostics-tabs"
@@ -475,13 +475,40 @@ export default function DiagnosticsWorkbench() {
             type="button"
             role="tab"
             aria-selected={view === item}
+            tabIndex={view === item ? 0 : -1}
+            onKeyDown={(event) => {
+              const tabs = [
+                "correlation",
+                "decomposition",
+                "quality",
+              ] as View[];
+              const index = tabs.indexOf(item);
+              const next =
+                event.key === "ArrowRight"
+                  ? (index + 1) % 3
+                  : event.key === "ArrowLeft"
+                    ? (index + 2) % 3
+                    : event.key === "Home"
+                      ? 0
+                      : event.key === "End"
+                        ? 2
+                        : null;
+              if (next === null) return;
+              event.preventDefault();
+              chooseView(tabs[next]);
+              (
+                event.currentTarget.parentElement?.children[
+                  next
+                ] as HTMLButtonElement
+              )?.focus();
+            }}
             onClick={() => chooseView(item)}
           >
             {item === "correlation"
-              ? "Sliding correlation"
+              ? "Weather & energy"
               : item === "decomposition"
-                ? "STL & spectrogram"
-                : "SPC & LOF"}
+                ? "Seasonal patterns"
+                : "Unusual observations"}
           </button>
         ))}
       </div>
@@ -525,8 +552,7 @@ export default function DiagnosticsWorkbench() {
                 value={kind}
                 onChange={(event) => {
                   const next = event.target.value as
-                    | "production"
-                    | "consumption";
+                    "production" | "consumption";
                   setKind(next);
                   setGroup(next === "production" ? "hydro" : "household");
                 }}
@@ -548,166 +574,184 @@ export default function DiagnosticsWorkbench() {
             </label>
           </>
         )}
-        {view === "correlation" && (
-          <>
-            <label>
-              Weather variable
-              <select
-                value={weather}
-                onChange={(event) => setWeather(event.target.value)}
-              >
-                {weatherVariables.map((item) => (
-                  <option key={item}>{item}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Window, hours
-              <input
-                type="number"
-                min={12}
-                max={720}
-                step={6}
-                value={windowHours}
-                onChange={(event) => setWindowHours(Number(event.target.value))}
-              />
-            </label>
-            <label>
-              Lag, hours
-              <input
-                type="number"
-                min={-240}
-                max={240}
-                value={lagHours}
-                onChange={(event) => setLagHours(Number(event.target.value))}
-              />
-            </label>
-            <label className="check-control">
-              <input
-                type="checkbox"
-                checked={normalize}
-                onChange={(event) => setNormalize(event.target.checked)}
-              />{" "}
-              Normalize comparison
-            </label>
-          </>
-        )}
-        {view === "decomposition" && (
-          <>
-            <label>
-              STL period, hours
-              <input
-                type="number"
-                min={2}
-                max={2000}
-                value={period}
-                onChange={(event) => setPeriod(Number(event.target.value))}
-              />
-            </label>
-            <label>
-              Seasonal smoother
-              <input
-                type="number"
-                min={3}
-                max={9999}
-                value={seasonal}
-                onChange={(event) => setSeasonal(Number(event.target.value))}
-              />
-            </label>
-            <label>
-              Trend smoother
-              <input
-                type="number"
-                min={3}
-                max={9999}
-                value={trend}
-                onChange={(event) => setTrend(Number(event.target.value))}
-              />
-            </label>
-            <label className="check-control">
-              <input
-                type="checkbox"
-                checked={robust}
-                onChange={(event) => setRobust(event.target.checked)}
-              />{" "}
-              Robust STL
-            </label>
-            <label>
-              Spectral window, hours
-              <input
-                type="number"
-                min={8}
-                max={4096}
-                value={spectrogramWindow}
-                onChange={(event) =>
-                  setSpectrogramWindow(Number(event.target.value))
-                }
-              />
-            </label>
-            <label>
-              Overlap, hours
-              <input
-                type="number"
-                min={0}
-                max={4095}
-                value={spectrogramOverlap}
-                onChange={(event) =>
-                  setSpectrogramOverlap(Number(event.target.value))
-                }
-              />
-            </label>
-          </>
-        )}
-        {view === "quality" && (
-          <>
-            <label>
-              DCT fraction
-              <input
-                type="number"
-                min={0.001}
-                max={0.05}
-                step={0.001}
-                value={dctFraction}
-                onChange={(event) => setDctFraction(Number(event.target.value))}
-              />
-            </label>
-            <label>
-              Band width, robust σ
-              <input
-                type="number"
-                min={1}
-                max={6}
-                step={0.1}
-                value={k}
-                onChange={(event) => setK(Number(event.target.value))}
-              />
-            </label>
-            <label>
-              LOF contamination
-              <input
-                type="number"
-                min={0.001}
-                max={0.05}
-                step={0.001}
-                value={contamination}
-                onChange={(event) =>
-                  setContamination(Number(event.target.value))
-                }
-              />
-            </label>
-            <label>
-              LOF neighbors
-              <input
-                type="number"
-                min={10}
-                max={120}
-                step={5}
-                value={neighbors}
-                onChange={(event) => setNeighbors(Number(event.target.value))}
-              />
-            </label>
-          </>
-        )}
+        <details className="method-settings">
+          <summary>
+            Method settings{" "}
+            <span>Windows, model parameters and comparison options</span>
+          </summary>
+          <div className="method-settings-fields">
+            {view === "correlation" && (
+              <>
+                <label>
+                  Weather variable
+                  <select
+                    value={weather}
+                    onChange={(event) => setWeather(event.target.value)}
+                  >
+                    {weatherVariables.map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Window, hours
+                  <input
+                    type="number"
+                    min={12}
+                    max={720}
+                    step={6}
+                    value={windowHours}
+                    onChange={(event) =>
+                      setWindowHours(Number(event.target.value))
+                    }
+                  />
+                </label>
+                <label>
+                  Lag, hours
+                  <input
+                    type="number"
+                    min={-240}
+                    max={240}
+                    value={lagHours}
+                    onChange={(event) =>
+                      setLagHours(Number(event.target.value))
+                    }
+                  />
+                </label>
+                <label className="check-control">
+                  <input
+                    type="checkbox"
+                    checked={normalize}
+                    onChange={(event) => setNormalize(event.target.checked)}
+                  />{" "}
+                  Normalize comparison
+                </label>
+              </>
+            )}
+            {view === "decomposition" && (
+              <>
+                <label>
+                  STL period, hours
+                  <input
+                    type="number"
+                    min={2}
+                    max={2000}
+                    value={period}
+                    onChange={(event) => setPeriod(Number(event.target.value))}
+                  />
+                </label>
+                <label>
+                  Seasonal smoother
+                  <input
+                    type="number"
+                    min={3}
+                    max={9999}
+                    value={seasonal}
+                    onChange={(event) =>
+                      setSeasonal(Number(event.target.value))
+                    }
+                  />
+                </label>
+                <label>
+                  Trend smoother
+                  <input
+                    type="number"
+                    min={3}
+                    max={9999}
+                    value={trend}
+                    onChange={(event) => setTrend(Number(event.target.value))}
+                  />
+                </label>
+                <label className="check-control">
+                  <input
+                    type="checkbox"
+                    checked={robust}
+                    onChange={(event) => setRobust(event.target.checked)}
+                  />{" "}
+                  Robust STL
+                </label>
+                <label>
+                  Spectral window, hours
+                  <input
+                    type="number"
+                    min={8}
+                    max={4096}
+                    value={spectrogramWindow}
+                    onChange={(event) =>
+                      setSpectrogramWindow(Number(event.target.value))
+                    }
+                  />
+                </label>
+                <label>
+                  Overlap, hours
+                  <input
+                    type="number"
+                    min={0}
+                    max={4095}
+                    value={spectrogramOverlap}
+                    onChange={(event) =>
+                      setSpectrogramOverlap(Number(event.target.value))
+                    }
+                  />
+                </label>
+              </>
+            )}
+            {view === "quality" && (
+              <>
+                <label>
+                  DCT fraction
+                  <input
+                    type="number"
+                    min={0.001}
+                    max={0.05}
+                    step={0.001}
+                    value={dctFraction}
+                    onChange={(event) =>
+                      setDctFraction(Number(event.target.value))
+                    }
+                  />
+                </label>
+                <label>
+                  Band width, robust σ
+                  <input
+                    type="number"
+                    min={1}
+                    max={6}
+                    step={0.1}
+                    value={k}
+                    onChange={(event) => setK(Number(event.target.value))}
+                  />
+                </label>
+                <label>
+                  LOF contamination
+                  <input
+                    type="number"
+                    min={0.001}
+                    max={0.05}
+                    step={0.001}
+                    value={contamination}
+                    onChange={(event) =>
+                      setContamination(Number(event.target.value))
+                    }
+                  />
+                </label>
+                <label>
+                  LOF neighbors
+                  <input
+                    type="number"
+                    min={10}
+                    max={120}
+                    step={5}
+                    value={neighbors}
+                    onChange={(event) =>
+                      setNeighbors(Number(event.target.value))
+                    }
+                  />
+                </label>
+              </>
+            )}
+          </div>
+        </details>
         <button type="submit">Run analysis</button>
       </form>
       {status && (
