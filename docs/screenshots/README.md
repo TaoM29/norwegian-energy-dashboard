@@ -14,6 +14,12 @@ A second NO2 date window, shown in dark mode. Theme choice also follows the oper
 
 ![Synthetic NO2 overview in dark mode](overview-dark.png)
 
+## Region detail drawer
+
+NO4 inspected while the overview remains on NO1. The panel uses the same date window and presents energy totals, generation mix and source coverage. Escape closes it and returns keyboard focus to the originating row.
+
+![Synthetic NO4 region details in dark mode](region-drawer-dark.png)
+
 ## Mobile methods and keyboard navigation
 
 390-pixel viewport, showing source coverage and the focused skip link. The journey checks keyboard focus and absence of horizontal overflow.
