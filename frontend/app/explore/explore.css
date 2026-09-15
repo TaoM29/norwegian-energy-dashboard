@@ -1,6 +1,9 @@
 .explore-controls {
   align-items: flex-end;
 }
+.explore-controls .date-range-field {
+  min-width: min(100%, 250px);
+}
 .explore-options {
   display: flex;
   flex-wrap: wrap;

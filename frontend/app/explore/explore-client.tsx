@@ -5,8 +5,11 @@ import type { EChartsCoreOption } from "echarts/core";
 import { Download, RefreshCw } from "lucide-react";
 import AnalysisChart from "@/components/analysis-chart";
 import { AnalysisShell } from "@/components/analysis-shell";
+import { AppliedFilters } from "@/components/applied-filters";
+import { DateRangePicker, parseDate } from "@/components/date-range-picker";
 import { downloadCsv, downloadJson } from "@/lib/download";
 import { areas, getJson, number, shiftDay, type Coverage } from "@/lib/api";
+import { writeDashboardUrl } from "@/lib/navigation-state";
 
 type View = "energy" | "weather";
 type Aggregation = "hourly" | "daily" | "weekly";
@@ -179,12 +182,18 @@ function readFilters(coverage: Coverage): Filters {
   const startParam = params.get("start") || fallback.start;
   const endParam = params.get("end") || fallback.end;
   const start =
-    startParam < coverage.coverage.start || startParam >= coverage.coverage.end
+    !parseDate(startParam) ||
+    startParam < coverage.coverage.start ||
+    startParam >= coverage.coverage.end
       ? fallback.start
       : startParam;
   const lastAvailable = shiftDay(coverage.coverage.end, -1);
   const end =
-    endParam < start || endParam > lastAvailable ? fallback.end : endParam;
+    !parseDate(endParam) || endParam < start || endParam > lastAvailable
+      ? fallback.end < start
+        ? start
+        : fallback.end
+      : endParam;
   return {
     view,
     area,
@@ -200,7 +209,7 @@ function readFilters(coverage: Coverage): Filters {
   };
 }
 
-function writeFilters(filters: Filters) {
+function writeFilters(filters: Filters, replace = false) {
   const params = new URLSearchParams();
   params.set("view", filters.view);
   params.set("area", filters.area);
@@ -213,11 +222,7 @@ function writeFilters(filters: Filters) {
   params.set("normalize", String(filters.normalize));
   params.set("rolling", String(filters.rolling));
   params.set("opacity", String(filters.opacity));
-  window.history.replaceState(
-    null,
-    "",
-    `${window.location.pathname}?${params}`,
-  );
+  writeDashboardUrl(`${window.location.pathname}?${params}`, { replace });
 }
 
 function capRows<T extends { time: string }>(rows: T[], seriesCount: number) {
@@ -296,7 +301,7 @@ export default function ExploreClient() {
         setCoverage(value);
         setDraft(initial);
         setActive(initial);
-        writeFilters(initial);
+        writeFilters(initial, true);
       })
       .catch((reason) => {
         if (reason.name !== "AbortError") setError(reason.message);
@@ -304,6 +309,18 @@ export default function ExploreClient() {
       .finally(() => setLoading(false));
     return () => controller.abort();
   }, [coverageRetry]);
+
+  useEffect(() => {
+    if (!coverage) return;
+    const restore = () => {
+      const restored = readFilters(coverage);
+      setDraft(restored);
+      setActive(restored);
+      setError("");
+    };
+    window.addEventListener("popstate", restore);
+    return () => window.removeEventListener("popstate", restore);
+  }, [coverage]);
 
   useEffect(() => {
     if (!active) return;
@@ -372,6 +389,9 @@ export default function ExploreClient() {
     () =>
       weather ? capRows(weather.series, weather.query.variables.length) : null,
     [weather],
+  );
+  const dirty = Boolean(
+    draft && active && JSON.stringify(draft) !== JSON.stringify(active),
   );
 
   const energyOption = useMemo<EChartsCoreOption>(() => {
@@ -496,26 +516,13 @@ export default function ExploreClient() {
               ))}
             </select>
           </label>
-          <label>
-            Start date
-            <input
-              type="date"
-              min={coverage.coverage.start}
-              max={shiftDay(coverage.coverage.end, -1)}
-              value={draft.start}
-              onChange={(event) => update({ start: event.target.value })}
-            />
-          </label>
-          <label>
-            End date · inclusive
-            <input
-              type="date"
-              min={draft.start}
-              max={shiftDay(coverage.coverage.end, -1)}
-              value={draft.end}
-              onChange={(event) => update({ end: event.target.value })}
-            />
-          </label>
+          <DateRangePicker
+            value={{ start: draft.start, end: draft.end }}
+            onChange={(range) => update(range)}
+            min={coverage.coverage.start}
+            max={shiftDay(coverage.coverage.end, -1)}
+            presets
+          />
           <label>
             Time detail
             <select
@@ -640,6 +647,20 @@ export default function ExploreClient() {
             {shiftDay(coverage.coverage.end, -1)} UTC. End date is inclusive.
           </small>
         </form>
+      ) : null}
+
+      {active ? (
+        <AppliedFilters
+          dirty={dirty}
+          start={active.start}
+          end={active.end}
+          area={active.area}
+          loading={loading}
+          onReset={() => {
+            setDraft({ ...active });
+            setError("");
+          }}
+        />
       ) : null}
 
       {loading ? (

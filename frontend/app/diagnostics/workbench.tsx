@@ -12,8 +12,11 @@ import type { EChartsCoreOption } from "echarts/core";
 
 import AnalysisChart from "@/components/analysis-chart";
 import { AnalysisShell } from "@/components/analysis-shell";
+import { AppliedFilters } from "@/components/applied-filters";
+import { DateRangePicker, parseDate } from "@/components/date-range-picker";
 import { areas, getJson, number, shiftDay, type Coverage } from "@/lib/api";
 import { downloadCsv, downloadJson } from "@/lib/download";
+import { writeDashboardUrl } from "@/lib/navigation-state";
 import "./diagnostics.css";
 
 type View = "correlation" | "decomposition" | "quality";
@@ -83,6 +86,28 @@ type Quality = {
   };
   metadata: Metadata;
 };
+type DiagnosticsFilters = {
+  view: View;
+  area: string;
+  start: string;
+  end: string;
+  kind: "production" | "consumption";
+  group: string;
+  weather: string;
+  windowHours: number;
+  lagHours: number;
+  normalize: boolean;
+  period: number;
+  seasonal: number;
+  trend: number;
+  robust: boolean;
+  spectrogramWindow: number;
+  spectrogramOverlap: number;
+  dctFraction: number;
+  k: number;
+  contamination: number;
+  neighbors: number;
+};
 
 const productionGroups = ["hydro", "other", "solar", "thermal", "wind"];
 const consumptionGroups = [
@@ -116,6 +141,40 @@ function asNumber(params: URLSearchParams, key: string, fallback: number) {
   if (raw == null || raw.trim() === "") return fallback;
   const value = Number(raw);
   return Number.isFinite(value) ? value : fallback;
+}
+
+function dashboardParams(filters: DiagnosticsFilters) {
+  const params = new URLSearchParams({
+    view: filters.view,
+    area: filters.area,
+    start: filters.start,
+    end: filters.end,
+  });
+  if (filters.view !== "quality") {
+    params.set("kind", filters.kind);
+    params.set("group", filters.group);
+  }
+  if (filters.view === "correlation") {
+    params.set("weather", filters.weather);
+    params.set("window", String(filters.windowHours));
+    params.set("lag", String(filters.lagHours));
+    params.set("normalize", String(filters.normalize));
+  }
+  if (filters.view === "decomposition") {
+    params.set("period", String(filters.period));
+    params.set("seasonal", String(filters.seasonal));
+    params.set("trend", String(filters.trend));
+    params.set("robust", String(filters.robust));
+    params.set("specWindow", String(filters.spectrogramWindow));
+    params.set("overlap", String(filters.spectrogramOverlap));
+  }
+  if (filters.view === "quality") {
+    params.set("dct", String(filters.dctFraction));
+    params.set("k", String(filters.k));
+    params.set("contamination", String(filters.contamination));
+    params.set("neighbors", String(filters.neighbors));
+  }
+  return params;
 }
 
 function lineOption(
@@ -268,156 +327,169 @@ export default function DiagnosticsWorkbench() {
   const [result, setResult] = useState<
     Correlation | Decomposition | Quality | null
   >(null);
+  const [applied, setApplied] = useState<DiagnosticsFilters | null>(null);
+  const [pendingRestore, setPendingRestore] =
+    useState<DiagnosticsFilters | null>(null);
+  const [coverage, setCoverage] = useState<Coverage | null>(null);
   const [status, setStatus] = useState("Loading available dates…");
   const [error, setError] = useState("");
-  const [restoreTick, setRestoreTick] = useState(0);
   const request = useRef(0);
 
   const groups = kind === "production" ? productionGroups : consumptionGroups;
+  const setDraftFilters = useCallback((next: DiagnosticsFilters) => {
+    setView(next.view);
+    setArea(next.area);
+    setStart(next.start);
+    setEnd(next.end);
+    setKind(next.kind);
+    setGroup(next.group);
+    setWeather(next.weather);
+    setWindowHours(next.windowHours);
+    setLagHours(next.lagHours);
+    setNormalize(next.normalize);
+    setPeriod(next.period);
+    setSeasonal(next.seasonal);
+    setTrend(next.trend);
+    setRobust(next.robust);
+    setSpectrogramWindow(next.spectrogramWindow);
+    setSpectrogramOverlap(next.spectrogramOverlap);
+    setDctFraction(next.dctFraction);
+    setK(next.k);
+    setContamination(next.contamination);
+    setNeighbors(next.neighbors);
+  }, []);
 
   const restore = useCallback(
     (
       params: URLSearchParams,
       fallbackDates?: { start: string; end: string },
+      bounds?: { min: string; max: string },
     ) => {
       const restoredView = queryValue(params, "view", "correlation");
-      setView(
+      const nextView =
         (["correlation", "decomposition", "quality"].includes(restoredView)
           ? restoredView
-          : "correlation") as View,
-      );
-      setArea(queryValue(params, "area", "NO1"));
-      setStart(queryValue(params, "start", fallbackDates?.start || ""));
-      setEnd(queryValue(params, "end", fallbackDates?.end || ""));
+          : "correlation") as View;
+      const fallbackStart = fallbackDates?.start || "";
+      const fallbackEnd = fallbackDates?.end || "";
+      const requestedStart = queryValue(params, "start", fallbackStart);
+      const nextStart =
+        !parseDate(requestedStart) ||
+        (bounds && (requestedStart < bounds.min || requestedStart > bounds.max))
+          ? fallbackStart
+          : requestedStart;
+      const requestedEnd = queryValue(params, "end", fallbackEnd);
+      const nextEnd =
+        !parseDate(requestedEnd) ||
+        requestedEnd < nextStart ||
+        (bounds && (requestedEnd < bounds.min || requestedEnd > bounds.max))
+          ? fallbackEnd < nextStart
+            ? nextStart
+            : fallbackEnd
+          : requestedEnd;
       const restoredKind =
         queryValue(params, "kind", "production") === "consumption"
           ? "consumption"
           : "production";
-      setKind(restoredKind);
-      setGroup(
-        queryValue(
+      const next: DiagnosticsFilters = {
+        view: nextView,
+        area: queryValue(params, "area", "NO1"),
+        start: nextStart,
+        end: nextEnd,
+        kind: restoredKind,
+        group: queryValue(
           params,
           "group",
           restoredKind === "production" ? "hydro" : "household",
         ),
-      );
-      setWeather(queryValue(params, "weather", weatherVariables[0]));
-      setWindowHours(asNumber(params, "window", 168));
-      setLagHours(asNumber(params, "lag", 0));
-      setNormalize(queryValue(params, "normalize", "true") !== "false");
-      setPeriod(asNumber(params, "period", 24));
-      setSeasonal(asNumber(params, "seasonal", 13));
-      setTrend(asNumber(params, "trend", 365));
-      setRobust(queryValue(params, "robust", "true") !== "false");
-      setSpectrogramWindow(asNumber(params, "specWindow", 168));
-      setSpectrogramOverlap(asNumber(params, "overlap", 84));
-      setDctFraction(asNumber(params, "dct", 0.01));
-      setK(asNumber(params, "k", 3));
-      setContamination(asNumber(params, "contamination", 0.01));
-      setNeighbors(asNumber(params, "neighbors", 60));
-      setRestoreTick((value) => value + 1);
+        weather: queryValue(params, "weather", weatherVariables[0]),
+        windowHours: asNumber(params, "window", 168),
+        lagHours: asNumber(params, "lag", 0),
+        normalize: queryValue(params, "normalize", "true") !== "false",
+        period: asNumber(params, "period", 24),
+        seasonal: asNumber(params, "seasonal", 13),
+        trend: asNumber(params, "trend", 365),
+        robust: queryValue(params, "robust", "true") !== "false",
+        spectrogramWindow: asNumber(params, "specWindow", 168),
+        spectrogramOverlap: asNumber(params, "overlap", 84),
+        dctFraction: asNumber(params, "dct", 0.01),
+        k: asNumber(params, "k", 3),
+        contamination: asNumber(params, "contamination", 0.01),
+        neighbors: asNumber(params, "neighbors", 60),
+      };
+      setDraftFilters(next);
+      setPendingRestore(next);
     },
-    [],
+    [setDraftFilters],
   );
 
   useEffect(() => {
     const current = new URLSearchParams(window.location.search);
+    let knownCoverage: Coverage | null = null;
     getJson<Coverage>("/api/coverage")
-      .then((coverage) => {
-        restore(current, {
-          start: coverage.suggestedRange.start,
-          end: shiftDay(coverage.suggestedRange.end, -1),
-        });
+      .then((value) => {
+        knownCoverage = value;
+        setCoverage(value);
+        restore(
+          current,
+          {
+            start: value.suggestedRange.start,
+            end: shiftDay(value.suggestedRange.end, -1),
+          },
+          {
+            min: value.coverage.start,
+            max: shiftDay(value.coverage.end, -1),
+          },
+        );
       })
       .catch(() =>
         restore(current, { start: "2026-08-01", end: "2026-08-28" }),
       );
-    const back = () => restore(new URLSearchParams(window.location.search));
+    const back = () => {
+      const params = new URLSearchParams(window.location.search);
+      if (knownCoverage) {
+        restore(
+          params,
+          {
+            start: knownCoverage.suggestedRange.start,
+            end: shiftDay(knownCoverage.suggestedRange.end, -1),
+          },
+          {
+            min: knownCoverage.coverage.start,
+            max: shiftDay(knownCoverage.coverage.end, -1),
+          },
+        );
+      } else {
+        restore(params, { start: "2026-08-01", end: "2026-08-28" });
+      }
+    };
     window.addEventListener("popstate", back);
     return () => window.removeEventListener("popstate", back);
   }, [restore]);
 
-  const load = useCallback(
-    async (replaceUrl = false) => {
-      if (!start || !end) return;
-      const shared = new URLSearchParams({ view, area, start, end });
-      if (view !== "quality") {
-        shared.set("kind", kind);
-        shared.set("group", group);
-      }
-      if (view === "correlation") {
-        shared.set("weather", weather);
-        shared.set("window", String(windowHours));
-        shared.set("lag", String(lagHours));
-        shared.set("normalize", String(normalize));
-      }
-      if (view === "decomposition") {
-        shared.set("period", String(period));
-        shared.set("seasonal", String(seasonal));
-        shared.set("trend", String(trend));
-        shared.set("robust", String(robust));
-        shared.set("specWindow", String(spectrogramWindow));
-        shared.set("overlap", String(spectrogramOverlap));
-      }
-      if (view === "quality") {
-        shared.set("dct", String(dctFraction));
-        shared.set("k", String(k));
-        shared.set("contamination", String(contamination));
-        shared.set("neighbors", String(neighbors));
-      }
-      window.history[replaceUrl ? "replaceState" : "pushState"](
-        {},
-        "",
-        `${window.location.pathname}?${shared}`,
-      );
-      const api = new URLSearchParams({ area, start, end: shiftDay(end, 1) });
-      if (view !== "quality") {
-        api.set("kind", kind);
-        api.set("group", group);
-      }
-      if (view === "correlation") {
-        api.set("weather", weather);
-        api.set("windowHours", String(windowHours));
-        api.set("lagHours", String(lagHours));
-        api.set("normalize", String(normalize));
-      }
-      if (view === "decomposition") {
-        api.set("period", String(period));
-        api.set("seasonalSmoother", String(seasonal));
-        api.set("trendSmoother", String(trend));
-        api.set("robust", String(robust));
-        api.set("spectrogramWindow", String(spectrogramWindow));
-        api.set("spectrogramOverlap", String(spectrogramOverlap));
-      }
-      if (view === "quality") {
-        api.set("dctFraction", String(dctFraction));
-        api.set("k", String(k));
-        api.set("contamination", String(contamination));
-        api.set("neighbors", String(neighbors));
-      }
-      const sequence = ++request.current;
-      setStatus("Analyzing the complete hourly series…");
-      setError("");
-      setResult(null);
-      try {
-        const data = await getJson<Correlation | Decomposition | Quality>(
-          `/api/diagnostics/${view}?${api}`,
-        );
-        if (sequence === request.current) {
-          setResult(data);
-          setStatus("");
-        }
-      } catch (problem) {
-        if (sequence === request.current) {
-          setError(
-            problem instanceof Error
-              ? problem.message
-              : "The analysis could not be loaded.",
-          );
-          setStatus("");
-        }
-      }
-    },
+  const draft = useMemo<DiagnosticsFilters>(
+    () => ({
+      view,
+      area,
+      start,
+      end,
+      kind,
+      group,
+      weather,
+      windowHours,
+      lagHours,
+      normalize,
+      period,
+      seasonal,
+      trend,
+      robust,
+      spectrogramWindow,
+      spectrogramOverlap,
+      dctFraction,
+      k,
+      contamination,
+      neighbors,
+    }),
     [
       area,
       contamination,
@@ -442,22 +514,92 @@ export default function DiagnosticsWorkbench() {
     ],
   );
 
+  const load = useCallback(
+    async (filters: DiagnosticsFilters, replaceUrl = false) => {
+      if (!filters.start || !filters.end) return;
+      if (filters.end < filters.start) {
+        setError("The end date must be on or after the start date.");
+        return;
+      }
+      const shared = dashboardParams(filters);
+      writeDashboardUrl(`${window.location.pathname}?${shared}`, {
+        replace: replaceUrl,
+      });
+      const api = new URLSearchParams({
+        area: filters.area,
+        start: filters.start,
+        end: shiftDay(filters.end, 1),
+      });
+      if (filters.view !== "quality") {
+        api.set("kind", filters.kind);
+        api.set("group", filters.group);
+      }
+      if (filters.view === "correlation") {
+        api.set("weather", filters.weather);
+        api.set("windowHours", String(filters.windowHours));
+        api.set("lagHours", String(filters.lagHours));
+        api.set("normalize", String(filters.normalize));
+      }
+      if (filters.view === "decomposition") {
+        api.set("period", String(filters.period));
+        api.set("seasonalSmoother", String(filters.seasonal));
+        api.set("trendSmoother", String(filters.trend));
+        api.set("robust", String(filters.robust));
+        api.set("spectrogramWindow", String(filters.spectrogramWindow));
+        api.set("spectrogramOverlap", String(filters.spectrogramOverlap));
+      }
+      if (filters.view === "quality") {
+        api.set("dctFraction", String(filters.dctFraction));
+        api.set("k", String(filters.k));
+        api.set("contamination", String(filters.contamination));
+        api.set("neighbors", String(filters.neighbors));
+      }
+      const sequence = ++request.current;
+      setStatus("Analyzing the complete hourly series…");
+      setError("");
+      try {
+        const data = await getJson<Correlation | Decomposition | Quality>(
+          `/api/diagnostics/${filters.view}?${api}`,
+        );
+        if (sequence === request.current) {
+          setResult(data);
+          setApplied(filters);
+          setStatus("");
+        }
+      } catch (problem) {
+        if (sequence === request.current) {
+          setError(
+            problem instanceof Error
+              ? problem.message
+              : "The analysis could not be loaded.",
+          );
+          setStatus("");
+        }
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
-    if (start && end && restoreTick) void load(true);
-  }, [restoreTick]); // Initial dates and browser history restore the complete view.
+    if (!pendingRestore) return;
+    setPendingRestore(null);
+    void load(pendingRestore, true);
+  }, [load, pendingRestore]); // Initial dates and browser history restore the complete view.
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    void load();
+    void load(draft);
   }
   function chooseView(next: View) {
     request.current += 1;
     setView(next);
-    setResult(null);
     setStatus("");
     setError("");
   }
-  const fileStem = `${area}-${start}-${end}-${view}`;
+  const dirty = !applied || JSON.stringify(draft) !== JSON.stringify(applied);
+  const fileStem = applied
+    ? `${applied.area}-${applied.start}-${applied.end}-${applied.view}`
+    : `${area}-${start}-${end}-${view}`;
 
   return (
     <AnalysisShell
@@ -526,24 +668,16 @@ export default function DiagnosticsWorkbench() {
             ))}
           </select>
         </label>
-        <label>
-          Start date
-          <input
-            type="date"
-            value={start}
-            onChange={(event) => setStart(event.target.value)}
-            required
-          />
-        </label>
-        <label>
-          End date, inclusive
-          <input
-            type="date"
-            value={end}
-            onChange={(event) => setEnd(event.target.value)}
-            required
-          />
-        </label>
+        <DateRangePicker
+          value={{ start, end }}
+          onChange={(range) => {
+            setStart(range.start);
+            setEnd(range.end);
+          }}
+          min={coverage?.coverage.start}
+          max={coverage ? shiftDay(coverage.coverage.end, -1) : undefined}
+          presets={Boolean(coverage)}
+        />
         {view !== "quality" && (
           <>
             <label>
@@ -754,6 +888,25 @@ export default function DiagnosticsWorkbench() {
         </details>
         <button type="submit">Run analysis</button>
       </form>
+      {applied && (
+        <AppliedFilters
+          dirty={dirty}
+          start={applied.start}
+          end={applied.end}
+          area={applied.area}
+          loading={Boolean(status)}
+          onReset={() => {
+            request.current += 1;
+            setDraftFilters(applied);
+            writeDashboardUrl(
+              `${window.location.pathname}?${dashboardParams(applied)}`,
+              { replace: true },
+            );
+            setStatus("");
+            setError("");
+          }}
+        />
+      )}
       {status && (
         <div className="diagnostics-state" role="status">
           {status}
@@ -767,7 +920,7 @@ export default function DiagnosticsWorkbench() {
       )}
       {result && (
         <>
-          <CoverageNote metadata={result.metadata} view={view} />
+          <CoverageNote metadata={result.metadata} view={applied?.view ?? view} />
           <div className="analysis-actions">
             <button
               onClick={() =>
@@ -775,7 +928,7 @@ export default function DiagnosticsWorkbench() {
                   query: result.query,
                   units: result.units,
                   metadata: result.metadata,
-                  ...(view === "decomposition"
+                  ...(applied?.view === "decomposition"
                     ? {
                         effectiveParameters: (result as Decomposition)
                           .effectiveParameters,
@@ -797,13 +950,13 @@ export default function DiagnosticsWorkbench() {
           </div>
         </>
       )}
-      {view === "correlation" && result && (
+      {applied?.view === "correlation" && result && (
         <CorrelationView data={result as Correlation} fileStem={fileStem} />
       )}
-      {view === "decomposition" && result && (
+      {applied?.view === "decomposition" && result && (
         <DecompositionView data={result as Decomposition} fileStem={fileStem} />
       )}
-      {view === "quality" && result && (
+      {applied?.view === "quality" && result && (
         <QualityView data={result as Quality} fileStem={fileStem} />
       )}
     </AnalysisShell>
