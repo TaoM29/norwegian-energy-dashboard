@@ -50,7 +50,7 @@ def test_aggregate_freq_daily_energy_sum_weather_mean_sum():
     assert float(wD["temperature_2m (°C)"].iloc[0]) == 11.5
 
 
-def test_rolling_backtest_monkeypatched_sarimax_runs():
+def test_rolling_backtest_monkeypatched_sarimax_runs(monkeypatch):
     # Monkeypatch SARIMAX to keep test fast/deterministic
     class _DummyForecast:
         def __init__(self, idx, val):
@@ -74,7 +74,7 @@ def test_rolling_backtest_monkeypatched_sarimax_runs():
         def fit(self, disp=False):
             return _DummyRes(self._endog, self._freq)
 
-    su.SARIMAX = _DummySARIMAX  # patch in module namespace
+    monkeypatch.setattr(su, "SARIMAX", _DummySARIMAX)
 
     idx = pd.date_range("2024-01-01", periods=200, freq="h", tz="UTC")
     y = pd.Series(np.sin(np.arange(200) / 10.0), index=idx)
