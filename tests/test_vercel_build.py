@@ -6,7 +6,7 @@ import tarfile
 
 import pytest
 
-from deploy.vercel import build
+from scripts import fetch_snapshot as build
 
 
 @pytest.mark.parametrize("valid_checksum", [True, False])
@@ -18,7 +18,7 @@ def test_build_downloads_and_verifies_snapshot(tmp_path, monkeypatch, valid_chec
         entry.size = len(content)
         package.addfile(entry, io.BytesIO(content))
     payload = archive.getvalue()
-    manifest = tmp_path / "deploy/vercel/snapshot.json"
+    manifest = tmp_path / "data/snapshot.json"
     manifest.parent.mkdir(parents=True)
     manifest.write_text(json.dumps({
         "url": "https://example.test/snapshot.tar.gz",
@@ -33,4 +33,4 @@ def test_build_downloads_and_verifies_snapshot(tmp_path, monkeypatch, valid_chec
     else:
         with pytest.raises(ValueError, match="checksum"):
             build.main()
-        assert not (tmp_path / "data").exists()
+        assert list((tmp_path / "data").iterdir()) == [manifest]

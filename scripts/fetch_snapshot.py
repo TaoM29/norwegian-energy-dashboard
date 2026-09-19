@@ -6,11 +6,11 @@ import tarfile
 import tempfile
 from urllib.request import urlopen
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def main() -> None:
-    snapshot = json.loads((ROOT / "deploy/vercel/snapshot.json").read_text())
+    snapshot = json.loads((ROOT / "data/snapshot.json").read_text())
     with tempfile.TemporaryFile() as archive:
         digest = sha256()
         with urlopen(snapshot["url"], timeout=120) as response:

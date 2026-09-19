@@ -14,14 +14,14 @@ production branch. Each push to `main` deploys both applications:
 | Vercel project | Root directory | Framework | Build command |
 | --- | --- | --- | --- |
 | norwegian-energy-dashboard | frontend | Next.js | npm run build |
-| norwegian-energy-api | repository root | FastAPI | python deploy/vercel/build.py |
+| norwegian-energy-api | repository root | FastAPI | python scripts/fetch_snapshot.py |
 
 The dashboard's `ENERGY_API_URL` is `https://norwegian-energy-api.vercel.app`.
 Next.js rewrites keep browser requests on the same origin. Production and preview
 builds use that API. No local server or MongoDB connection is needed.
 
 The API build downloads the public Vercel Blob archive pinned in
-`deploy/vercel/snapshot.json`, verifies its SHA-256, and unpacks the real published
+`data/snapshot.json`, verifies its SHA-256, and unpacks the real published
 observations and saved forecast results. Git stores the manifest, not the large
 dataset. The public archive contains observations and scientific results only;
 it excludes local job records and configuration. Builds need no Blob write token.
@@ -39,7 +39,7 @@ To publish updated data:
    The command prints the archive's SHA-256.
 3. Upload it to the `norwegian-energy-snapshots` Vercel Blob store under a new path
    containing that hash. Keep previous archives for rollback; do not overwrite.
-4. Update the URL and SHA-256 in `deploy/vercel/snapshot.json`. Commit and push the
+4. Update the URL and SHA-256 in `data/snapshot.json`. Commit and push the
    manifest with any code changes to `main` when ready.
 
 Snapshots are fixed per commit; pushing UI code reuses the pinned data. The GitHub
