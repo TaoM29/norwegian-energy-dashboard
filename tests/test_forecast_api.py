@@ -4,7 +4,6 @@ import time
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-import pytest
 
 from backend import forecast
 from backend.forecast_jobs import ForecastJobManager
