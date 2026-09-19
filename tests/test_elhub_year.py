@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-import pandas as pd
 from pandas import DatetimeTZDtype
 
 from app_core.loaders.elhub_year import collection_name_for, year_range_utc, load_elhub_year_df
