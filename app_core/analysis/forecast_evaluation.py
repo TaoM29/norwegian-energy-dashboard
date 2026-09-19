@@ -290,7 +290,8 @@ def _norwegian_holidays(year: int) -> set[Any]:
     # Anonymous Gregorian Easter algorithm.
     a, b = year % 19, year // 100
     c, d, e = year % 100, b // 4, b % 4
-    f, g = (b + 8) // 25, (b - ((b + 8) // 25) + 1) // 3
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
     h = (19 * a + b - d - g + 15) % 30
     i, k = c // 4, c % 4
     ell = (32 + 2 * e + 2 * i - h - k) % 7
