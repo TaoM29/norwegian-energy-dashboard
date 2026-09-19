@@ -53,29 +53,9 @@ allow Git rebuilds to reproduce the same input data.
 
 ## Clean setup and offline demonstration
 
-Requires Python 3.11 or 3.12 and Node.js 22.
+Follow the [README local setup](../README.md#local-development-optional) to install dependencies, generate the synthetic fixture, and start the API and frontend. The fixture banner distinguishes generated data from observations.
 
-```sh
-python -m venv .venv
-. .venv/bin/activate
-pip install -r requirements-dev.txt
-python scripts/create_fixture.py
-cd frontend
-npm ci
-cd ..
-```
-
-Start the API with explicitly synthetic inputs:
-
-```sh
-ENERGY_DATABASE=data/fixture/energy.sqlite \
-WEATHER_SNAPSHOT_DIR=data/fixture/weather \
-FORECAST_ARTIFACT_ROOT=data/fixture/forecasts \
-ENERGY_DATA_MODE=fixture \
-python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
-```
-
-In another terminal, run `cd frontend && npm run dev`, then open `http://localhost:3000`. The yellow fixture banner distinguishes generated data from observations. Regenerating an existing fixture uses `python scripts/create_fixture.py --force`; recreate any fixture containers afterwards so their bind mounts use the replacement directory. The fixture includes every base group and area, weather and a genuinely calculated seasonal-naive evaluation. It does not manufacture evidence of model performance on real data. Point-weather fixture coverage is limited to the documented default point; other points return a clear fixture-coverage message without contacting the public source.
+Regenerating an existing fixture uses `python scripts/create_fixture.py --force`; recreate any fixture containers afterwards so their bind mounts use the replacement directory. The fixture includes every base group and area, weather and a genuinely calculated seasonal-naive evaluation. It does not manufacture evidence of model performance on real data. Point-weather fixture coverage is limited to the documented default point; other points return a clear fixture-coverage message without contacting the public source.
 
 For real observations, run `python scripts/refresh_data.py backfill` from the repository root. Start the API without the fixture environment variables. Generate prepared forecasts with the command in [Phase 4 validation](PHASE4_VALIDATION.md). Ordinary views read published snapshots; point snow-weather requests are the exception. No MongoDB credentials are required by the dashboard.
 

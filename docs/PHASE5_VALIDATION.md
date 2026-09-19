@@ -1,6 +1,6 @@
 # Phase 5 — Release candidate and Streamlit retirement
 
-Recorded 2026-09-15. Streamlit retirement and the local release candidate are implemented. The full public-release gate remains open: no Internet deployment host/domain is configured. [GitHub CI passed for revision `441dbf8`](https://github.com/TaoM29/norwegian-energy-dashboard/actions/runs/34965254001), including the four Chromium journeys and Python 3.11/3.12. The additional changes recorded below are locally verified and remain uncommitted. No commit or push was made by the implementation agent.
+Recorded 2026-09-15. This is the historical local release-candidate record. At that time, Streamlit was retired and no Internet deployment host/domain was configured. Current Vercel deployment and snapshot publication are documented in [release operations](RELEASE.md); the measurements below do not establish Internet performance. [GitHub CI passed for revision `441dbf8`](https://github.com/TaoM29/norwegian-energy-dashboard/actions/runs/34965254001), including the four Chromium journeys and Python 3.11/3.12. The additional changes below were locally verified but uncommitted at the time of this record. No commit or push was made during that validation session.
 
 ## Retirement decisions
 
@@ -51,6 +51,6 @@ Earlier checks caught and fixed a mismatched fixture point-cache key, an uncaugh
 
 Release review added container health for refresh failures, timeouts and overdue execution, with the last successful timestamp retained. Focused tests cover failure, recovery, timeout and stale status without making upstream calls. Rollback instructions now include the active refresh profile so code rollback also replaces the scheduler image. Energy readiness remains a readability/date-envelope check; internal observation gaps are supported rather than hidden or treated as application startup failures.
 
-## Remaining public-release gate
+## Public-release gate recorded on 2026-09-15
 
 Configure the actual host/domain and HTTPS proxy, publish the chosen real snapshots and prepared result artifacts there, enable its scheduled refresh, and measure the externally deployed journeys. Run CI again on the revision the user commits, capture the final public deployment screenshots, and verify the documented rollback on that host. The repository provides the runnable candidate and operations procedure; a loopback deployment is not an Internet release.

@@ -1,6 +1,6 @@
 # Norwegian Energy Dashboard — Implementation Plan
 
-Prepared 2026-09-14. This document describes planned work; checked phase items record completed work; the Next.js replacement remains planned.
+Prepared 2026-09-14. This document preserves the original design and phase acceptance criteria, followed by dated implementation results. Next.js/FastAPI now replaces Streamlit; see [release operations](RELEASE.md) for the current deployment and setup.
 
 ## 1. Outcome and scope
 
@@ -82,7 +82,7 @@ All rows begin as pending. During implementation, record the replacement route, 
 | STL and spectrogram | `40_STL_Decomposition_and_Spectrogram.py` | Components, spectral view and parameter controls with meaningful axis units |
 | SPC and LOF | `41_SPC_and_LOF_Data_Quality.py` | Outlier/anomaly controls, contextual plots, scores and interpretation |
 
-Files above live in `pages/`. Keep notebooks as research provenance; their presence does not require linking unfinished experiments in public navigation.
+The original files above lived in `pages/`; they remain available in the historical checkout documented in [release operations](RELEASE.md). Keep notebooks as research provenance; their presence does not require linking unfinished experiments in public navigation.
 
 ## 4. Phases and completion gates
 
