@@ -4,7 +4,7 @@ import os
 import shutil
 import sqlite3
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Iterable, Optional, Sequence
 

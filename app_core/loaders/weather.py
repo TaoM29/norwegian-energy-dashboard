@@ -64,11 +64,6 @@ def era5_available_end(now: datetime | None = None) -> pd.Timestamp:
     return pd.Timestamp(latest_day + timedelta(days=1), tz="UTC")
 
 
-def era5_available_range(now: datetime | None = None) -> tuple[pd.Timestamp, pd.Timestamp]:
-    """Return Open-Meteo ERA5-Seamless source coverage as UTC half-open bounds."""
-    return pd.Timestamp(ERA5_FIRST_DAY, tz="UTC"), era5_available_end(now)
-
-
 def _utc_timestamp(value: date | datetime | pd.Timestamp) -> pd.Timestamp:
     timestamp = pd.Timestamp(value)
     return timestamp.tz_localize("UTC") if timestamp.tzinfo is None else timestamp.tz_convert("UTC")

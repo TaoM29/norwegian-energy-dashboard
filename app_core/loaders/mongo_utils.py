@@ -14,7 +14,6 @@ import os
 COLL_PROD_2021 = "prod_hour"
 COLL_PROD_2224 = "elhub_production_mba_hour"
 COLL_CONS_2124 = "elhub_consumption_mba_hour"
-COLL_PROD_TOTALS_2021 = "prod_year_totals"
 
 ENERGY_COLUMNS = [
     "timestamp", "area", "kind", "group", "value", "unit", "source",
