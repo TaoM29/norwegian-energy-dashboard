@@ -63,10 +63,6 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.hint {
-  color: var(--text-muted);
-  font-size: 10px;
-}
 .error {
   padding: 12px;
   border-left: 3px solid var(--danger);

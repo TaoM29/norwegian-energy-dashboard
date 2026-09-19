@@ -44,8 +44,7 @@
 }
 
 .trial-intro p,
-.trial-card p,
-.trial-note {
+.trial-card p {
   color: #607069;
   line-height: 1.65;
 }
