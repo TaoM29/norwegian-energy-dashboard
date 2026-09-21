@@ -50,6 +50,7 @@ data/energy.sqlite*
 data/.energy*
 data/weather/
 data/forecasts/
+data/analyses/
 data/fixture/
 data/refresh-status.json
 data/refresh-status.tmp

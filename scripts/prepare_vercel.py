@@ -19,6 +19,9 @@ with tempfile.TemporaryDirectory() as temporary:
             archive.add(ROOT / "data" / name, arcname=f"data/{name}")
         for name in ("manifest.json", "results"):
             archive.add(ROOT / "data/forecasts" / name, arcname=f"data/forecasts/{name}")
+        sensitivity = ROOT / "data/analyses/demand-sensitivity.json"
+        if sensitivity.is_file():
+            archive.add(sensitivity, arcname="data/analyses/demand-sensitivity.json")
 print(STAGE)
 print(f"Snapshot upload: {(STAGE / 'snapshots.tar.gz').stat().st_size / 1024**2:.1f} MB")
 
