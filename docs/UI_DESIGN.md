@@ -49,6 +49,16 @@ The two supplied dashboard screenshots informed a quieter, more spacious treatme
 
 Validation: TypeScript checking, production build and all 18 offline Chromium journeys passed. Desktop dark/light and 390px mobile layouts were visually inspected. Checked main text, muted text, links and primary-button token pairs exceed 4.5:1 contrast in both themes; this is a focused colour check, not a claim of a full accessibility audit.
 
+## Forecast reading and reliability — 2026-09-21
+
+The forecast page groups controls with the chart and uses a shorter heading and an unboxed result selector. The saved summary identifies the full evaluation cohort, matched area-origins and observations per model, and labels observed coverage below its nominal target. Area, dates and origin affect the chart; cohort and model selection also determine the overall summary.
+
+Model colors remain stable across selection changes. A wrapping HTML legend replaces the paginated canvas legend, and an explicit interval-model selector defaults to the best-MAE selected model with stored bounds. Tooltips report lower and upper bounds; the expandable forecast table exposes the same filtered values with UTC timestamps and kWh units. PNG exports retain a title and canvas legend, including the selected interval band.
+
+The first metric table focuses on MAE, baseline comparison, coverage and sample size. “All metrics” retains RMSE, MASE, width and every quantile loss; downloads and scientific artifacts remain unchanged. Public deployments replace the unavailable experiment action with local setup guidance. Result-load errors cannot show an old artifact under a different selection and offer retry; job-history failures do not block saved results.
+
+Verification included production compilation and TypeScript checks, the existing browser journeys, focused failure/retry and interval-bound regressions, keyboard table scrolling, mobile overflow checks, desktop light/dark and 390px visual inspection, and inspection of a downloaded PNG.
+
 ## References and selection
 
 Reviewed [Beautiful UI](https://www.beautifului.dev/), [beUI’s catalog](https://beui.dev/llms.txt), [Rare UI](https://www.rareui.com/), [Transitions.dev](https://transitions.dev/) and [shadcn/ui](https://ui.shadcn.com/docs/components). Applied the ideas of clear navigation, compact selection controls, optional detail and restrained state feedback. The existing shadcn-style buttons/cards and native disclosures were sufficient; no third-party component source was copied.
