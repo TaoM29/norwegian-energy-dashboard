@@ -3,6 +3,12 @@
   background: var(--page);
   color: var(--text);
 }
+.analysis-workspace-compact .analysis-heading {
+  margin-bottom: 10px;
+}
+.analysis-workspace-compact .reading-guide {
+  margin-bottom: 12px;
+}
 .analysis-controls {
   display: flex;
   flex-wrap: wrap;

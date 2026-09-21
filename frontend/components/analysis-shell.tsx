@@ -10,10 +10,12 @@ export function AnalysisShell({
   title,
   description,
   children,
+  compact = false,
 }: {
   title: string;
   description: string;
   children: ReactNode;
+  compact?: boolean;
 }) {
   const path = usePathname();
   const guides: Record<string, string> = {
@@ -27,14 +29,18 @@ export function AnalysisShell({
       "The map compares Norway’s five electricity price areas. Switch to Snow model for a separate task: choose a location to estimate how wind moves snow. It is a modeled estimate, not a measurement of snow at that point. Coverage and assumptions are shown with each result.",
   };
   return (
-    <div className="analysis-workspace">
+    <div
+      className={`analysis-workspace${compact ? " analysis-workspace-compact" : ""}`}
+    >
       <a href="#analysis-main" className="skip-link">
         Skip to analysis
       </a>
       <AppNavigation />
       <main className="analysis-main" id="analysis-main" tabIndex={-1}>
         <header className="analysis-heading">
-          <span className="eyebrow">NORWAY, THROUGH THE DATA</span>
+          {!compact && (
+            <span className="eyebrow">NORWAY, THROUGH THE DATA</span>
+          )}
           <h1>{title}</h1>
           <p>{description}</p>
         </header>

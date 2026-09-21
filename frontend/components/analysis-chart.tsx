@@ -313,12 +313,14 @@ function applyTheme(
 
 export default function AnalysisChart({
   option,
+  imageOption,
   label,
   height = 340,
   onReady,
   exports,
 }: {
   option: EChartsCoreOption;
+  imageOption?: EChartsCoreOption;
   label: string;
   height?: number;
   onReady?: (chart: EChartsType) => void;
@@ -365,12 +367,40 @@ export default function AnalysisChart({
   function saveImage() {
     if (!chart.current) return;
     const palette = readPalette();
+    let imageUrl: string;
+    if (imageOption) {
+      const source = chart.current;
+      const canvas = document.createElement("div");
+      const snapshot = echarts.init(canvas, undefined, {
+        renderer: "canvas",
+        width: Math.max(source.getWidth(), 900),
+        height: source.getHeight() + 90,
+      });
+      try {
+        const snapshotOption = {
+          ...source.getOption(),
+          ...imageOption,
+          animation: false,
+        } as EChartsCoreOption;
+        snapshot.setOption(snapshotOption, { notMerge: true });
+        applyTheme(snapshot, snapshotOption, currentTheme.current);
+        imageUrl = snapshot.getDataURL({
+          type: "png",
+          pixelRatio: 2,
+          backgroundColor: palette.surface,
+        });
+      } finally {
+        snapshot.dispose();
+      }
+    } else {
+      imageUrl = chart.current.getDataURL({
+        type: "png",
+        pixelRatio: 2,
+        backgroundColor: palette.surface,
+      });
+    }
     const link = document.createElement("a");
-    link.href = chart.current.getDataURL({
-      type: "png",
-      pixelRatio: 2,
-      backgroundColor: palette.surface,
-    });
+    link.href = imageUrl;
     link.download = `${label
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
