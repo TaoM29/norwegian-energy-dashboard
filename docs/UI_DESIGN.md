@@ -37,6 +37,18 @@ Implemented 2026-09-15. The interface supports two levels of reading: a visitor 
 - The forecast timeline follows the backend: issue = exclusive training end + energy lag; window end = issue + horizon × target duration. The shared calendar uses UTC-aware dates for custom month navigation, avoiding browser-timezone month shifts.
 - Browser checks cover native-dialog nesting, selector keyboard/focus behavior, help activation/dismissal, calendar month offsets and a 72-hour forecast-window/submission check in addition to existing analytical journeys.
 
+## Reference-led visual refinement — 2026-09-21
+
+The two supplied dashboard screenshots informed a quieter, more spacious treatment: layered charcoal surfaces, restrained colour accents, clear metric hierarchy and subtle panel boundaries. The light theme uses the same structure with soft grey surroundings and white panels.
+
+- Centralized sidebar width, panel/control radii, shadows and system typography in the theme tokens. Removed duplicate analysis layout rules so the shared shell governs every page.
+- Increased small overview labels, navigation and key values; gave metrics separate cards with semantic icon accents. Energy balance keeps its calculation and exports caveat visible.
+- Grouped overview help/export actions in the heading. Standardized control geometry, table spacing, result panels and disclosures across the analytical pages.
+- Kept production green and consumption amber in the overview; added a restrained fading chart fill and theme-aware generation-mix colours. ECharts now uses the app's system font and remaps the previously unhandled brown series in dark mode.
+- Retained data queries, calculations, chart axes, exports, fixture labels, URL state, theme preferences and keyboard/reduced-motion behaviour. No dependencies were added.
+
+Validation: TypeScript checking, production build and all 18 offline Chromium journeys passed. Desktop dark/light and 390px mobile layouts were visually inspected. Checked main text, muted text, links and primary-button token pairs exceed 4.5:1 contrast in both themes; this is a focused colour check, not a claim of a full accessibility audit.
+
 ## References and selection
 
 Reviewed [Beautiful UI](https://www.beautifului.dev/), [beUI’s catalog](https://beui.dev/llms.txt), [Rare UI](https://www.rareui.com/), [Transitions.dev](https://transitions.dev/) and [shadcn/ui](https://ui.shadcn.com/docs/components). Applied the ideas of clear navigation, compact selection controls, optional detail and restrained state feedback. The existing shadcn-style buttons/cards and native disclosures were sufficient; no third-party component source was copied.
