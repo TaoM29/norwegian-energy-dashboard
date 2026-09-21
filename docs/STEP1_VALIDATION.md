@@ -78,6 +78,12 @@ An initial developmental artifact is retained under `data/analyses/development-r
 
 **Step 1 is complete locally.** Code and artifacts remain uncommitted for review. The public deployment still uses its existing pinned data archive; including this study in a future release requires the normal snapshot publication workflow. The packaging script includes the prepared default study when present.
 
+Subsequent publication, 2026-09-21: after the user committed the implementation,
+snapshot update `a7f1857` published the unchanged study to production. All five
+areas, the rendered response chart and the downloaded artifact checksum were
+verified through the dashboard domain. The earlier completion statement above
+records the state at the end of implementation.
+
 ## References
 
 - [SplineTransformer](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.SplineTransformer.html): fitted knots and extrapolation policy.

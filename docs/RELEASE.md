@@ -63,6 +63,18 @@ For real observations, run `python scripts/refresh_data.py backfill` from the re
 
 Prepare the fixed weather-adjusted demand study with `python scripts/run_demand_sensitivity.py` after the 2021–2025 snapshots are available. See [Step 1 validation](STEP1_VALIDATION.md) for the protocol, retained-input replay, and interpretation. The API reads `analyses/demand-sensitivity.json` beside `ENERGY_DATABASE`, or the file selected by `DEMAND_SENSITIVITY_ARTIFACT`; it never fits on page visits. Keep the result and its companion input directory for audit/replay. Missing studies produce an unavailable state. The Vercel packaging command includes the default prepared study when present; it does not upload or repin the public archive automatically. Containers read the same file from their data mount.
 
+The broader forecast reliability study uses the [frozen Step 2 protocol](STEP2_PROTOCOL.md)
+and `python scripts/run_forecast_reliability.py`. Retain its checksummed input
+bundle under `data/analyses/` for replay. Its immutable result appears alongside
+older results in Forecasts and is included by the normal snapshot packaging
+command. A code push alone does not publish a newly fitted result: upload and
+repin the data archive as above. Verify the new saved result's reliability panel
+and metadata download after publishing it.
+
+Saved forecast detail and complete-artifact downloads stream the stored JSON
+file. This preserves every prediction row while supporting studies larger than
+Vercel's [buffered response limit](https://vercel.com/kb/guide/how-to-bypass-vercel-body-size-limit-serverless-functions).
+
 ## Container deployment
 
 The Compose stack builds the frontend and API and mounts one persistent data directory. Supply a directory containing `energy.sqlite`, `weather/`, `forecasts/` and `file.geojson`. The repository's real `data/` directory already has the geography; fixture setup writes it too. Keep source data out of images and rebuilds. The VCS_REF build argument records the base commit in container-generated forecast metadata; source fingerprints distinguish uncommitted changes, and container dirty status remains unknown. Build tags identify rollback candidates; do not reuse a tag for different source.

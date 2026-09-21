@@ -2,7 +2,7 @@
 
 Prepared 2026-09-21 following the project-wide analysis review.
 
-**Status: Steps 0–1 complete locally on 2026-09-21; Steps 2–8 remain planned.** This document defines the work for step-by-step delivery and records completed checks. It does not authorize executing every step at once. Implementation proceeds in individually selected steps, with results and limitations reviewed before expanding scope.
+**Status: Steps 0–1 complete and published; Step 2 complete locally on 2026-09-22; Steps 3–8 remain planned.** This document defines the work for step-by-step delivery and records completed checks. It does not authorize executing every step at once. Implementation proceeds in individually selected steps, with results and limitations reviewed before expanding scope.
 
 The goal is to answer useful questions with defensible evidence: what drives observed demand patterns, where forecasts fail, and how much confidence their results deserve. Reuse the current Next.js/FastAPI application and analytical stack. Prefer a small number of understandable studies over more models, pages, or infrastructure.
 
@@ -29,8 +29,8 @@ The sequence below puts correctness first, then the recommended initial studies.
 | Step | Deliverable | Dependency | Effort | Status |
 | --- | --- | --- | --- | --- |
 | 0 | Correct hourly correlation windows and wind-rose sectors | None | Small | Complete 2026-09-21; see completion record below |
-| 1 | Weather-adjusted demand sensitivity | Step 0; validated common coverage | Medium | Complete locally; [validation](STEP1_VALIDATION.md) |
-| 2 | Broader forecast reliability study | Frozen experiment protocol and eligible data | Medium–large | Planned |
+| 1 | Weather-adjusted demand sensitivity | Step 0; validated common coverage | Medium | Complete and published; [validation](STEP1_VALIDATION.md) |
+| 2 | Broader forecast reliability study | Frozen experiment protocol and eligible data | Medium–large | Complete locally; [validation](STEP2_VALIDATION.md) |
 | 3 | Visual forecast-error explorer | Existing saved results; extend with Step 2 later | Small–medium | Planned |
 | 4 | Forecast feature ablation | Step 2 evaluation protocol | Medium | Planned |
 | 5 | Contextual demand anomalies | Validated expected-demand baseline; reuse Step 1 where suitable | Medium | Planned |
@@ -98,7 +98,7 @@ Step 0 is complete. No additional statistical study, commit, or push was perform
 
 ### Step 1 completion record — 2026-09-21
 
-The saved five-area study, offline fitting/replay command, read-only API, and Demand sensitivity tab in Patterns are implemented. Calendar-only, linear-temperature, and spline models use chronological selection and evaluation. The interface includes supported mean-contrast bands, temperature support, model/area comparisons, residual diagnostics, accessible tables, and downloads. [The validation record](STEP1_VALIDATION.md) documents the exact protocol, retained inputs, real-data results, 246 passing Python tests, frontend/build/browser checks, and scientific limitations. Step 0 was committed and pushed as `99d587b` before this implementation; Step 1 remains uncommitted for review.
+The saved five-area study, offline fitting/replay command, read-only API, and Demand sensitivity tab in Patterns are implemented. Calendar-only, linear-temperature, and spline models use chronological selection and evaluation. The interface includes supported mean-contrast bands, temperature support, model/area comparisons, residual diagnostics, accessible tables, and downloads. [The validation record](STEP1_VALIDATION.md) documents the exact protocol, retained inputs, real-data results, 246 passing Python tests, frontend/build/browser checks, and scientific limitations. Step 0 was committed and pushed as `99d587b` before this implementation. Step 1 was initially left uncommitted for review, then committed by the user; the prepared study was published with snapshot update `a7f1857` on 2026-09-21 and verified on the live site.
 
 ## Step 2 — Broader forecast reliability study
 
@@ -120,6 +120,15 @@ Report paired baseline differences, MAE/RMSE, bias, residual dependence, and exi
 - Recompute reported scores from saved prediction rows. Poor coverage or no baseline improvement is a valid result, not grounds for tuning against the final holdout.
 
 **Likely integration:** [forecast evaluation](../app_core/analysis/forecast_evaluation.py), [benchmark command](../scripts/run_forecast_benchmark.py), existing forecast artifacts, and a dated validation record.
+
+### Step 2 completion record — 2026-09-22
+
+- Froze a versioned exploratory protocol before score inspection, measured a development-only runtime pilot, retained checksummed hourly inputs and archived the analytical execution sources. The 34.3-minute offline run used 12 validation dates in 2023, 23 calibration dates in 2024 and 46 evaluation dates in 2025 across NO1–NO5.
+- Saved a new immutable `step2-household-reliability-20260921` result. It retains 224 matched area-origins (5,376 hourly targets per model), six evaluation exclusions and one calibration failure. The original Phase 4 artifact and evidence are unchanged.
+- Added shared-date block uncertainty, signed bias, sample support, calibration residuals and exact-lag residual diagnostics. Forecasts presents the fixed study cohort, uncertainty sensitivity, per-area diagnostics and a complete streamed JSON download. Interactive fitting limits remain unchanged.
+- Independently reconciled all 144 metric rows, calibration quantiles, cohort accounting and retained-input hashes: 25,808 checks passed. Deterministic report replay matched exactly. The Python suite passed 265 tests; all five focused Forecasts browser tests, type checking and the production build passed. The real study was also reviewed on desktop/mobile in both themes.
+- Gradient boosting's pooled MAE was 16.2% below the seasonal baseline, with 77.9% measured coverage for nominal 80% intervals. Ridge's difference was inconclusive; SARIMAX performed worse. The period was previously inspected, so these remain exploratory findings. Full figures, exclusions, uncertainty and limitations are in [the validation record](STEP2_VALIDATION.md).
+- Code and study are complete locally, without commit, push or deployment. Publishing requires an updated serving snapshot as well as code; retained experimental inputs remain separate reproducibility evidence.
 
 ## Step 3 — Visual forecast-error explorer
 
