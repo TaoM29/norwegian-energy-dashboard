@@ -1,16 +1,16 @@
 .modeSwitch {
   display: inline-flex;
   gap: 4px;
-  margin-bottom: 10px;
-  padding: 4px;
+  margin-bottom: 14px;
+  padding: 5px;
   border: 1px solid var(--border);
-  border-radius: 9px;
+  border-radius: var(--control-radius, 10px);
   background: var(--surface-muted);
 }
 .modeSwitch button {
-  padding: 9px 14px;
+  padding: 10px 16px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 7px;
   background: transparent;
   color: var(--text-muted);
   font-weight: 650;
@@ -22,8 +22,8 @@
 }
 .modeIntro {
   display: grid;
-  gap: 3px;
-  margin-bottom: 14px;
+  gap: 5px;
+  margin-bottom: 18px;
 }
 .modeIntro strong {
   color: var(--text);
@@ -93,9 +93,10 @@
   margin-top: 8px;
 }
 .areaButtons button {
-  padding: 7px 12px;
+  min-height: 36px;
+  padding: 8px 13px;
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: var(--control-radius, 10px);
   background: var(--surface);
   color: var(--accent);
 }
@@ -114,7 +115,7 @@
 }
 .tableWrap th,
 .tableWrap td {
-  padding: 10px 9px;
+  padding: 12px 11px;
   border-bottom: 1px solid var(--border);
   text-align: left;
   white-space: nowrap;
@@ -163,9 +164,9 @@
   flex-direction: row;
   align-items: center;
   gap: 5px;
-  padding: 7px 9px;
+  padding: 8px 11px;
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: var(--control-radius, 10px);
   color: var(--text);
   text-transform: capitalize;
 }

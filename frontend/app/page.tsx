@@ -3,12 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
+  ArrowLeftRight,
+  Droplets,
+  PlugZap,
+  Zap,
   Check,
   ChevronDown,
   Download,
   MapPin,
   RefreshCw,
   Waves,
+  type LucideIcon,
 } from "lucide-react";
 import {
   Area,
@@ -43,12 +48,12 @@ import {
 
 type Filters = { area: string; start: string; end: string };
 const mixColors: Record<string, string> = {
-  hydro: "var(--accent)",
-  wind: "#8fbbad",
-  solar: "#d8b454",
-  thermal: "#958573",
-  other: "#c1c9c4",
-  nuclear: "#7376a1",
+  hydro: "var(--chart-series-1)",
+  wind: "var(--chart-series-2)",
+  solar: "var(--chart-series-3)",
+  thermal: "var(--chart-series-5)",
+  other: "var(--chart-series-4)",
+  nuclear: "var(--text-muted)",
 };
 
 export default function Page() {
@@ -230,46 +235,48 @@ export default function Page() {
                 regions.
               </p>
             </div>
-            <ExportMenu>
-              <Button
-                variant="outline"
-                onClick={download}
-                disabled={!overview || loading || !!error}
-              >
-                <Download size={15} /> Export daily data
-              </Button>
-              <Button
-                variant="outline"
-                disabled={!overview || loading || !!error}
-                onClick={() =>
-                  overview &&
-                  downloadJson(`${overview.query.area}-overview.json`, overview)
-                }
-              >
-                Download data & metadata
-              </Button>
-            </ExportMenu>
-          </div>
-          <div className="reading-guide">
-            <HelpPanel label="New here? A 30-second guide">
-              <div>
-                <p>
-                  Choose a region and time period. <strong>Production</strong>{" "}
-                  is electricity generated; <strong>consumption</strong> is
-                  electricity used. The chart compares them day by day.
-                </p>
-                <p>
-                  NO1–NO5 are Norway’s five electricity price areas. GWh
-                  measures energy: 1 GWh is one million kWh. Production minus
-                  consumption is an energy balance, not a measurement of
-                  exports.
-                </p>
-                <a href="/methods">
-                  See the methods, sources and project findings{" "}
-                  <ArrowRight size={14} />
-                </a>
+            <div className="page-actions">
+              <div className="reading-guide">
+                <HelpPanel label="New here? A 30-second guide">
+                  <div>
+                    <p>
+                      Choose a region and time period. <strong>Production</strong>{" "}
+                      is electricity generated; <strong>consumption</strong> is
+                      electricity used. The chart compares them day by day.
+                    </p>
+                    <p>
+                      NO1–NO5 are Norway’s five electricity price areas. GWh
+                      measures energy: 1 GWh is one million kWh. Production minus
+                      consumption is an energy balance, not a measurement of
+                      exports.
+                    </p>
+                    <a href="/methods">
+                      See the methods, sources and project findings{" "}
+                      <ArrowRight size={14} />
+                    </a>
+                  </div>
+                </HelpPanel>
               </div>
-            </HelpPanel>
+              <ExportMenu>
+                <Button
+                  variant="outline"
+                  onClick={download}
+                  disabled={!overview || loading || !!error}
+                >
+                  <Download size={15} /> Export daily data
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={!overview || loading || !!error}
+                  onClick={() =>
+                    overview &&
+                    downloadJson(`${overview.query.area}-overview.json`, overview)
+                  }
+                >
+                  Download data & metadata
+                </Button>
+              </ExportMenu>
+            </div>
           </div>
           <section className="filterbar" aria-label="Overview filters">
             <div className="area-filter">
@@ -355,12 +362,16 @@ export default function Page() {
               <section className="metrics" aria-label="Key metrics">
                 <Metric
                   title="Energy produced"
+                  icon={Zap}
+                  tone="production"
                   value={production?.mwh == null ? null : production.mwh / 1000}
                   unit="GWh"
                   note="Across observed production groups"
                 />
                 <Metric
                   title="Energy consumed"
+                  icon={PlugZap}
+                  tone="consumption"
                   value={
                     consumption?.mwh == null ? null : consumption.mwh / 1000
                   }
@@ -368,13 +379,17 @@ export default function Page() {
                   note="Across observed consumption groups"
                 />
                 <Metric
-                  title="Production − consumption"
+                  title="Energy balance"
+                  icon={ArrowLeftRight}
+                  tone="balance"
                   value={balance}
                   unit="GWh"
-                  note="An energy balance, not measured exports"
+                  note="Production − consumption; not measured exports"
                 />
                 <Metric
                   title="Hydropower share"
+                  icon={Droplets}
+                  tone="hydro"
                   value={hydro?.share == null ? null : hydro.share * 100}
                   unit="%"
                   note="Of observed energy production"
@@ -408,6 +423,26 @@ export default function Page() {
                         margin={{ top: 12, right: 10, bottom: 4, left: -16 }}
                         accessibilityLayer
                       >
+                        <defs>
+                          <linearGradient
+                            id="production-fill"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                          >
+                            <stop
+                              offset="0%"
+                              stopColor="var(--chart-series-1)"
+                              stopOpacity={0.16}
+                            />
+                            <stop
+                              offset="100%"
+                              stopColor="var(--chart-series-1)"
+                              stopOpacity={0.015}
+                            />
+                          </linearGradient>
+                        </defs>
                         <CartesianGrid
                           stroke="var(--chart-grid)"
                           vertical={false}
@@ -418,13 +453,13 @@ export default function Page() {
                           tickLine={false}
                           axisLine={false}
                           minTickGap={36}
-                          tick={{ fill: "var(--chart-text)", fontSize: 11 }}
+                          tick={{ fill: "var(--chart-text)", fontSize: 12 }}
                           dy={10}
                         />
                         <YAxis
                           tickLine={false}
                           axisLine={false}
-                          tick={{ fill: "var(--chart-text)", fontSize: 11 }}
+                          tick={{ fill: "var(--chart-text)", fontSize: 12 }}
                         />
                         <Tooltip
                           labelFormatter={(value) => shortDate(String(value))}
@@ -435,7 +470,7 @@ export default function Page() {
                             border: "1px solid var(--border)",
                             background: "var(--surface)",
                             color: "var(--text)",
-                            borderRadius: 8,
+                            borderRadius: 12,
                             fontSize: 12,
                           }}
                         />
@@ -443,8 +478,8 @@ export default function Page() {
                           type="linear"
                           dataKey="production"
                           name="Production"
-                          stroke="var(--accent)"
-                          fill="var(--accent-soft)"
+                          stroke="var(--chart-series-1)"
+                          fill="url(#production-fill)"
                           strokeWidth={2.4}
                           isAnimationActive={false}
                           connectNulls={false}
@@ -493,7 +528,7 @@ export default function Page() {
                         key={row.group}
                         style={{
                           width: `${(row.share || 0) * 100}%`,
-                          background: mixColors[row.group] || "#a5ada8",
+                          background: mixColors[row.group] || "var(--text-muted)",
                         }}
                       />
                     ))}
@@ -504,7 +539,7 @@ export default function Page() {
                         <span>
                           <i
                             style={{
-                              background: mixColors[row.group] || "#a5ada8",
+                              background: mixColors[row.group] || "var(--text-muted)",
                             }}
                           />
                           {row.group}
@@ -648,16 +683,25 @@ function Metric({
   value,
   unit,
   note,
+  icon: Icon,
+  tone,
 }: {
   title: string;
   value: number | null;
   unit: string;
   note: string;
+  icon: LucideIcon;
+  tone: "production" | "consumption" | "balance" | "hydro";
 }) {
   return (
-    <div className="metric">
+    <div className={`metric metric-${tone}`}>
       <div className="metric-label">
-        {title}
+        <span className="metric-title">
+          <span className="metric-icon">
+            <Icon size={17} strokeWidth={1.7} aria-hidden="true" />
+          </span>
+          {title}
+        </span>
         <HelpTip label={title} iconOnly>
           {note}
         </HelpTip>
@@ -666,6 +710,7 @@ function Metric({
         {number(value)}
         <span>{unit}</span>
       </div>
+      <p>{note}</p>
     </div>
   );
 }

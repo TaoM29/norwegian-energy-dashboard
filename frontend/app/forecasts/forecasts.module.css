@@ -1,9 +1,10 @@
 .selectorPanel {
-  padding: 11px 12px;
+  padding: 16px 18px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--panel-radius, 16px);
   background: var(--surface);
-  margin-bottom: 16px;
+  box-shadow: var(--panel-shadow, none);
+  margin-bottom: 20px;
 }
 
 .jobForm p {
@@ -24,7 +25,7 @@
 .compactGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 13px;
+  gap: 16px;
 }
 
 .resultToolbar label,
@@ -41,11 +42,11 @@
 
 .jobForm input:not([type="checkbox"]):not([type="range"]) {
   width: 100%;
-  min-height: 38px;
+  min-height: 40px;
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: var(--control-radius, 10px);
   background: var(--surface);
-  padding: 7px 9px;
+  padding: 8px 11px;
   color: var(--text);
 }
 
@@ -59,7 +60,7 @@
 .resultToolbar {
   display: grid;
   grid-template-columns: minmax(260px, 1fr) auto;
-  gap: 10px;
+  gap: 14px;
   align-items: end;
 }
 
@@ -68,10 +69,10 @@
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-height: 38px;
-  padding: 7px 12px;
+  min-height: 40px;
+  padding: 8px 14px;
   border: 1px solid var(--action);
-  border-radius: 6px;
+  border-radius: var(--control-radius, 10px);
   background: var(--action);
   color: var(--on-action);
   font-weight: 650;
@@ -79,11 +80,12 @@
 }
 
 .resultSummary {
-  padding: 14px;
+  padding: 20px 22px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--panel-radius, 16px);
   background: var(--surface);
-  margin-bottom: 14px;
+  box-shadow: var(--panel-shadow, none);
+  margin-bottom: 20px;
 }
 
 .resultSummaryHeading {
@@ -95,7 +97,8 @@
 
 .resultSummaryHeading h2 {
   margin: 0;
-  font-size: 19px;
+  font-size: 21px;
+  letter-spacing: -0.02em;
 }
 
 .resultSummaryHeading > div {
@@ -107,9 +110,9 @@
 
 .resultSummaryHeading > span {
   flex: 0 0 auto;
-  padding: 6px 8px;
+  padding: 7px 10px;
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: 8px;
   background: var(--surface-muted);
   color: var(--text-muted);
   font-size: 11px;
@@ -119,10 +122,10 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1px;
-  margin-top: 10px;
+  margin-top: 16px;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--control-radius, 10px);
   background: var(--border);
 }
 
@@ -131,7 +134,7 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  padding: 10px 12px;
+  padding: 14px 16px;
   background: var(--surface-muted);
 }
 
@@ -172,10 +175,11 @@
 }
 
 .detailDisclosure {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   border: 1px solid var(--border);
-  border-radius: 9px;
+  border-radius: var(--panel-radius, 16px);
   background: var(--surface);
+  box-shadow: var(--panel-shadow, none);
 }
 
 .detailDisclosure > summary {
@@ -184,8 +188,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 52px;
-  padding: 12px 42px 12px 16px;
+  min-height: 56px;
+  padding: 14px 46px 14px 20px;
   cursor: pointer;
   list-style: none;
 }
@@ -224,7 +228,7 @@
 }
 
 .disclosureBody {
-  padding: 4px 16px 18px;
+  padding: 4px 20px 20px;
   border-top: 1px solid var(--border);
 }
 
@@ -278,7 +282,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
-  padding: 18px 20px;
+  padding: 20px 24px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
 }
@@ -296,14 +300,14 @@
   height: 36px;
   padding: 0;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--control-radius, 10px);
   background: var(--surface-muted);
   color: var(--text);
 }
 
 .drawerBody {
   height: calc(100dvh - 79px);
-  padding: 18px 20px 28px;
+  padding: 22px 24px 30px;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -318,7 +322,7 @@
 .drawerJobs {
   margin-bottom: 16px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--control-radius, 10px);
   background: var(--surface);
 }
 
@@ -377,9 +381,9 @@
 }
 
 .disabledExperiments {
-  padding: 16px;
+  padding: 18px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--control-radius, 10px);
   background: var(--surface);
 }
 
@@ -400,8 +404,8 @@
   grid-template-columns: auto 1fr auto;
   gap: 10px 12px;
   align-items: center;
-  padding: 14px;
-  border-radius: 8px;
+  padding: 16px;
+  border-radius: var(--control-radius, 10px);
   background: var(--surface-muted);
   color: var(--accent);
 }
@@ -450,9 +454,9 @@
 
 .loading,
 .empty {
-  padding: 28px;
+  padding: 32px;
   border: 1px dashed var(--border);
-  border-radius: 8px;
+  border-radius: var(--panel-radius, 16px);
   color: var(--text-muted);
   text-align: center;
 }
@@ -461,9 +465,10 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--panel-radius, 16px);
   background: var(--surface);
-  margin-bottom: 12px;
+  box-shadow: var(--panel-shadow, none);
+  margin-bottom: 18px;
   overflow: hidden;
 }
 
@@ -471,7 +476,7 @@
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 5px 8px;
-  padding: 17px;
+  padding: 20px;
   border-right: 1px solid var(--border);
 }
 
@@ -500,8 +505,8 @@
 
 .appliedScope {
   margin: 10px 0 16px;
-  padding: 9px 11px;
-  border-radius: 6px;
+  padding: 11px 14px;
+  border-radius: var(--control-radius, 10px);
   background: var(--surface-muted);
   color: var(--text-muted);
   font-size: 11px;
@@ -570,7 +575,7 @@
 .formTitle > span {
   flex: 0 0 auto;
   padding: 7px 9px;
-  border-radius: 5px;
+  border-radius: 8px;
   background: var(--surface-muted);
   color: var(--text-muted);
   font-size: 11px;
@@ -590,7 +595,7 @@
 
 .tableWrap th,
 .tableWrap td {
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--surface-muted);
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -616,18 +621,19 @@
 .jobForm {
   display: flex;
   flex-direction: column;
-  gap: 17px;
+  gap: 20px;
   min-width: 0;
-  padding: 20px;
+  padding: 22px 24px;
   border: 1px solid var(--border);
-  border-radius: 9px;
+  border-radius: var(--panel-radius, 16px);
   background: var(--surface);
+  box-shadow: var(--panel-shadow, none);
 }
 
 .forecastSetup {
-  padding: 14px;
+  padding: 18px;
   border: 1px solid var(--border-strong);
-  border-radius: 9px;
+  border-radius: var(--control-radius, 10px);
   background: var(--surface-muted);
 }
 
@@ -685,9 +691,9 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  padding: 10px;
+  padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: var(--control-radius, 10px);
   background: var(--surface);
 }
 
@@ -710,7 +716,7 @@
 
 .formDisclosure {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--control-radius, 10px);
   background: var(--surface);
 }
 
@@ -740,9 +746,9 @@
 
 .jobForm fieldset {
   min-width: 0;
-  padding: 13px;
+  padding: 15px;
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: var(--control-radius, 10px);
 }
 
 .jobForm legend {
@@ -766,9 +772,9 @@
 }
 
 .comparisonToggle {
-  padding: 11px 13px;
+  padding: 12px 15px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--control-radius, 10px);
   background: var(--surface);
 }
 
@@ -786,9 +792,9 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 40px;
+  min-height: 42px;
   border: 1px solid var(--action);
-  border-radius: 6px;
+  border-radius: var(--control-radius, 10px);
   background: var(--action);
   color: var(--on-action);
   font-weight: 600;
