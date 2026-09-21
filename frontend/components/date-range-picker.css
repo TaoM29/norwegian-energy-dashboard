@@ -17,10 +17,10 @@ button.date-range-trigger {
   align-items: center;
   justify-content: space-between;
   gap: 9px;
-  min-height: 36px;
+  min-height: 40px;
   width: 100%;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   background: var(--surface-muted);
   color: var(--text);
   padding: 7px 12px;

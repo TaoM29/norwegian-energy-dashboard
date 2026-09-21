@@ -3,38 +3,17 @@
   background: var(--page);
   color: var(--text);
 }
-main.analysis-main {
-  width: calc(100% - 220px);
-  max-width: none;
-  margin: 0 0 0 220px;
-  padding: 30px 32px;
-}
-.analysis-heading {
-  margin-bottom: 18px;
-}
-.analysis-heading h1 {
-  margin: 7px 0;
-  font-size: clamp(24px, 2.2vw, 28px);
-  letter-spacing: -0.75px;
-  font-weight: 600;
-}
-.analysis-heading p {
-  color: var(--text-muted);
-  max-width: 700px;
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.55;
-}
 .analysis-controls {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
-  gap: 12px;
-  padding: 13px 14px;
+  gap: 14px;
+  padding: 18px 20px;
   border: 1px solid var(--border);
-  border-radius: 9px;
+  border-radius: var(--panel-radius, 16px);
   background: var(--surface);
-  margin-bottom: 18px;
+  box-shadow: var(--panel-shadow, none);
+  margin-bottom: 22px;
 }
 .analysis-controls label {
   display: flex;
@@ -45,10 +24,10 @@ main.analysis-main {
 }
 .analysis-controls input:not([type="checkbox"]):not([type="range"]),
 .analysis-controls select {
-  min-height: 34px;
+  min-height: 38px;
   max-width: 100%;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--control-radius, 10px);
   background: var(--surface);
   padding: 6px 11px;
   color: var(--text);
@@ -62,10 +41,10 @@ main.analysis-main {
 .analysis-controls button,
 .analysis-panel > button,
 .analysis-actions button {
-  min-height: 34px;
+  min-height: 38px;
   padding: 7px 13px;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--control-radius, 10px);
   background: var(--surface-muted);
   color: var(--accent);
   box-shadow: var(--control-shadow);
@@ -78,38 +57,41 @@ main.analysis-main {
 .analysis-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 20px;
 }
 .analysis-panel {
   min-width: 0;
-  padding: 18px;
+  padding: 22px 24px;
   border: 1px solid var(--border);
-  border-radius: 9px;
+  border-radius: var(--panel-radius, 16px);
   background: var(--surface);
-  margin-bottom: 16px;
+  box-shadow: var(--panel-shadow, none);
+  margin-bottom: 20px;
 }
 .analysis-panel h2 {
-  margin-bottom: 9px;
-  font-size: 17px;
+  margin-bottom: 12px;
+  font-size: 19px;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
 }
 .analysis-panel p {
   color: var(--text-muted);
-  line-height: 1.7;
+  line-height: 1.65;
 }
 .analysis-metrics {
   display: flex;
   flex-wrap: wrap;
   gap: 1px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 9px;
+  border-radius: var(--panel-radius, 16px);
   background: var(--border);
 }
 .analysis-metrics > * {
   flex: 1;
   min-width: 145px;
-  padding: 13px 15px;
+  padding: 18px 20px;
   background: var(--surface);
 }
 .analysis-actions {
@@ -134,12 +116,12 @@ main.analysis-main {
   font-size: 11px;
 }
 .analysis-main table {
-  font-size: 12px;
+  font-size: 13px;
 }
 .analysis-main details {
   margin: 16px 0;
 }
-.analysis-main summary {
+:where(.analysis-main) summary {
   cursor: pointer;
   color: var(--accent);
   padding: 8px 0;
@@ -153,32 +135,24 @@ main.analysis-main {
 .analysis-footer {
   display: block;
   border-top: 1px solid var(--border);
-  padding-top: 16px;
-  margin-top: 24px;
-  font-size: 11px;
+  padding-top: 22px;
+  margin-top: 32px;
+  font-size: 12px;
   color: var(--text-muted);
   line-height: 1.7;
 }
 @media (max-width: 800px) {
-  main.analysis-main {
-    width: 100%;
-    margin-left: 0;
-    padding: 24px 18px;
-  }
   .analysis-grid {
     grid-template-columns: 1fr;
   }
   .analysis-panel {
-    padding: 16px;
+    padding: 18px;
   }
   .analysis-controls {
-    padding: 15px;
+    padding: 16px;
     gap: 12px;
   }
   .analysis-controls label {
     max-width: 100%;
-  }
-  .analysis-heading h1 {
-    font-size: 24px;
   }
 }

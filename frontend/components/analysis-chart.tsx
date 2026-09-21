@@ -57,6 +57,7 @@ type ChartPalette = {
   grid: string;
   chartText: string;
   series: string[];
+  fontFamily: string;
 };
 
 function readPalette(): ChartPalette {
@@ -64,6 +65,7 @@ function readPalette(): ChartPalette {
   const value = (name: string) => styles.getPropertyValue(name).trim();
   return {
     surface: value("--surface"),
+    fontFamily: styles.fontFamily,
     text: value("--text"),
     muted: value("--text-muted"),
     border: value("--border"),
@@ -108,6 +110,7 @@ function darkColor(value: string, palette: ChartPalette) {
     "#d18d2f": palette.series[2],
     "#c4942f": palette.series[2],
     "#b88627": palette.series[2],
+    "#9a6558": palette.series[4],
     "#9a816a": "#d3b89e",
     "#958573": "#d3b89e",
     "#c55252": "#ee8079",
@@ -205,7 +208,7 @@ function themePatch(
   };
   const patch: Record<string, unknown> = {
     color: palette.series,
-    textStyle: { color: palette.text, fontFamily: "Arial, sans-serif" },
+    textStyle: { color: palette.text, fontFamily: palette.fontFamily },
     series: styledSeriesPatch(source.series, theme, palette),
   };
   for (const key of [
@@ -349,7 +352,7 @@ export default function AnalysisChart({
     instance.setOption(
       {
         animation: false,
-        textStyle: { fontFamily: "Arial, sans-serif" },
+        textStyle: { fontFamily: readPalette().fontFamily },
         ...option,
       },
       { notMerge: true },
