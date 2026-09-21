@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from contextlib import contextmanager
+from dataclasses import asdict
 from datetime import datetime, timezone
 import json
 import os
@@ -15,6 +16,7 @@ from typing import Any, Iterator, Mapping, Sequence
 
 import numpy as np
 import pandas as pd
+from threadpoolctl import threadpool_limits
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,6 +24,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from app_core.analysis.forecast_evaluation import evaluate_frames, validate_evaluation_config  # noqa: E402
+from app_core.analysis.demand_sensitivity import DemandSensitivityConfig, analyze_area  # noqa: E402
 from app_core.ingestion.models import AREAS, BASE_GROUPS  # noqa: E402
 from app_core.ingestion.store import EnergyStore  # noqa: E402
 from app_core.loaders import weather  # noqa: E402
@@ -309,6 +312,37 @@ def _replace_output(staging: Path, output: Path, force: bool) -> None:
     os.replace(staging, output)
 
 
+def _write_sensitivity(root: Path, energy_path: Path, weather_frame: pd.DataFrame,
+                       start: pd.Timestamp, end: pd.Timestamp) -> None:
+    """Fit a short, explicitly synthetic demonstration from the fixture itself."""
+    hours = int((end - start) / pd.Timedelta(hours=1))
+    config = DemandSensitivityConfig(
+        start=start.isoformat(), train_end=(start + pd.Timedelta(hours=int(hours * .6))).isoformat(),
+        validation_end=(start + pd.Timedelta(hours=int(hours * .8))).isoformat(), end=end.isoformat(),
+        minimum_train=100, minimum_validation=100, minimum_test=100,
+    )
+    energy = pd.DataFrame(EnergyStore(energy_path).query(
+        start=start.to_pydatetime(), end=end.to_pydatetime(), areas=list(AREAS),
+        kinds=["consumption"], groups=["household"],
+    ))
+    energy["timestamp"] = pd.to_datetime(energy["timestamp"], utc=True)
+    results = []
+    with threadpool_limits(limits=1):
+        for area in AREAS:
+            demand = energy[energy["area"].eq(area)].set_index("timestamp")["value"]
+            temperature = weather_frame[weather_frame["area"].eq(area)].set_index("time")["temperature_2m (°C)"]
+            try:
+                results.append(analyze_area(pd.DataFrame({"demand": demand, "temperature": temperature}), area, config))
+            except ValueError as exc:
+                results.append({"area": area, "status": "unavailable", "reason": str(exc)})
+    _atomic_json(root / "analyses" / "demand-sensitivity.json", {
+        "schemaVersion": 1, "id": "fixture-demand-sensitivity", "createdAt": CREATED_AT,
+        "dataMode": "fixture", "protocol": asdict(config), "areas": results,
+        "metadata": {"sourceLabel": SYNTHETIC_SOURCE, "generator": "scripts/create_fixture.py",
+                     "purpose": "Short synthetic demonstration fitted from fixture observations; not the multi-year scientific study."},
+    })
+
+
 def create_fixture(
     output: Path = DEFAULT_OUTPUT,
     *,
@@ -334,6 +368,7 @@ def create_fixture(
         predictions = _write_forecast(
             staging / "forecasts", energy_path, area_weather, forecast_config, start, end
         )
+        _write_sensitivity(staging, energy_path, area_weather, start, end)
         manifest = {
             "schemaVersion": 1,
             "dataMode": "fixture",

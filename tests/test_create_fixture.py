@@ -93,6 +93,11 @@ def test_create_fixture_writes_api_readable_snapshots_and_prepared_result(tmp_pa
     assert forecasts[0]["metadata"]["synthetic"] is True
     assert forecasts[0]["coverage"]["matchedOrigins"] == 5
     assert len(forecasts[0]["predictions"]) == 5 * 24
+    sensitivity = json.loads((output / "analyses/demand-sensitivity.json").read_text())
+    assert sensitivity["dataMode"] == "fixture"
+    assert len(sensitivity["areas"]) == 5
+    assert all(area["status"] == "ok" for area in sensitivity["areas"])
+    assert sensitivity["protocol"]["end"].startswith("2025-04-01")
     fixture_manifest = json.loads((output / "fixture-manifest.json").read_text())
     assert fixture_manifest == manifest
 
