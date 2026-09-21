@@ -23,3 +23,53 @@
   font-size: 17px;
   letter-spacing: -0.02em;
 }
+
+.modelSection > p {
+  max-width: 85ch;
+}
+.content .modelGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin: 28px 0 32px;
+}
+.modelCard {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--control-radius);
+}
+.content .modelCard h3,
+.content .modelNotes h3 {
+  margin: 0 0 14px;
+}
+.modelCard p {
+  margin: 0;
+}
+.content .modelCard p + p {
+  margin-top: 16px;
+}
+.modelNotes {
+  display: grid;
+  gap: 28px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+.modelNotes p {
+  max-width: 85ch;
+  margin: 0;
+}
+@media (max-width: 800px) {
+  .content .modelGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .modelCard {
+    padding: 20px;
+  }
+  .modelNotes {
+    gap: 24px;
+    padding-top: 24px;
+  }
+}

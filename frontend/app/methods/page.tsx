@@ -113,7 +113,7 @@ export default function Methods() {
             </li>
           </ol>
         </section>
-        <section className="analysis-panel">
+        <section className={`analysis-panel ${styles.modelSection}`}>
           <h2>Forecast model cards</h2>
           <p>
             The flagship task predicts 24 hours of household demand in all five
@@ -122,30 +122,38 @@ export default function Methods() {
             These are experimental assumptions, not verified publication
             archives.
           </p>
-          <div className="analysis-grid">
+          <div className={styles.modelGrid}>
             {models.map(([name, method, limit]) => (
-              <article key={name}>
+              <article className={styles.modelCard} key={name}>
                 <h3>{name}</h3>
                 <p>{method}</p>
                 <p>{limit}</p>
               </article>
             ))}
           </div>
-          <p>
-            Parameters are selected on chronological validation dates. Residual
-            quantiles are calibrated before the final holdout. Later origins can
-            refit using earlier observations once eligible, while selection and
-            calibration remain frozen. Failed fits are recorded; comparison uses
-            the same successful origins for every model.
-          </p>
-          <p>
-            MAE and RMSE measure held-out error. MASE uses training seasonal
-            changes as its denominator; MASE below one does not prove a model
-            beat the held-out baseline. Benchmark intervals use empirical
-            10th/50th/90th residual quantiles. Evaluate coverage, width and
-            pinball loss together. Realized future weather is available only as
-            a separately labeled upper-bound experiment.
-          </p>
+          <div className={styles.modelNotes}>
+            <section>
+              <h3>Evaluation protocol</h3>
+              <p>
+                Parameters are selected on chronological validation dates. Residual
+                quantiles are calibrated before the final holdout. Later origins can
+                refit using earlier observations once eligible, while selection and
+                calibration remain frozen. Failed fits are recorded; comparison uses
+                the same successful origins for every model.
+              </p>
+            </section>
+            <section>
+              <h3>Reading the scores and intervals</h3>
+              <p>
+                MAE and RMSE measure held-out error. MASE uses training seasonal
+                changes as its denominator; MASE below one does not prove a model
+                beat the held-out baseline. Benchmark intervals use empirical
+                10th/50th/90th residual quantiles. Evaluate coverage, width and
+                pinball loss together. Realized future weather is available only as
+                a separately labeled upper-bound experiment.
+              </p>
+            </section>
+          </div>
         </section>
         <OverviewCaseStudies />
         <section className="analysis-panel">
