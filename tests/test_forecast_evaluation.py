@@ -103,6 +103,19 @@ def test_stage_boundaries_wait_until_prior_target_labels_are_published():
         fe.validate_evaluation_config(_config(holdout_origins=["2025-02-09T00:00:00Z"]))
 
 
+def test_offline_origin_limit_is_96_but_interactive_limit_remains_24():
+    from backend.forecast_jobs import validate_job_config
+
+    holdout = pd.date_range("2025-02-11", periods=25, freq="D", tz="UTC")
+    requested = _config(holdout_origins=[day.isoformat() for day in holdout])
+    assert len(fe.validate_evaluation_config(requested)["holdout_origins"]) == 25
+    with pytest.raises(ValueError, match="interactive holdout_origins"):
+        validate_job_config("evaluation", requested)
+    too_many = pd.date_range("2025-02-11", periods=97, freq="D", tz="UTC")
+    with pytest.raises(ValueError, match="1 to 96"):
+        fe.validate_evaluation_config(_config(holdout_origins=[day.isoformat() for day in too_many]))
+
+
 def test_seasonal_naive_repeats_weekly_lag_until_reference_is_available():
     timestamps = pd.date_range("2024-12-01", "2025-02-10", freq="h", tz="UTC")
     energy = pd.Series(np.arange(len(timestamps), dtype=float), index=timestamps)
@@ -165,6 +178,23 @@ def test_holdout_values_cannot_change_validation_selection(monkeypatch):
     assert first["origins"]["selectionFrozenBeforeHoldout"] is True
 
 
+def test_holdout_values_cannot_change_calibration_residuals(monkeypatch):
+    energy, weather = _frames()
+
+    def simple_predict(model, parameters, prepared, origin, cfg):
+        return np.repeat(190.0 if model == "ridge" else 200.0, cfg["horizon_hours"])
+
+    monkeypatch.setattr(fe, "_predict", simple_predict)
+    first = fe.evaluate_frames(energy, weather, _config(ridge_alphas=[1.0]))
+    changed = energy.copy()
+    changed.loc[changed["timestamp"] >= pd.Timestamp("2025-02-11T00:00:00Z"), "value"] += 1000
+    second = fe.evaluate_frames(changed, weather, _config(ridge_alphas=[1.0]))
+    assert first["calibration"] == second["calibration"]
+    rows = first["calibration"]["NO1"]["ridge"]["residualRows"]
+    assert len(rows) == first["calibration"]["NO1"]["ridge"]["observations"]
+    assert all(row["actual"] - row["prediction"] == pytest.approx(row["residual"]) for row in rows)
+
+
 def test_failed_model_excludes_origin_from_every_models_metrics(monkeypatch):
     energy, weather = _frames()
     failed_origin = pd.Timestamp("2025-02-12T00:00:00Z")
@@ -196,6 +226,7 @@ def test_small_real_ridge_evaluation_is_json_serializable():
     assert len(result["predictions"]) == 2 * 4 * 2
     assert any(row["scope"] == "horizon" and row["horizon"] == 4 for row in result["metrics"])
     assert all("maeDeltaVsBaseline" in row for row in result["metrics"])
+    assert all("bias" in row and "baselineBias" in row and "areaOrigins" in row for row in result["metrics"])
     assert all("baselineMase" in row and "maseDeltaVsBaseline" in row for row in result["metrics"])
     assert "snapshotCaveat" in result["metadata"]["assumptions"]
     # Artifact storage uses strict JSON; NaN and numpy scalar leakage must fail here.

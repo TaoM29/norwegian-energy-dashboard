@@ -106,6 +106,30 @@ def test_invalid_requests_are_rejected_before_worker_creation(tmp_path) -> None:
         manager.close()
 
 
+def test_large_result_stream_and_download_preserve_artifact_bytes(tmp_path) -> None:
+    import hashlib
+
+    client, manager = _client(tmp_path)
+    try:
+        result = {"id": "large-study", "kind": "evaluation", "metadata": {},
+                  "predictions": [], "evidence": "x" * 5_000_000}
+        manager.store.save_result(result)
+        original = (manager.store.results_dir / "large-study.json").read_bytes()
+        expected = hashlib.sha256(original).hexdigest()
+        for suffix in ("", "/artifact"):
+            response = client.get(f"/api/forecasts/results/large-study{suffix}")
+            assert response.status_code == 200
+            assert response.headers["content-type"] == "application/json"
+            assert hashlib.sha256(response.content).hexdigest() == expected
+            assert response.json() == result
+        assert response.headers["content-disposition"] == 'attachment; filename="large-study.json"'
+        assert client.get("/api/forecasts/results/missing/artifact").status_code == 404
+        (manager.store.results_dir / "broken.json").write_text("not JSON")
+        assert client.get("/api/forecasts/results/broken/artifact").status_code == 503
+    finally:
+        manager.close()
+
+
 def test_cancel_and_missing_or_terminal_job_responses(tmp_path) -> None:
     started = False
 
