@@ -20,9 +20,10 @@ import { areas, getJson, number, shiftDay, type Coverage } from "@/lib/api";
 import { ExportMenu } from "@/components/export-menu";
 import { downloadCsv, downloadJson } from "@/lib/download";
 import { writeDashboardUrl } from "@/lib/navigation-state";
+import SensitivityView from "./sensitivity-view";
 import "./diagnostics.css";
 
-type View = "correlation" | "decomposition" | "quality";
+type View = "correlation" | "decomposition" | "quality" | "sensitivity";
 type Row = { time: string } & Record<string, number | boolean | null | string>;
 type Metadata = {
   analyzedPoints: number;
@@ -147,6 +148,9 @@ function asNumber(params: URLSearchParams, key: string, fallback: number) {
 }
 
 function dashboardParams(filters: DiagnosticsFilters) {
+  if (filters.view === "sensitivity") {
+    return new URLSearchParams({ view: "sensitivity", area: filters.area });
+  }
   const params = new URLSearchParams({
     view: filters.view,
     area: filters.area,
@@ -370,7 +374,7 @@ export default function DiagnosticsWorkbench() {
     ) => {
       const restoredView = queryValue(params, "view", "correlation");
       const nextView = (
-        ["correlation", "decomposition", "quality"].includes(restoredView)
+        ["correlation", "decomposition", "quality", "sensitivity"].includes(restoredView)
           ? restoredView
           : "correlation"
       ) as View;
@@ -520,6 +524,7 @@ export default function DiagnosticsWorkbench() {
 
   const load = useCallback(
     async (filters: DiagnosticsFilters, replaceUrl = false) => {
+      if (filters.view === "sensitivity") return;
       if (!filters.start || !filters.end) return;
       if (filters.end < filters.start) {
         setError("The end date must be on or after the start date.");
@@ -587,6 +592,7 @@ export default function DiagnosticsWorkbench() {
   useEffect(() => {
     if (!pendingRestore) return;
     setPendingRestore(null);
+    if (pendingRestore.view === "sensitivity") return;
     void load(pendingRestore, true);
   }, [load, pendingRestore]); // Initial dates and browser history restore the complete view.
 
@@ -599,6 +605,9 @@ export default function DiagnosticsWorkbench() {
     setView(next);
     setStatus("");
     setError("");
+    writeDashboardUrl(
+      `${window.location.pathname}?${dashboardParams({ ...draft, view: next })}`,
+    );
   }
   const dirty = !applied || JSON.stringify(draft) !== JSON.stringify(applied);
   const fileStem = applied
@@ -615,7 +624,7 @@ export default function DiagnosticsWorkbench() {
         role="tablist"
         aria-label="Diagnostic method"
       >
-        {(["correlation", "decomposition", "quality"] as View[]).map((item) => (
+        {(["correlation", "decomposition", "quality", "sensitivity"] as View[]).map((item) => (
           <button
             key={item}
             type="button"
@@ -627,17 +636,18 @@ export default function DiagnosticsWorkbench() {
                 "correlation",
                 "decomposition",
                 "quality",
+                "sensitivity",
               ] as View[];
               const index = tabs.indexOf(item);
               const next =
                 event.key === "ArrowRight"
-                  ? (index + 1) % 3
+                  ? (index + 1) % tabs.length
                   : event.key === "ArrowLeft"
-                    ? (index + 2) % 3
+                    ? (index + tabs.length - 1) % tabs.length
                     : event.key === "Home"
                       ? 0
                       : event.key === "End"
-                        ? 2
+                        ? tabs.length - 1
                         : null;
               if (next === null) return;
               event.preventDefault();
@@ -654,10 +664,24 @@ export default function DiagnosticsWorkbench() {
               ? "Weather & energy"
               : item === "decomposition"
                 ? "Seasonal patterns"
-                : "Unusual observations"}
+                : item === "quality"
+                  ? "Unusual observations"
+                  : "Demand sensitivity"}
           </button>
         ))}
       </div>
+      {view === "sensitivity" ? (
+        <SensitivityView
+          area={area}
+          onAreaChange={(next) => {
+            setArea(next);
+            writeDashboardUrl(
+              `${window.location.pathname}?${dashboardParams({ ...draft, view: "sensitivity", area: next })}`,
+            );
+          }}
+        />
+      ) : (
+      <>
       <form className="analysis-controls" onSubmit={submit}>
         <label>
           Price area
@@ -968,6 +992,8 @@ export default function DiagnosticsWorkbench() {
       )}
       {applied?.view === "quality" && result && (
         <QualityView data={result as Quality} fileStem={fileStem} />
+      )}
+      </>
       )}
     </AnalysisShell>
   );

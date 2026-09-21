@@ -100,7 +100,13 @@
 }
 @media (max-width: 760px) {
   .diagnostics-tabs {
-    margin-inline: -3px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+  }
+  .diagnostics-tabs button {
+    padding-inline: 8px;
+    white-space: normal;
   }
   .diagnostics-notice,
   .diagnostics-coverage {
