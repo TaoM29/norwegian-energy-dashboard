@@ -7,11 +7,11 @@
 .explore-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 14px;
+  gap: 10px 16px;
   min-width: min(100%, 350px);
-  padding: 8px 12px 10px;
+  padding: 10px 14px 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--control-radius, 10px);
 }
 .explore-options legend {
   padding: 0 5px;
@@ -35,7 +35,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  min-height: 130px;
+  min-height: 150px;
 }
 .explore-state p {
   margin: 0;
@@ -50,7 +50,7 @@
 .explore-panel-heading {
   display: flex;
   justify-content: space-between;
-  gap: 20px;
+  gap: 24px;
   align-items: flex-start;
 }
 .explore-panel-heading h2,
@@ -91,7 +91,7 @@
 }
 .explore-table-wrap th,
 .explore-table-wrap td {
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--border);
   text-align: right;
   white-space: nowrap;
@@ -105,7 +105,7 @@
   font-weight: 600;
 }
 .explore-section-heading {
-  margin: 12px 0 16px;
+  margin: 18px 0 18px;
 }
 .explore-section-heading h2 {
   margin-bottom: 4px;
@@ -125,8 +125,8 @@
   margin-top: 10px;
 }
 .explore-sector-values span {
-  padding: 6px 9px;
-  border-radius: 5px;
+  padding: 7px 10px;
+  border-radius: 8px;
   background: var(--surface-muted);
   color: var(--text-muted);
   font-size: 11px;

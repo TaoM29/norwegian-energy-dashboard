@@ -1,20 +1,21 @@
 .diagnostics-tabs {
   display: flex;
-  gap: 7px;
-  margin-bottom: 15px;
+  gap: 8px;
+  margin-bottom: 20px;
   overflow-x: auto;
+  padding-bottom: 3px;
 }
 .diagnostics-tabs button {
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: var(--control-radius, 10px);
   background: var(--surface);
   color: var(--text-muted);
-  padding: 10px 15px;
+  padding: 11px 16px;
   white-space: nowrap;
 }
 .diagnostics-tabs button[aria-selected="true"] {
-  border-color: var(--accent);
-  background: var(--surface-muted);
+  border-color: var(--border-strong);
+  background: var(--accent-soft);
   color: var(--accent);
   font-weight: 650;
 }
@@ -28,12 +29,13 @@
   display: flex;
   flex-direction: column;
   gap: 5px;
-  padding: 22px;
-  margin: 0 0 22px;
+  padding: 24px;
+  margin: 0 0 24px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--panel-radius, 16px);
   background: var(--surface);
   color: var(--text-muted);
+  box-shadow: var(--panel-shadow, none);
 }
 .diagnostics-error {
   border-color: var(--danger-soft);
@@ -57,9 +59,10 @@
 .diagnostics-notice {
   display: flex;
   gap: 12px;
-  padding: 15px 18px;
-  margin-bottom: 22px;
+  padding: 17px 20px;
+  margin-bottom: 24px;
   border-left: 4px solid var(--warning);
+  border-radius: var(--control-radius, 10px);
   background: var(--warning-soft);
   line-height: 1.55;
 }
@@ -70,9 +73,9 @@
   display: flex;
   gap: 9px;
   align-items: baseline;
-  padding: 12px 15px;
-  margin-bottom: 12px;
-  border-radius: 7px;
+  padding: 14px 17px;
+  margin-bottom: 16px;
+  border-radius: var(--control-radius, 10px);
   background: var(--surface-muted);
   color: var(--text-muted);
   line-height: 1.55;
@@ -90,7 +93,7 @@
 }
 .diagnostics-table-wrap th,
 .diagnostics-table-wrap td {
-  padding: 8px 10px;
+  padding: 11px 12px;
   border-bottom: 1px solid var(--border);
   text-align: left;
   white-space: nowrap;
