@@ -107,7 +107,7 @@ function result(id: string, title: string, ridgeMae: number) {
 
 async function mockForecastApi(
   page: Page,
-  options: { failBOnce?: boolean; failJobs?: boolean } = {},
+  options: { failBOnce?: boolean; failJobs?: boolean; studyA?: boolean } = {},
 ) {
   let bRequests = 0;
   await page.route("**/api/forecasts/**", async (route) => {
@@ -131,7 +131,61 @@ async function mockForecastApi(
           : { json: { items: [], total: 0 } },
       );
     } else if (path.endsWith("/results/result-a")) {
-      await route.fulfill({ json: result("result-a", "Result A", 120) });
+      const saved = result("result-a", "Result A", 120);
+      await route.fulfill({
+        json: options.studyA
+          ? {
+              ...saved,
+              metadata: {
+                ...saved.metadata,
+                studyProtocol: {
+                  id: "synthetic-step-2",
+                  label: "Synthetic Step 2 test",
+                  evidenceStatus: "exploratory",
+                },
+              },
+              reliability: {
+                schemaVersion: 1,
+                method: { supportRule: "Synthetic matched rows." },
+                support: {
+                  scheduledDates: 46,
+                  observedDates: 44,
+                  missingDates: ["2025-03-14T00:00:00Z"],
+                  scheduledAreaOrigins: 230,
+                  matchedAreaOrigins: 219,
+                  excludedAreaOrigins: 11,
+                  hourlyRowsPerModel: { ridge: 5256 },
+                },
+                models: [
+                  {
+                    model: "ridge",
+                    overall: {
+                      maeDeltaVsBaseline: -12.4,
+                      bias: 3.2,
+                      intervalCoverage: 0.74,
+                      meanIntervalWidth: 88.1,
+                    },
+                    uncertainty: {
+                      byBlockLength: [2, 4, 8].map((blockLengthDates) => ({
+                        blockLengthDates,
+                        intervals: {
+                          maeDeltaVsBaseline: { lower: -20, upper: 5 },
+                        },
+                      })),
+                    },
+                    residualDependence: {
+                      withinWindowLag1Hour: { pairs: 42, correlation: 0.35 },
+                      byArea: [
+                        { area: "NO1", withinWindowLag1Hour: { pairs: 20, correlation: 0.25 } },
+                        { area: "NO2", withinWindowLag1Hour: { pairs: 22, correlation: 0.45 } },
+                      ],
+                    },
+                  },
+                ],
+              },
+            }
+          : saved,
+      });
     } else if (path.endsWith("/results/result-b")) {
       bRequests += 1;
       await route.fulfill(
@@ -147,6 +201,28 @@ async function mockForecastApi(
     }
   });
 }
+
+test("exploratory reliability stays scoped to its fixed study cohort and older results omit it", async ({ page }) => {
+  await mockForecastApi(page, { studyA: true });
+  await page.goto("/forecasts?result=result-a");
+  const panel = page.getByRole("region", { name: "Reliability comparison" });
+  await expect(page.getByRole("heading", { name: "Forecast reliability across dates" })).toBeVisible();
+  await expect(panel).toContainText("-12.4");
+  await expect(panel).toContainText("2 dates: -20.0 to +5.0");
+  await expect(panel).toContainText("74.0%");
+  await expect(page.getByText("219", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Missing scheduled dates: 2025-03-14/)).toBeVisible();
+  await expect(page.getByText(/All five areas and every matched study date are pooled here/)).toBeVisible();
+  await page.getByText("Support and residual dependence").click();
+  const diagnostics = page.getByRole("region", { name: "Residual dependence diagnostics" });
+  await expect(diagnostics).toContainText("0.25");
+  await page.getByRole("combobox", { name: "Residual area" }).selectOption("NO2");
+  await expect(diagnostics).toContainText("0.45");
+  await expect(diagnostics).not.toContainText("0.25");
+  await page.getByRole("combobox", { name: "Prepared forecast result" }).click();
+  await page.getByRole("option", { name: /Result B/ }).click();
+  await expect(page.getByRole("heading", { name: "Forecast reliability across dates" })).toHaveCount(0);
+});
 
 test("a failed result switch hides stale detail and retry restores the selected result", async ({
   page,
