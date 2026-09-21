@@ -14,12 +14,14 @@ from backend.explore import router as explore_router
 from backend.diagnostics import router as diagnostics_router
 from backend.regional import router as regional_router
 from backend.forecast import router as forecast_router
+from backend.sensitivity import router as sensitivity_router
 
 
 DEFAULT_DATABASE = Path(__file__).resolve().parents[1] / "data" / "energy.sqlite"
 DATABASE_ENV = "ENERGY_DATABASE"
 
 app = FastAPI(title="Norwegian Energy Dashboard API", version="0.1.0")
+app.include_router(sensitivity_router)
 
 
 class DatabaseUnavailable(RuntimeError):
