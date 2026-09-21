@@ -2,7 +2,7 @@
 
 Prepared 2026-09-21 following the project-wide analysis review.
 
-**Status: Step 0 complete on 2026-09-21; Steps 1–8 remain planned.** This document defines the work for step-by-step delivery and records completed checks. It does not report new forecasting experiments or authorize executing every step at once. Implementation proceeds in individually selected steps, with results and limitations reviewed before expanding scope.
+**Status: Steps 0–1 complete locally on 2026-09-21; Steps 2–8 remain planned.** This document defines the work for step-by-step delivery and records completed checks. It does not authorize executing every step at once. Implementation proceeds in individually selected steps, with results and limitations reviewed before expanding scope.
 
 The goal is to answer useful questions with defensible evidence: what drives observed demand patterns, where forecasts fail, and how much confidence their results deserve. Reuse the current Next.js/FastAPI application and analytical stack. Prefer a small number of understandable studies over more models, pages, or infrastructure.
 
@@ -29,7 +29,7 @@ The sequence below puts correctness first, then the recommended initial studies.
 | Step | Deliverable | Dependency | Effort | Status |
 | --- | --- | --- | --- | --- |
 | 0 | Correct hourly correlation windows and wind-rose sectors | None | Small | Complete 2026-09-21; see completion record below |
-| 1 | Weather-adjusted demand sensitivity | Step 0; validated common coverage | Medium | Planned |
+| 1 | Weather-adjusted demand sensitivity | Step 0; validated common coverage | Medium | Complete locally; [validation](STEP1_VALIDATION.md) |
 | 2 | Broader forecast reliability study | Frozen experiment protocol and eligible data | Medium–large | Planned |
 | 3 | Visual forecast-error explorer | Existing saved results; extend with Step 2 later | Small–medium | Planned |
 | 4 | Forecast feature ablation | Step 2 evaluation protocol | Medium | Planned |
@@ -95,6 +95,10 @@ Step 0 is complete. No additional statistical study, commit, or push was perform
 - Retain the simpler model if added complexity does not improve useful interpretation or validation.
 
 **Likely integration:** `app_core/analysis/`, `backend/diagnostics.py`, `frontend/app/diagnostics/workbench.tsx`, and Methods & Data. Final module boundaries should follow the implementation rather than create a parallel framework.
+
+### Step 1 completion record — 2026-09-21
+
+The saved five-area study, offline fitting/replay command, read-only API, and Demand sensitivity tab in Patterns are implemented. Calendar-only, linear-temperature, and spline models use chronological selection and evaluation. The interface includes supported mean-contrast bands, temperature support, model/area comparisons, residual diagnostics, accessible tables, and downloads. [The validation record](STEP1_VALIDATION.md) documents the exact protocol, retained inputs, real-data results, 246 passing Python tests, frontend/build/browser checks, and scientific limitations. Step 0 was committed and pushed as `99d587b` before this implementation; Step 1 remains uncommitted for review.
 
 ## Step 2 — Broader forecast reliability study
 

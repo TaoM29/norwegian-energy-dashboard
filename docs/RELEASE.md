@@ -55,9 +55,11 @@ allow Git rebuilds to reproduce the same input data.
 
 Follow the [README local setup](../README.md#local-development-optional) to install dependencies, generate the synthetic fixture, and start the API and frontend. The fixture banner distinguishes generated data from observations.
 
-Regenerating an existing fixture uses `python scripts/create_fixture.py --force`; recreate any fixture containers afterwards so their bind mounts use the replacement directory. The fixture includes every base group and area, weather and a genuinely calculated seasonal-naive evaluation. It does not manufacture evidence of model performance on real data. Point-weather fixture coverage is limited to the documented default point; other points return a clear fixture-coverage message without contacting the public source.
+Regenerating an existing fixture uses `python scripts/create_fixture.py --force`; recreate any fixture containers afterwards so their bind mounts use the replacement directory. The fixture includes every base group and area, weather, a genuinely calculated seasonal-naive evaluation, and a fitted synthetic demand-sensitivity study. It does not manufacture evidence of model performance on real data. Point-weather fixture coverage is limited to the documented default point; other points return a clear fixture-coverage message without contacting the public source.
 
 For real observations, run `python scripts/refresh_data.py backfill` from the repository root. Start the API without the fixture environment variables. Generate prepared forecasts with the command in [Phase 4 validation](PHASE4_VALIDATION.md). Ordinary views read published snapshots; point snow-weather requests are the exception. No MongoDB credentials are required by the dashboard.
+
+Prepare the fixed weather-adjusted demand study with `python scripts/run_demand_sensitivity.py` after the 2021–2025 snapshots are available. See [Step 1 validation](STEP1_VALIDATION.md) for the protocol, retained-input replay, and interpretation. The API reads `analyses/demand-sensitivity.json` beside `ENERGY_DATABASE`, or the file selected by `DEMAND_SENSITIVITY_ARTIFACT`; it never fits on page visits. Keep the result and its companion input directory for audit/replay. Missing studies produce an unavailable state. The Vercel packaging command includes the default prepared study when present; it does not upload or repin the public archive automatically. Containers read the same file from their data mount.
 
 ## Container deployment
 

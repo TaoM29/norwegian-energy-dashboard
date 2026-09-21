@@ -12,6 +12,7 @@ Source code: <https://github.com/TaoM29/norwegian-energy-dashboard>
 - Production and consumption across Norwegian price areas (NO1–NO5)
 - Weather exploration and regional analysis
 - Correlation, decomposition, spectral, and data-quality views
+- Saved weather-adjusted household-demand studies with temporal validation and uncertainty
 - Forecast benchmarks, uncertainty metrics, and bounded custom jobs
 - Transparent methods, data freshness, and provenance
 
