@@ -155,6 +155,33 @@ export default function Methods() {
             </section>
           </div>
         </section>
+        <section className="analysis-panel">
+          <h2>Weather-adjusted demand sensitivity</h2>
+          <p>
+            The <a href="/diagnostics?view=sensitivity">Demand sensitivity</a>
+            study is a saved retrospective analysis of hourly household demand
+            in NO1–NO5. It compares a calendar-only reference, a linear
+            temperature response and a flexible temperature response on later
+            observations. The page shows the study’s fixed training,
+            validation and test dates; changing the dates in other dashboard
+            views does not refit this study.
+          </p>
+          <p>
+            The temperature curve is an adjusted association after accounting
+            for hour, weekday, holidays and seasonality. Its shaded 95%
+            pointwise band describes uncertainty in the estimated mean response,
+            not the range for an individual hour. Temperature support and
+            held-out error should be read alongside the curve, especially near
+            the edges of the observed range.
+          </p>
+          <p>
+            Each area uses one fixed city weather proxy rather than an
+            area-wide temperature measure. The result is neither a causal
+            temperature effect nor an operational weather forecast; demand
+            scales differ across areas, so raw error values should not be used
+            as a ranking without that context.
+          </p>
+        </section>
         <OverviewCaseStudies />
         <section className="analysis-panel">
           <h2>Architecture and reproducibility</h2>
