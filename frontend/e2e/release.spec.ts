@@ -169,10 +169,15 @@ test("methods and navigation fit mobile and support keyboard focus", async ({
   });
 });
 
-test("theme follows the system and preserves an explicit choice across pages", async ({
+test("light and dark choices persist across pages and ignore device theme changes", async ({
   page,
 }, testInfo) => {
-  await page.emulateMedia({ colorScheme: "dark" });
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.addInitScript(() => {
+    if (!localStorage.getItem("energy-dashboard-theme")) {
+      localStorage.setItem("energy-dashboard-theme", "system");
+    }
+  });
   await page.goto("/?area=NO2&start=2025-11-01&end=2025-11-28");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await expect(
@@ -212,9 +217,13 @@ test("theme follows the system and preserves an explicit choice across pages", a
     fullPage: true,
     animations: "disabled",
   });
-  await page.getByRole("button", { name: "System", exact: true }).click();
+  await expect(page.getByRole("group", { name: "Color theme" }).getByRole("button")).toHaveCount(2);
+  await expect(page.getByRole("button", { name: "System", exact: true })).toHaveCount(0);
+  await page.emulateMedia({ colorScheme: "dark" });
   await page.emulateMedia({ colorScheme: "light" });
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.getByRole("button", { name: "Dark", exact: true })).toHaveAttribute("aria-pressed", "true");
 });
 
 test("mobile pages keep navigation, guidance and theme controls usable", async ({

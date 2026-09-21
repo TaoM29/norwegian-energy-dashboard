@@ -9,33 +9,26 @@ import {
   type ReactNode,
 } from "react";
 
-export type ThemeMode = "light" | "dark" | "system";
-export type ResolvedTheme = Exclude<ThemeMode, "system">;
+export type ThemeMode = "light" | "dark";
 
 export const THEME_STORAGE_KEY = "energy-dashboard-theme";
 
 type ThemeContextValue = {
   theme: ThemeMode;
-  resolvedTheme: ResolvedTheme;
   setTheme: (theme: ThemeMode) => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function isThemeMode(value: string | null): value is ThemeMode {
-  return value === "light" || value === "dark" || value === "system";
+function savedTheme(value: string | null): ThemeMode {
+  return value === "light" ? "light" : "dark";
 }
 
-function systemTheme(query: MediaQueryList): ResolvedTheme {
-  return query.matches ? "dark" : "light";
-}
-
-function applyDocumentTheme(resolved: ResolvedTheme, mode: ThemeMode) {
+function applyDocumentTheme(theme: ThemeMode) {
   const root = document.documentElement;
   root.classList.add("theme-changing");
-  root.dataset.theme = resolved;
-  root.dataset.themeMode = mode;
-  root.style.colorScheme = resolved;
+  root.dataset.theme = theme;
+  root.style.colorScheme = theme;
   void root.offsetHeight;
   requestAnimationFrame(() =>
     requestAnimationFrame(() => root.classList.remove("theme-changing")),
@@ -43,52 +36,33 @@ function applyDocumentTheme(resolved: ResolvedTheme, mode: ThemeMode) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>("system");
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("light");
+  const [theme, setThemeState] = useState<ThemeMode>("dark");
 
   useEffect(() => {
-    const query = window.matchMedia("(prefers-color-scheme: dark)");
-
-    const applyTheme = (mode: ThemeMode) => {
-      const resolved = mode === "system" ? systemTheme(query) : mode;
-      applyDocumentTheme(resolved, mode);
-      setResolvedTheme(resolved);
-    };
-
-    let stored: string | null = null;
+    let initialTheme: ThemeMode = "dark";
     try {
-      stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+      initialTheme = savedTheme(window.localStorage.getItem(THEME_STORAGE_KEY));
+      // Normalize older "system" preferences to the new default.
+      window.localStorage.setItem(THEME_STORAGE_KEY, initialTheme);
     } catch {
-      // System preference remains the default when storage is unavailable.
+      // Dark remains the default when storage is unavailable.
     }
-    const initialTheme = isThemeMode(stored) ? stored : "system";
     setThemeState(initialTheme);
-    applyTheme(initialTheme);
+    applyDocumentTheme(initialTheme);
 
-    const handleSystemChange = () => {
-      if (document.documentElement.dataset.themeMode === "system") {
-        applyTheme("system");
-      }
-    };
     const handleStorage = (event: StorageEvent) => {
-      if (event.key !== THEME_STORAGE_KEY) return;
-      const nextTheme = isThemeMode(event.newValue) ? event.newValue : "system";
+      if (event.key !== THEME_STORAGE_KEY && event.key !== null) return;
+      const nextTheme = savedTheme(event.newValue);
       setThemeState(nextTheme);
-      applyTheme(nextTheme);
+      applyDocumentTheme(nextTheme);
     };
-
-    query.addEventListener("change", handleSystemChange);
     window.addEventListener("storage", handleStorage);
-    return () => {
-      query.removeEventListener("change", handleSystemChange);
-      window.removeEventListener("storage", handleStorage);
-    };
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
   const value = useMemo<ThemeContextValue>(
     () => ({
       theme,
-      resolvedTheme,
       setTheme: (nextTheme) => {
         setThemeState(nextTheme);
         try {
@@ -96,14 +70,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         } catch {
           // The selected theme still applies when storage is unavailable.
         }
-        const query = window.matchMedia("(prefers-color-scheme: dark)");
-        const resolved =
-          nextTheme === "system" ? systemTheme(query) : nextTheme;
-        applyDocumentTheme(resolved, nextTheme);
-        setResolvedTheme(resolved);
+        applyDocumentTheme(nextTheme);
       },
     }),
-    [resolvedTheme, theme],
+    [theme],
   );
 
   return (

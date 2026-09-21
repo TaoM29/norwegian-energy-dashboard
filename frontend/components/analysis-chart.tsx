@@ -25,7 +25,7 @@ import {
 } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import type { EChartsCoreOption, EChartsType } from "echarts/core";
-import { useTheme, type ResolvedTheme } from "@/components/theme-provider";
+import { useTheme, type ThemeMode } from "@/components/theme-provider";
 
 echarts.use([
   BarChart,
@@ -132,7 +132,7 @@ function darkColor(value: string, palette: ChartPalette) {
 
 function themedValue(
   value: unknown,
-  theme: ResolvedTheme,
+  theme: ThemeMode,
   palette: ChartPalette,
 ): unknown {
   if (typeof value === "string") {
@@ -159,7 +159,7 @@ function componentPatch(value: unknown, patch: Record<string, unknown>) {
 
 function styledSeriesPatch(
   value: unknown,
-  theme: ResolvedTheme,
+  theme: ThemeMode,
   palette: ChartPalette,
 ) {
   const series = Array.isArray(value) ? value : value ? [value] : [];
@@ -194,7 +194,7 @@ function styledSeriesPatch(
 
 function themePatch(
   option: EChartsCoreOption,
-  theme: ResolvedTheme,
+  theme: ThemeMode,
   palette: ChartPalette,
 ): EChartsCoreOption {
   const source = option as Record<string, unknown>;
@@ -302,7 +302,7 @@ function themePatch(
 function applyTheme(
   instance: EChartsType,
   option: EChartsCoreOption,
-  theme: ResolvedTheme,
+  theme: ThemeMode,
 ) {
   instance.setOption(themePatch(option, theme, readPalette()), {
     notMerge: false,
@@ -324,13 +324,13 @@ export default function AnalysisChart({
   onReady?: (chart: EChartsType) => void;
   exports?: ReactNode;
 }) {
-  const { resolvedTheme } = useTheme();
+  const { theme } = useTheme();
   const node = useRef<HTMLDivElement>(null);
   const chart = useRef<EChartsType | null>(null);
   const ready = useRef(onReady);
-  const currentTheme = useRef(resolvedTheme);
+  const currentTheme = useRef(theme);
   ready.current = onReady;
-  currentTheme.current = resolvedTheme;
+  currentTheme.current = theme;
   useEffect(() => {
     if (!node.current) return;
     const instance = echarts.init(node.current, undefined, {
@@ -360,8 +360,8 @@ export default function AnalysisChart({
     applyTheme(instance, option, currentTheme.current);
   }, [option]);
   useEffect(() => {
-    if (chart.current) applyTheme(chart.current, option, resolvedTheme);
-  }, [resolvedTheme]);
+    if (chart.current) applyTheme(chart.current, option, theme);
+  }, [theme]);
   function saveImage() {
     if (!chart.current) return;
     const palette = readPalette();

@@ -1,12 +1,11 @@
 "use client";
 
-import { Sun, Moon, Monitor } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 import { useTheme, type ThemeMode } from "./theme-provider";
 
 const options: { value: ThemeMode; label: string }[] = [
   { value: "light", label: "Light" },
   { value: "dark", label: "Dark" },
-  { value: "system", label: "System" },
 ];
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
@@ -30,10 +29,8 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
         >
           {value === "light" ? (
             <Sun size={15} aria-hidden="true" />
-          ) : value === "dark" ? (
-            <Moon size={15} aria-hidden="true" />
           ) : (
-            <Monitor size={15} aria-hidden="true" />
+            <Moon size={15} aria-hidden="true" />
           )}
           <span>{label}</span>
         </button>

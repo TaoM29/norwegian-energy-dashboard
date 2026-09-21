@@ -12,21 +12,13 @@ export const metadata: Metadata = {
 
 const themeScript = `
 (() => {
-  const systemTheme = () => matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-  let mode = "system";
+  let theme = "dark";
   try {
-    const key = "energy-dashboard-theme";
-    const stored = localStorage.getItem(key);
-    mode = stored === "light" || stored === "dark" || stored === "system"
-      ? stored
-      : "system";
+    const stored = localStorage.getItem("energy-dashboard-theme");
+    theme = stored === "light" ? "light" : "dark";
   } catch {}
-  const resolved = mode === "system" ? systemTheme() : mode;
-  document.documentElement.dataset.theme = resolved;
-  document.documentElement.dataset.themeMode = mode;
-  document.documentElement.style.colorScheme = resolved;
+  document.documentElement.dataset.theme = theme;
+  document.documentElement.style.colorScheme = theme;
 })();
 `;
 
