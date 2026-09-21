@@ -202,8 +202,8 @@ def validate_evaluation_config(config: Mapping[str, Any] | None = None) -> dict[
     stages: dict[str, list[pd.Timestamp]] = {}
     for key in ("validation_origins", "calibration_origins", "holdout_origins"):
         raw = merged[key]
-        if not isinstance(raw, (list, tuple)) or not raw or len(raw) > 24:
-            raise ValueError(f"{key} must contain 1 to 24 forecast origins")
+        if not isinstance(raw, (list, tuple)) or not raw or len(raw) > 96:
+            raise ValueError(f"{key} must contain 1 to 96 forecast origins")
         parsed = sorted(dict.fromkeys(_utc_hour(value, key) for value in raw))
         stages[key] = parsed
         normalized[key] = [value.isoformat().replace("+00:00", "Z") for value in parsed]
@@ -641,13 +641,14 @@ def _calibrate(
     cfg: Mapping[str, Any],
     failures: list[dict[str, Any]],
     cancelled: _Cancelled | None,
-) -> dict[str, dict[str, float]]:
+) -> dict[str, dict[str, Any]]:
     alpha = (1 - cfg["interval_coverage"]) / 2
     origins = [_utc_hour(value, "calibration_origins") for value in cfg["calibration_origins"]]
     residuals: dict[str, list[float]] = {model: [] for model in cfg["models"]}
+    residual_rows: dict[str, list[dict[str, Any]]] = {model: [] for model in cfg["models"]}
     for origin in origins:
         try:
-            _, actual = _actuals(prepared, origin, cfg)
+            targets, actual = _actuals(prepared, origin, cfg)
         except Exception as error:
             for model_name in cfg["models"]:
                 failures.append({"area": area, "stage": "calibration", "origin": origin.isoformat(),
@@ -658,6 +659,12 @@ def _calibrate(
             try:
                 prediction = _predict(model_name, selected[model_name], prepared, origin, cfg)
                 residuals[model_name].extend((actual - prediction).tolist())
+                residual_rows[model_name].extend({
+                    "origin": origin.isoformat(), "targetTime": target.isoformat(),
+                    "horizon": offset + 1, "actual": float(actual[offset]),
+                    "prediction": float(prediction[offset]),
+                    "residual": float(actual[offset] - prediction[offset]),
+                } for offset, target in enumerate(targets))
             except Exception as error:
                 failures.append({"area": area, "stage": "calibration", "origin": origin.isoformat(),
                                  "model": model_name, "reason": _safe_reason(error)})
@@ -672,6 +679,8 @@ def _calibrate(
             "median_residual": float(np.quantile(finite, 0.5)),
             "upper_residual": float(np.quantile(finite, 1 - alpha)),
             "observations": int(len(finite)),
+            "successfulOrigins": int(len({row["origin"] for row in residual_rows[model_name]})),
+            "residualRows": residual_rows[model_name],
         }
     return result
 
@@ -704,7 +713,10 @@ def _metric_row(frame: pd.DataFrame, model: str, scope: str, **dimension: Any) -
     return {
         "scope": scope, **dimension, "model": model,
         "observations": int(len(frame)), "origins": int(frame["origin"].nunique()),
+        "areaOrigins": int(frame[["area", "origin"]].drop_duplicates().shape[0]),
+        "distinctOriginDates": int(pd.to_datetime(frame["origin"], utc=True).dt.normalize().nunique()),
         "mae": mae, "rmse": rmse, "mase": mase,
+        "bias": float(np.mean(error)), "baselineBias": float(np.mean(base_error)),
         "baselineMae": baseline_mae, "baselineRmse": baseline_rmse, "baselineMase": baseline_mase,
         "maeDeltaVsBaseline": mae - baseline_mae,
         "maeRatioVsBaseline": mae / baseline_mae if baseline_mae > 0 else None,
@@ -801,7 +813,11 @@ def evaluate_frames(
     progress: _Progress | None = None,
     cancelled: _Cancelled | None = None,
 ) -> dict[str, Any]:
-    """Run tuning, calibration and untouched holdout evaluation on supplied frames."""
+    """Run tuning, frozen calibration and final evaluation on supplied frames.
+
+    Whether the final period is genuinely untouched or exploratory depends on
+    the dated study protocol and prior inspection of those observations.
+    """
     cfg = validate_evaluation_config(config)
     failures: list[dict[str, Any]] = []
     predictions: list[dict[str, Any]] = []

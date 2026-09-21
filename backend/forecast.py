@@ -7,6 +7,7 @@ import threading
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.forecast_jobs import (
@@ -78,13 +79,25 @@ def list_results(manager: ForecastJobManager = Depends(get_job_manager)) -> dict
 @router.get("/results/{result_id}")
 def get_result(
     result_id: str, manager: ForecastJobManager = Depends(get_job_manager)
-) -> dict[str, Any]:
+) -> FileResponse:
     try:
-        return manager.store.get_result(result_id)
+        # Validate the id and artifact before streaming its original bytes.
+        # Broader studies exceed the host's buffered JSON response size limit.
+        manager.store.get_result(result_id)
+        return FileResponse(manager.store.results_dir / f"{result_id}.json", media_type="application/json")
     except KeyError as exc:
         raise _not_found("result") from exc
     except ForecastArtifactError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@router.get("/results/{result_id}/artifact")
+def download_result(
+    result_id: str, manager: ForecastJobManager = Depends(get_job_manager)
+) -> FileResponse:
+    response = get_result(result_id, manager)
+    response.headers["Content-Disposition"] = f'attachment; filename="{result_id}.json"'
+    return response
 
 
 @router.get("/jobs")

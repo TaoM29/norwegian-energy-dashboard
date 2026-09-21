@@ -252,7 +252,11 @@ def validate_job_config(kind: str, config: dict[str, Any]) -> dict[str, Any]:
     if kind == "evaluation":
         from app_core.analysis.forecast_evaluation import validate_evaluation_config
 
-        return validate_evaluation_config(dict(config))
+        normalized = validate_evaluation_config(dict(config))
+        for key in ("validation_origins", "calibration_origins", "holdout_origins"):
+            if len(normalized[key]) > 24:
+                raise ValueError(f"interactive {key} must contain at most 24 forecast origins")
+        return normalized
     if kind == "sarimax":
         from app_core.analysis.forecast_sarimax import validate_sarimax_config
 
