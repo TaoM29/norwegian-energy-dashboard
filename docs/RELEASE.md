@@ -35,7 +35,8 @@ To publish updated data:
 
 1. Run the existing local refresh and any explicitly requested forecast analysis.
 2. Run `python scripts/prepare_vercel.py` to package a consistent SQLite backup,
-   weather, geography, and saved forecasts in `.vercel-deploy/api/snapshots.tar.gz`.
+   weather, geography, saved forecasts, and the prepared demand-sensitivity study
+   (when present) in `.vercel-deploy/api/snapshots.tar.gz`.
    The command prints the archive's SHA-256.
 3. Upload it to the `norwegian-energy-snapshots` Vercel Blob store under a new path
    containing that hash. Keep previous archives for rollback; do not overwrite.
@@ -46,8 +47,9 @@ Snapshots are fixed per commit; pushing UI code reuses the pinned data. The GitH
 refresh workflow publishes downloadable artifacts but does not change this pin.
 Temporary point-weather caches do not persist across function instances.
 
-Verify `/api/ready`, overview, weather, regional data, and saved forecasts through
-the dashboard domain after deployment. Roll back with Vercel's deployment history;
+Verify `/api/ready`, overview, weather, regional data, saved forecasts, and
+Patterns → Demand sensitivity through the dashboard domain after deployment.
+Roll back with Vercel's deployment history;
 API and frontend releases are promoted independently. The older pinned archives
 allow Git rebuilds to reproduce the same input data.
 
