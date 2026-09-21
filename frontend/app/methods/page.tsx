@@ -141,6 +141,14 @@ export default function Methods() {
                 calibration remain frozen. Failed fits are recorded; comparison uses
                 the same successful origins for every model.
               </p>
+              <p>
+                The broader reliability study evaluates 46 scheduled dates across
+                2025, after validation in 2023 and interval calibration in 2024.
+                These previously reviewed observations support exploratory
+                comparisons, not untouched confirmation. Its uncertainty ranges
+                resample blocks of forecast dates with all regions kept together;
+                seasonal comparisons and results from few blocks remain tentative.
+              </p>
             </section>
             <section>
               <h3>Reading the scores and intervals</h3>

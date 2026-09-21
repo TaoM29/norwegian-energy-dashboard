@@ -35,6 +35,7 @@ import { downloadCsv, downloadJson } from "@/lib/download";
 import { writeDashboardUrl } from "@/lib/navigation-state";
 import styles from "./forecasts.module.css";
 import { ForecastChart, modelColour } from "./forecast-chart";
+import { ReliabilityPanel } from "./reliability-panel";
 
 const benchmarkModels = [
   "seasonal_naive",
@@ -1113,6 +1114,10 @@ export default function ForecastsClient() {
   }
 
   const metadata = detail?.metadata || summary?.metadata || {};
+  const reliabilityReport = detail?.reliability;
+  const isExploratoryStudy =
+    reliabilityReport != null &&
+    asObject(metadata.studyProtocol).evidenceStatus === "exploratory";
   const originsMetadata = asObject(detail?.origins);
   const holdoutOrigins = Array.isArray(originsMetadata.holdout)
     ? originsMetadata.holdout
@@ -1306,11 +1311,15 @@ export default function ForecastsClient() {
                   should be read together with interval width in Metric details.
                 </HelpTip>
               </div>
-              <span>Retrospective · not operational</span>
+              <span>
+                {isExploratoryStudy
+                  ? "Exploratory · retrospective"
+                  : "Retrospective · not operational"}
+              </span>
             </div>
             <p className={styles.summaryScope}>
               {detail.kind === "evaluation"
-                ? `All ${availableAreas.length} saved areas · ${view.split.replaceAll("_", " ")}`
+                ? `All ${availableAreas.length} saved areas · ${isExploratoryStudy ? "exploratory study" : view.split.replaceAll("_", " ")}`
                 : "Rolling-origin development evaluation"}
               {detail.kind === "evaluation" &&
               ["holdout", "matched_holdout"].includes(view.split) &&
@@ -1368,6 +1377,15 @@ export default function ForecastsClient() {
               </div>
             </div>
           </section>
+
+          {reliabilityReport != null && (
+            <ReliabilityPanel
+              report={reliabilityReport}
+              protocol={metadata.studyProtocol}
+              resultId={detail.id}
+              unit={typeof metadata.unit === "string" ? metadata.unit : "kWh"}
+            />
+          )}
 
           {detail.kind === "sarimax" && detail.converged === false && (
             <p className={styles.error} role="alert">
@@ -1447,7 +1465,9 @@ export default function ForecastsClient() {
                     {availableSplits.map((split) => (
                       <option key={split} value={split}>
                         {split === "matched_holdout" || split === "holdout"
-                          ? "Matched final holdout (untouched)"
+                          ? isExploratoryStudy
+                            ? "Matched exploratory study"
+                            : "Matched final holdout (untouched)"
                           : split === "validation"
                             ? "Validation / tuning"
                             : split.replaceAll("_", " ")}
@@ -1621,7 +1641,9 @@ export default function ForecastsClient() {
                   ? "Realized future weather upper bound: this retrospective experiment uses weather that was not available at issue time. It is not an operational forecast."
                   : detail.kind === "sarimax"
                     ? "Retrospective custom experiment using revised snapshots and assumed publication lags. Its projected weather scenario and historical fit are not an as-issued operational forecast."
-                    : "Retrospective held-out evaluation: publication lags and historical availability are applied. Historical performance does not promise operational accuracy."}
+                    : isExploratoryStudy
+                      ? "Exploratory retrospective evaluation on previously reviewed dates: publication lags and historical availability are applied. Results do not establish confirmatory or operational accuracy."
+                      : "Retrospective held-out evaluation: publication lags and historical availability are applied. Historical performance does not promise operational accuracy."}
               </p>
               {detail.kind === "sarimax" &&
                 Array.isArray(detail.warnings) &&
@@ -1695,13 +1717,15 @@ export default function ForecastsClient() {
                     {detail.kind === "sarimax"
                       ? "Rolling-origin development metrics"
                       : ["holdout", "matched_holdout"].includes(view.split)
-                        ? "Untouched final holdout"
+                        ? isExploratoryStudy
+                          ? "Matched exploratory study"
+                          : "Untouched final holdout"
                         : "Model development split"}
                   </span>
                   <h2>Accuracy and interval quality</h2>
                   {detail.kind === "evaluation" && (
                     <p>
-                      Metrics cover all saved matched holdout origins and areas.
+                      Metrics cover all saved matched origins and areas.
                       Area, date and origin filters above apply to the forecast
                       chart; use the Area breakdown for regional scores.
                     </p>
@@ -1802,9 +1826,11 @@ export default function ForecastsClient() {
               <p>
                 Prepared household-demand benchmarks use all five price areas, a
                 24-hour target, baseline, Ridge, gradient boosting and SARIMAX
-                on matched origins. Validation supports tuning; the final
-                holdout remains separate. Features and lags are defined relative
-                to the saved issue time and last available observations.
+                on matched origins. Features and lags are defined relative to
+                the saved issue time and last available observations.
+                {isExploratoryStudy
+                  ? " This study covers previously reviewed dates, so its comparisons are exploratory."
+                  : " Validation supports tuning; the final holdout remains separate."}
               </p>
               <details>
                 <summary>Artifact metadata</summary>
