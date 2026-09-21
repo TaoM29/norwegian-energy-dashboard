@@ -1,0 +1,162 @@
+.forecastChart {
+  min-width: 0;
+}
+
+.chartHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px 20px;
+  margin: 14px 0 12px;
+}
+
+.chartExplanation {
+  display: grid;
+  min-width: 0;
+  max-width: 620px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.intervalControl {
+  display: grid;
+  gap: 7px;
+  min-width: min(220px, 100%);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.actualSwatch,
+.baselineSwatch,
+.modelSwatch,
+.bandSwatch {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 14px;
+  height: 3px;
+  border-radius: 4px;
+}
+
+.actualSwatch {
+  background: var(--text);
+}
+
+.baselineSwatch {
+  background: #9a816a;
+}
+
+:global([data-theme="dark"]) .baselineSwatch {
+  background: #d3b89e;
+}
+
+.bandSwatch {
+  height: 9px;
+  border-radius: 3px;
+  opacity: 0.35;
+}
+
+.rowCount {
+  display: block;
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.valuesDisclosure {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--control-radius, 10px);
+  background: var(--surface);
+}
+
+.valuesDisclosure summary {
+  padding: 12px 14px;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.tableWrap {
+  max-height: 480px;
+  overflow: auto;
+  border-top: 1px solid var(--border);
+}
+
+.tableWrap:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.tableWrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tableWrap caption {
+  padding: 10px 14px;
+  color: var(--text-muted);
+  text-align: left;
+}
+
+.tableWrap th,
+.tableWrap td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+}
+
+.tableWrap th:first-child,
+.tableWrap td:first-child,
+.tableWrap th:nth-child(2),
+.tableWrap td:nth-child(2) {
+  text-align: left;
+}
+
+.tableWrap thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-weight: 650;
+}
+
+@media (max-width: 640px) {
+  .intervalControl {
+    width: 100%;
+  }
+
+  .legend {
+    gap: 7px 12px;
+  }
+}
+
+/* Keep a hidden tooltip's old desktop position inside the resized chart. */
+.forecastChart :global([role="img"]) {
+  overflow: clip;
+}
