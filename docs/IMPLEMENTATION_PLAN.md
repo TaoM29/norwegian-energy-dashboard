@@ -184,6 +184,8 @@ Release candidate implemented 2026-09-15: Streamlit is retired after the Phase 3
 
 These are candidates, not a commitment to add every technique. Prioritize a clear question, valid data, evaluation and an understandable visualization.
 
+The [statistical analysis roadmap](STATISTICAL_ANALYSIS_ROADMAP.md), prepared 2026-09-21, turns the project review into a proposed step-by-step sequence with dependencies, scientific limits, and acceptance criteria. It tracks the next analytical work separately from this document's migration history.
+
 | Priority | Candidate | Question / approach | Evidence required |
 | --- | --- | --- | --- |
 | High | Weather sensitivity | Calendar-adjusted nonlinear temperature response by area; regression or GAM; heating-degree features | Temporal validation, uncertainty and residual diagnostics; call effects associations unless causally identified |

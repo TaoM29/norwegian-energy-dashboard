@@ -233,8 +233,12 @@ def _monthly_weather(frame: pd.DataFrame) -> list[dict[str, Any]]:
 def _wind_rose(frame: pd.DataFrame) -> list[dict[str, Any]]:
     column = WEATHER_VARIABLES["wind_direction"]["column"]
     values = _finite(frame[column]).dropna().to_numpy(dtype=float)
-    values = np.where(values == 360.0, 0.0, values)
-    counts, _ = np.histogram(values, bins=np.arange(0.0, 361.0, 22.5))
+    # Keep the existing valid-direction range and share denominator. Each
+    # compass label denotes the center of a 22.5° sector; the first sector
+    # spans both sides of north and 360° is equivalent to 0°.
+    values = values[(values >= 0.0) & (values <= 360.0)]
+    indices = np.floor(((values % 360.0) + 11.25) / 22.5).astype(int) % len(WIND_SECTORS)
+    counts = np.bincount(indices, minlength=len(WIND_SECTORS))
     total = int(counts.sum())
     return [
         {

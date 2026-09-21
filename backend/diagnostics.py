@@ -168,21 +168,24 @@ def correlation(
     weather_data = weather_frame(area, start_ts, end_ts)
     energy = _energy_series(energy_data)
     weather_values = _weather_series(weather_data, weather)
-    wx, en = align_two_series(apply_lag_hours(weather_values, lag_hours), energy)
+    shifted_weather = apply_lag_hours(weather_values, lag_hours)
+    wx, en = align_two_series(shifted_weather, energy)
     if len(wx) < window_hours:
         raise HTTPException(
             status_code=422,
             detail=f"The selected lag leaves {len(wx)} paired hours; the {window_hours}-hour window needs at least {window_hours}.",
         )
 
-    correlation_values = rolling_pearson_corr(wx, en, window_hours, center=True, min_periods=window_hours)
+    correlation_values = rolling_pearson_corr(
+        shifted_weather, energy, window_hours, center=True, min_periods=window_hours
+    )
     wx_plot = zscore(wx) if normalize else wx
     en_plot = zscore(en) if normalize else en
     values = pd.DataFrame(
         {
-            "time": wx.index,
-            "weather": wx_plot.to_numpy(),
-            "energy": en_plot.to_numpy(),
+            "time": correlation_values.index,
+            "weather": wx_plot.reindex(correlation_values.index).to_numpy(),
+            "energy": en_plot.reindex(correlation_values.index).to_numpy(),
             "correlation": correlation_values.to_numpy(),
         }
     )
@@ -206,7 +209,7 @@ def correlation(
             "correlation": "Pearson r",
         },
         "summary": {
-            "pairedHours": len(values),
+            "pairedHours": len(wx),
             "correlationHours": len(valid_corr),
             "meanCorrelation": _json_number(valid_corr.mean()),
             "latestCorrelation": _json_number(valid_corr.iloc[-1]) if not valid_corr.empty else None,
@@ -215,14 +218,14 @@ def correlation(
         "metadata": {
             **_base_metadata(area, start, end, analyzed=len(values), returned=len(chart)),
             "lagConvention": "Positive lag shifts weather forward in time, testing whether weather leads energy.",
-            "correlation": "Centered rolling Pearson correlation requiring a complete window.",
+            "correlation": "Centered rolling Pearson correlation requiring an observed pair in every hourly slot of the window; constant windows have undefined correlation.",
             "normalization": "Population z-scores affect the comparison chart only; correlation uses original values.",
-            "missingData": "Hourly means for weather and sums for energy; only observed pairs are analyzed. Missing values are not replaced with zero.",
+            "missingData": "Hourly means for weather and sums for energy; a regular hourly overlap is retained after lagging. Unpaired hours remain null in the comparison chart and invalidate any full correlation window containing them. Paired-hour counts exclude gaps; missing values are not replaced with zero.",
             "coverage": {
                 "expectedHours": int((end_ts - start_ts).total_seconds() / 3600),
                 "energyObservedHours": int(energy.notna().sum()),
                 "weatherObservedHours": int(weather_values.notna().sum()),
-                "pairedHours": len(values),
+                "pairedHours": len(wx),
             },
             "sources": {"energy": _frame_metadata(energy_data), "weather": _frame_metadata(weather_data)},
             "interpretation": (

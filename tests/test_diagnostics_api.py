@@ -102,6 +102,59 @@ def test_correlation_validates_group_window_and_lag_overlap(client: TestClient) 
     assert "paired hours" in response.json()["detail"]
 
 
+@pytest.mark.parametrize("source", ["energy", "weather"])
+@pytest.mark.parametrize("absent", [False, True])
+def test_correlation_keeps_hourly_gaps_and_counts_only_pairs(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, source: str, absent: bool
+) -> None:
+    frame = _energy() if source == "energy" else _weather()
+    if absent:
+        frame = frame.drop(index=240)
+    else:
+        frame.loc[240, "value" if source == "energy" else "temperature_2m (°C)"] = np.nan
+    monkeypatch.setattr(diagnostics, f"{source}_frame", lambda *args, **kwargs: frame)
+    response = client.get(
+        "/api/diagnostics/correlation",
+        params={"start": "2026-01-01", "end": "2026-01-21", "group": "solar", "windowHours": 24},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["summary"]["pairedHours"] == 479
+    assert body["metadata"]["coverage"]["pairedHours"] == 479
+    assert body["metadata"]["coverage"][f"{source}ObservedHours"] == 479
+    assert body["metadata"]["analyzedPoints"] == 480
+    assert len(body["values"]) == 480
+    gap = body["values"][240]
+    assert pd.Timestamp(gap["time"]) == pd.Timestamp("2026-01-11", tz="UTC")
+    assert gap["weather"] is None and gap["energy"] is None
+    # A centered 24-hour window includes 12 earlier and 11 later slots.
+    valid_positions = list(range(12, 229)) + list(range(253, 469))
+    assert [i for i, row in enumerate(body["values"]) if row["correlation"] is not None] == valid_positions
+    assert body["summary"]["correlationHours"] == len(valid_positions)
+    expected = np.corrcoef(
+        _weather()["temperature_2m (°C)"].iloc[241:265], _energy()["value"].iloc[241:265]
+    )[0, 1]
+    assert body["values"][253]["correlation"] == pytest.approx(expected)
+    assert "regular hourly overlap" in body["metadata"]["missingData"]
+
+
+def test_correlation_with_many_pairs_but_no_complete_window(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    frame = _energy().drop(index=range(0, 480, 12))
+    monkeypatch.setattr(diagnostics, "energy_frame", lambda *args, **kwargs: frame)
+    response = client.get(
+        "/api/diagnostics/correlation",
+        params={"start": "2026-01-01", "end": "2026-01-21", "group": "solar", "windowHours": 24},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["summary"] == {
+        "pairedHours": 440, "correlationHours": 0, "meanCorrelation": None, "latestCorrelation": None,
+    }
+    assert all(row["correlation"] is None for row in body["values"])
+
+
 def test_decomposition_returns_effective_odd_smoothers_and_bounded_spectrum(client: TestClient) -> None:
     response = client.get(
         "/api/diagnostics/decomposition",

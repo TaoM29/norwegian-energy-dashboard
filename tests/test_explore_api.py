@@ -6,6 +6,8 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app_core.analysis.exploration import (
+    WIND_SECTORS,
+    _wind_rose,
     circular_mean,
     energy_exploration,
     weather_exploration,
@@ -182,12 +184,54 @@ def test_weather_endpoint_matches_legacy_scalar_rules_and_uses_circular_directio
     assert body["monthly"][1]["temperature"] is None
     rose = {row["sector"]: row for row in body["windRose"]}
     assert len(rose) == 16
-    assert rose["N"]["count"] == 1
-    assert rose["NNW"]["count"] == 1
+    assert rose["N"]["count"] == 2
+    assert rose["N"]["share"] == 1.0
+    assert rose["NNW"]["count"] == 0
     direction = next(row for row in body["series"] if row["variable"] == "wind_direction")
     assert min(abs(direction["value"]), abs(direction["value"] - 360.0)) < 1e-9
     assert body["metadata"]["calculation"]["windDirection"].startswith("circular")
     assert body["coverage"]["complete"] is False
+
+
+@pytest.mark.parametrize("sector_index", range(16))
+def test_wind_rose_exact_sector_boundaries_belong_to_clockwise_sector(sector_index):
+    boundary = sector_index * 22.5 + 11.25
+    frame = pd.DataFrame({"wind_direction_10m (°)": [boundary]})
+
+    rose = _wind_rose(frame)
+
+    assert [row["sector"] for row in rose] == list(WIND_SECTORS)
+    assert rose[(sector_index + 1) % 16]["count"] == 1
+    assert sum(row["count"] for row in rose) == 1
+
+
+def test_wind_rose_north_wrap_conserves_counts_and_shares_with_missing_directions():
+    frame = pd.DataFrame(
+        {
+            "wind_direction_10m (°)": [
+                0.0, 360.0, 359.0, 1.0,
+                11.25 - 1e-6, 11.25, 11.25 + 1e-6,
+                348.75 - 1e-6, 348.75, 348.75 + 1e-6,
+                float("nan"), float("inf"), -1.0, 361.0,
+            ]
+        }
+    )
+
+    rose = _wind_rose(frame)
+    counts = {row["sector"]: row["count"] for row in rose}
+
+    assert counts["N"] == 7
+    assert counts["NNE"] == 2
+    assert counts["NNW"] == 1
+    assert sum(row["count"] for row in rose) == 10
+    assert sum(row["share"] for row in rose) == pytest.approx(1.0)
+    assert {row["sector"]: row["share"] for row in rose}["N"] == pytest.approx(0.7)
+
+
+def test_wind_rose_without_usable_directions_has_no_share():
+    rose = _wind_rose(pd.DataFrame({"wind_direction_10m (°)": [None, float("inf")]}))
+
+    assert all(row["count"] == 0 and row["share"] is None for row in rose)
 
 
 def test_normalization_follows_aggregation_and_turns_constant_series_to_zero():

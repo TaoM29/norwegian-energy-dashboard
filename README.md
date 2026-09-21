@@ -71,6 +71,8 @@ cd frontend && npm run typecheck && npm run build
 
 Read the [implementation plan](docs/IMPLEMENTATION_PLAN.md) for architecture and acceptance criteria. See [docs/DATA_PIPELINE.md](docs/DATA_PIPELINE.md) for data commands and contracts.
 
+The [statistical analysis roadmap](docs/STATISTICAL_ANALYSIS_ROADMAP.md) describes proposed next studies, their implementation order, and the evidence required to complete each step.
+
 ## Data and security
 
 Data sources are [Elhub](https://api.elhub.no/) and [Open-Meteo](https://open-meteo.com/). The dashboard does not require MongoDB credentials; retained research loaders use environment variables only.

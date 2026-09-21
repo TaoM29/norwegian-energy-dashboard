@@ -2,6 +2,8 @@
 
 Phase 3 migrates the exploration and diagnostics workflows into Next.js and FastAPI. Streamlit remains runnable, including SARIMAX, pending Phase 4. This report records the local September 15, 2026 validation; it does not replace the historical Phase 0 captures or Phase 2 measurements.
 
+Subsequent correction (2026-09-21): correlation now preserves missing hourly slots, and exploration wind-rose sectors are compass-centered. See the [Step 0 completion record](STATISTICAL_ANALYSIS_ROADMAP.md#step-0-completion-record--2026-09-21) for changed behavior and regression checks. The original validation below remains a historical record.
+
 ## Parity delivered
 
 | Original experience | Replacement | Numerical verification |
