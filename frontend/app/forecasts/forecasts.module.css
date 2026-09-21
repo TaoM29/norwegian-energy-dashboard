@@ -1,10 +1,5 @@
 .selectorPanel {
-  padding: 16px 18px;
-  border: 1px solid var(--border);
-  border-radius: var(--panel-radius, 16px);
-  background: var(--surface);
-  box-shadow: var(--panel-shadow, none);
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .jobForm p {
@@ -62,6 +57,13 @@
   grid-template-columns: minmax(260px, 1fr) auto;
   gap: 14px;
   align-items: end;
+}
+.summaryScope {
+  margin: 12px 0 0;
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-muted);
 }
 
 .experimentButton {
@@ -141,7 +143,8 @@
 .evidenceSummaryGrid span,
 .evidenceSummaryGrid small {
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .evidenceSummaryGrid span {
@@ -168,10 +171,14 @@
   font-size: 12px;
 }
 
-.resultFilters {
-  gap: 9px 12px;
-  margin-bottom: 12px;
-  padding: 12px;
+.primaryChart .resultFilters {
+  gap: 16px;
+  margin: 16px 0 12px;
+  padding: 0 0 16px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .detailDisclosure {
@@ -553,9 +560,11 @@
   margin-bottom: 4px;
 }
 
-.inlineChecks label {
+.resultFilters .inlineChecks label {
   flex-direction: row;
   align-items: center;
+  gap: 6px;
+  min-height: 28px;
 }
 
 .panelHeading,
@@ -586,6 +595,20 @@
   overflow-x: auto;
   margin-top: 18px;
 }
+.tableWrap:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.tableCaption {
+  padding-bottom: 12px;
+  text-align: left;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.allMetrics > summary {
+  padding: 12px 0;
+  font-size: 13px;
+}
 
 .tableWrap table {
   width: 100%;
@@ -608,7 +631,7 @@
 
 .tableWrap thead th {
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.7px;
   text-transform: uppercase;
 }
@@ -872,4 +895,13 @@
     padding-right: 16px;
     padding-left: 16px;
   }
+}
+
+.chartHeadingAside {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 12px;
 }

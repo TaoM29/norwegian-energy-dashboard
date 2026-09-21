@@ -34,6 +34,7 @@ import { areas, number, shiftDay } from "@/lib/api";
 import { downloadCsv, downloadJson } from "@/lib/download";
 import { writeDashboardUrl } from "@/lib/navigation-state";
 import styles from "./forecasts.module.css";
+import { ForecastChart, modelColour } from "./forecast-chart";
 
 const benchmarkModels = [
   "seasonal_naive",
@@ -52,7 +53,6 @@ const modelLabels: Record<string, string> = {
   sarimax_no_exog: "SARIMAX without weather",
   sarimax_exog: "SARIMAX with weather",
 };
-const seriesColours = ["#176b59", "#d4774d", "#725f9e", "#3f7eaa", "#a55366"];
 const weatherVariables = [
   ["temperature_2m (°C)", "Temperature (2 m)"],
   ["precipitation (mm)", "Precipitation"],
@@ -396,7 +396,11 @@ export default function ForecastsClient() {
   const viewRef = useRef<ViewState | null>(null);
   const [results, setResults] = useState<ResultSummary[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [detail, setDetail] = useState<ForecastResult | null>(null);
+  const [storedDetail, setDetail] = useState<ForecastResult | null>(null);
+  const detail = storedDetail?.id === view?.result ? storedDetail : null;
+  const [listError, setListError] = useState("");
+  const [listRetry, setListRetry] = useState(0);
+  const [detailRetry, setDetailRetry] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [jobError, setJobError] = useState("");
@@ -404,9 +408,8 @@ export default function ForecastsClient() {
   const [customJobsEnabled, setCustomJobsEnabled] = useState(false);
   const [evaluation, setEvaluation] = useState(defaultEvaluation);
   const [sarimax, setSarimax] = useState(defaultSarimax);
-  const [experimentKind, setExperimentKind] = useState<Job["kind"]>(
-    "evaluation",
-  );
+  const [experimentKind, setExperimentKind] =
+    useState<Job["kind"]>("evaluation");
   const experimentDialogRef = useRef<HTMLDialogElement>(null);
 
   const updateView = useCallback(
@@ -439,13 +442,24 @@ export default function ForecastsClient() {
   }, []);
 
   const loadLists = useCallback(async () => {
-    const [resultResponse, jobResponse] = await Promise.all([
+    const [resultResponse, jobResponse] = await Promise.allSettled([
       apiJson<{ items: ResultSummary[] }>("/api/forecasts/results"),
       apiJson<{ items: Job[] }>("/api/forecasts/jobs"),
     ]);
-    setResults(resultResponse.items);
-    setJobs(jobResponse.items);
-    return { results: resultResponse.items, jobs: jobResponse.items };
+    if (jobResponse.status === "fulfilled") {
+      setJobs(jobResponse.value.items);
+      setJobError("");
+    } else {
+      setJobError(
+        "Job history is unavailable. Saved results can still be explored.",
+      );
+    }
+    if (resultResponse.status === "rejected") throw resultResponse.reason;
+    setResults(resultResponse.value.items);
+    return {
+      results: resultResponse.value.items,
+      jobs: jobResponse.status === "fulfilled" ? jobResponse.value.items : [],
+    };
   }, []);
 
   useEffect(() => {
@@ -463,7 +477,7 @@ export default function ForecastsClient() {
     if (!view) return;
     let live = true;
     setLoading(true);
-    setError("");
+    setListError("");
     loadLists()
       .then(({ results: loaded }) => {
         if (!live) return;
@@ -477,7 +491,7 @@ export default function ForecastsClient() {
       })
       .catch((reason: Error) => {
         if (live) {
-          setError(reason.message);
+          setListError(reason.message);
           setLoading(false);
         }
       });
@@ -486,7 +500,7 @@ export default function ForecastsClient() {
     };
     // Initial list load. Selection changes are handled by the detail effect.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view ? "ready" : "waiting", loadLists, updateView]);
+  }, [view ? "ready" : "waiting", loadLists, updateView, listRetry]);
 
   useEffect(() => {
     if (!view?.result) {
@@ -501,6 +515,7 @@ export default function ForecastsClient() {
       { signal: controller.signal },
     )
       .then((data) => {
+        if (controller.signal.aborted) return;
         setDetail(data);
         setLoading(false);
         const rawPredictions = asRows(data.predictions).concat(
@@ -561,6 +576,7 @@ export default function ForecastsClient() {
       })
       .catch((reason: Error) => {
         if (reason.name !== "AbortError") {
+          setDetail(null);
           setError(reason.message);
           setLoading(false);
         }
@@ -568,7 +584,7 @@ export default function ForecastsClient() {
     return () => controller.abort();
     // Result is the only fetch key; filters are client-side.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view?.result, results]);
+  }, [view?.result, results, detailRetry]);
 
   const selectedJob = jobs.find((job) => job.id === view?.job) || null;
   useEffect(() => {
@@ -759,154 +775,19 @@ export default function ForecastsClient() {
     });
   }, [metricRows, view, availableSplits]);
 
-  const chartOption = useMemo<EChartsCoreOption>(() => {
-    const rows = [...filteredPredictions].sort((a, b) =>
-      targetTime(a).localeCompare(targetTime(b)),
-    );
-    const times = [...new Set(rows.map(targetTime).filter(Boolean))];
-    const byModel = new Map<string, Map<string, Json>>();
-    for (const row of rows) {
-      const model = modelKey(row);
-      if (!byModel.has(model)) byModel.set(model, new Map());
-      byModel.get(model)!.set(targetTime(row), row);
-    }
-    const firstByTime = new Map<string, Json>();
-    for (const row of rows)
-      if (!firstByTime.has(targetTime(row)))
-        firstByTime.set(targetTime(row), row);
-    const intervalModel =
-      [...byModel.keys()].find(
-        (model) => model !== "baseline" && model !== "seasonal_naive",
-      ) || [...byModel.keys()][0];
-    const intervalRows = intervalModel
-      ? byModel.get(intervalModel)!
-      : new Map<string, Json>();
-    const lower = times.map((time) =>
-      numericValue(intervalRows.get(time) || {}, "lower", "q10", "lowerBound"),
-    );
-    const range = times.map((time, index) => {
-      const upper = numericValue(
-        intervalRows.get(time) || {},
-        "upper",
-        "q90",
-        "upperBound",
-      );
-      return upper == null || lower[index] == null
-        ? null
-        : upper - lower[index]!;
-    });
-    const series: Json[] = [];
-    if (lower.some((value) => value != null)) {
-      series.push(
-        {
-          name: "Interval lower",
-          type: "line",
-          data: lower,
-          stack: "interval",
-          stackStrategy: "all",
-          symbol: "none",
-          silent: true,
-          lineStyle: { opacity: 0 },
-          areaStyle: { opacity: 0 },
-          tooltip: { show: false },
-        },
-        {
-          name: `${modelLabel(intervalModel || "model")} interval`,
-          type: "line",
-          data: range,
-          stack: "interval",
-          stackStrategy: "all",
-          symbol: "none",
-          lineStyle: { opacity: 0 },
-          areaStyle: { color: "rgba(23,107,89,.20)" },
-        },
-      );
-    }
-    const actual = times.map((time) =>
-      numericValue(firstByTime.get(time) || {}, "actual", "observed"),
-    );
-    if (actual.some((value) => value != null))
-      series.push({
-        name: "Actual",
-        type: "line",
-        data: actual,
-        symbol: "none",
-        lineStyle: { color: "#263a32", width: 2 },
-      });
-    const baseline = times.map((time) =>
-      numericValue(firstByTime.get(time) || {}, "baseline", "seasonalNaive"),
-    );
-    if (baseline.some((value) => value != null))
-      series.push({
-        name: "Seasonal baseline",
-        type: "line",
-        data: baseline,
-        symbol: "none",
-        lineStyle: { color: "#9a816a", width: 1.5, type: "dashed" },
-      });
-    [...byModel.entries()].forEach(([model, values], index) => {
-      if (["baseline", "seasonal_naive"].includes(model.toLowerCase())) return;
-      series.push({
-        name: modelLabel(model),
-        type: "line",
-        data: times.map((time) =>
-          numericValue(
-            values.get(time) || {},
-            "prediction",
-            "median",
-            "forecast",
-          ),
-        ),
-        symbol: times.length < 80 ? "circle" : "none",
-        symbolSize: 4,
-        lineStyle: {
-          color: seriesColours[index % seriesColours.length],
-          width: 2,
-        },
-        itemStyle: { color: seriesColours[index % seriesColours.length] },
-      });
-    });
-    return {
-      tooltip: {
-        trigger: "axis",
-        valueFormatter: (value: unknown) =>
-          `${number(typeof value === "number" ? value : null, 1)} kWh`,
-      },
-      legend: {
-        type: "scroll",
-        top: 0,
-        data: series
-          .map((item) => String(item.name))
-          .filter((name) => name !== "Interval lower"),
-        textStyle: { color: "#52645c" },
-      },
-      grid: { left: 68, right: 24, top: 54, bottom: 74 },
-      xAxis: {
-        type: "category",
-        data: times,
-        axisLabel: {
-          color: "#607069",
-          hideOverlap: true,
-          formatter: shortUtcTick,
-        },
-        name: "Target time (UTC)",
-        nameLocation: "middle",
-        nameGap: 52,
-      },
-      yAxis: {
-        type: "value",
-        name: "kWh",
-        scale: true,
-        axisLabel: { color: "#607069" },
-        splitLine: { lineStyle: { color: "#e4e9e2" } },
-      },
-      dataZoom:
-        times.length > 48
-          ? [{ type: "inside" }, { type: "slider", bottom: 18, height: 18 }]
-          : [],
-      series,
-    };
-  }, [filteredPredictions]);
+  const forecastPoints = useMemo(
+    () =>
+      filteredPredictions.map((row) => ({
+        time: targetTime(row),
+        model: modelKey(row),
+        actual: numericValue(row, "actual", "observed"),
+        baseline: numericValue(row, "baseline", "seasonalNaive"),
+        prediction: numericValue(row, "prediction", "median", "forecast"),
+        lower: numericValue(row, "lower", "q10", "lowerBound"),
+        upper: numericValue(row, "upper", "q90", "upperBound"),
+      })),
+    [filteredPredictions],
+  );
 
   const metricSummary = useMemo(() => {
     const summaryRows = metricRows.filter((row) => {
@@ -949,9 +830,9 @@ export default function ForecastsClient() {
       ({ row }) => modelKey(row) === "seasonal_naive",
     );
     const baselineMae = best
-      ? numericValue(best.row, "baselineMae", "baseline_mae") ??
+      ? (numericValue(best.row, "baselineMae", "baseline_mae") ??
         baselineRow?.mae ??
-        null
+        null)
       : null;
     const coverage = best
       ? numericValue(best.row, "coverage", "intervalCoverage")
@@ -964,6 +845,9 @@ export default function ForecastsClient() {
     return {
       rows: filteredMetrics.length,
       models: new Set(filteredMetrics.map(modelKey)).size,
+      sampleCount: best
+        ? numericValue(best.row, "n", "count", "observations", "points")
+        : null,
       bestModel: best ? modelKey(best.row) : "",
       bestMae: best?.mae ?? null,
       baselineMae,
@@ -1012,6 +896,7 @@ export default function ForecastsClient() {
           data: trainingRows.map((row) => numericValue(row, "actual")),
           symbol: "none",
           lineStyle: { color: "#263a32", width: 1.5 },
+          itemStyle: { color: "#263a32" },
         },
         {
           name: "One-step fitted",
@@ -1019,6 +904,7 @@ export default function ForecastsClient() {
           data: trainingRows.map((row) => numericValue(row, "fitted")),
           symbol: "none",
           lineStyle: { color: "#3f7eaa", width: 1 },
+          itemStyle: { color: "#3f7eaa" },
         },
         {
           name: "Dynamic fitted",
@@ -1026,6 +912,7 @@ export default function ForecastsClient() {
           data: trainingRows.map((row) => numericValue(row, "dynamic")),
           symbol: "none",
           lineStyle: { color: "#d4774d", width: 1.5, type: "dashed" },
+          itemStyle: { color: "#d4774d" },
         },
       ],
     }),
@@ -1086,8 +973,9 @@ export default function ForecastsClient() {
           ),
           symbol: "none",
           lineStyle: { color: "#263a32", width: 2 },
+          itemStyle: { color: "#263a32" },
         },
-        ...[...byModel.entries()].map(([model, values], index) => ({
+        ...[...byModel.entries()].map(([model, values]) => ({
           name: modelLabel(model),
           type: "line",
           data: times.map((time) =>
@@ -1095,8 +983,9 @@ export default function ForecastsClient() {
           ),
           symbol: "circle",
           symbolSize: 4,
+          itemStyle: { color: modelColour(model).line },
           lineStyle: {
-            color: seriesColours[index % seriesColours.length],
+            color: modelColour(model).line,
             width: 1.7,
             type: model.toLowerCase().includes("naive") ? "dashed" : "solid",
           },
@@ -1301,7 +1190,8 @@ export default function ForecastsClient() {
   return (
     <AnalysisShell
       title="Forecasts & evaluation"
-      description="Can we predict tomorrow’s electricity use? Compare saved forecasts with actual outcomes, then explore the evidence behind each model."
+      description="Compare saved forecasts with actual demand and inspect the evidence behind each model."
+      compact
     >
       <section
         className={styles.selectorPanel}
@@ -1333,21 +1223,56 @@ export default function ForecastsClient() {
               ))}
             </Select>
           </label>
-          <button
-            type="button"
-            className={styles.experimentButton}
-            onClick={() => experimentDialogRef.current?.showModal()}
-          >
-            <Settings2 size={15} aria-hidden="true" /> Experiment settings
-          </button>
+          {customJobsEnabled ? (
+            <button
+              type="button"
+              className={styles.experimentButton}
+              onClick={() => experimentDialogRef.current?.showModal()}
+            >
+              <Settings2 size={15} aria-hidden="true" /> Experiment settings
+            </button>
+          ) : (
+            <HelpPanel label="Run experiments locally">
+              <p>
+                Custom runs are disabled on this deployment. Saved results and
+                downloads remain available.
+              </p>
+              <p>
+                A local installation supports bounded evaluation and SARIMAX
+                jobs, with progress reporting and cancellation.
+              </p>
+              <a href="https://github.com/TaoM29/norwegian-energy-dashboard/blob/main/docs/RELEASE.md">
+                Local setup instructions →
+              </a>
+            </HelpPanel>
+          )}
         </div>
       </section>
 
+      {listError && (
+        <section className="analysis-panel">
+          <p className={styles.error} role="alert">
+            {listError}
+          </p>
+          <button
+            type="button"
+            onClick={() => setListRetry((value) => value + 1)}
+          >
+            Retry results
+          </button>
+        </section>
+      )}
       {error && (
         <section className="analysis-panel">
           <p className={styles.error} role="alert">
             {error}
           </p>
+          <button
+            type="button"
+            onClick={() => setDetailRetry((value) => value + 1)}
+          >
+            Retry result
+          </button>
         </section>
       )}
       {loading && (
@@ -1355,12 +1280,13 @@ export default function ForecastsClient() {
           Loading stored forecast result…
         </p>
       )}
-      {!loading && !error && !detail && (
+      {!loading && !error && !listError && !detail && (
         <section className="analysis-panel">
           <h2>No prepared result is available</h2>
           <p>
-            Start a bounded evaluation or SARIMAX job below. Completed jobs
-            create immutable results that can be revisited from this selector.
+            {customJobsEnabled
+              ? "Open Experiment settings to run an evaluation or SARIMAX job. Completed jobs appear here as saved results."
+              : "No saved forecast has been published on this deployment yet. Use a local installation to run an experiment."}
           </p>
         </section>
       )}
@@ -1380,10 +1306,22 @@ export default function ForecastsClient() {
                   should be read together with interval width in Metric details.
                 </HelpTip>
               </div>
-              <span>
-                Retrospective · not operational
-              </span>
+              <span>Retrospective · not operational</span>
             </div>
+            <p className={styles.summaryScope}>
+              {detail.kind === "evaluation"
+                ? `All ${availableAreas.length} saved areas · ${view.split.replaceAll("_", " ")}`
+                : "Rolling-origin development evaluation"}
+              {detail.kind === "evaluation" &&
+              ["holdout", "matched_holdout"].includes(view.split) &&
+              typeof asObject(detail.coverage).matchedOrigins === "number"
+                ? ` · ${asObject(detail.coverage).matchedOrigins} matched area-origins`
+                : ""}
+              {metricSummary.sampleCount != null
+                ? ` · ${number(metricSummary.sampleCount, 0)} target observations per model`
+                : ""}
+              . Area, dates and origin affect the chart only.
+            </p>
             <div className={styles.evidenceSummaryGrid}>
               <div>
                 <span>Average error (MAE)</span>
@@ -1411,9 +1349,7 @@ export default function ForecastsClient() {
                       ? "Reference model"
                       : `${number(Math.abs(maeChange), 1)}% ${maeChange >= 0 ? "lower" : "higher"} MAE`}
                 </strong>
-                <small>
-                  The seasonal pattern repeats demand from one week earlier
-                </small>
+                <small>Weekly seasonal reference</small>
               </div>
               <div>
                 <span>Outcomes inside interval</span>
@@ -1426,7 +1362,7 @@ export default function ForecastsClient() {
                   {nominalCoverage == null
                     ? "No nominal target saved"
                     : metricSummary.bestModel
-                      ? `${number(nominalCoverage, 1)}% nominal · ${modelLabel(metricSummary.bestModel)}`
+                      ? `${number(nominalCoverage, 1)}% nominal${actualCoverage != null && actualCoverage < nominalCoverage ? " · Below target" : ""} · ${modelLabel(metricSummary.bestModel)}`
                       : `${number(nominalCoverage, 1)}% nominal`}
                 </small>
               </div>
@@ -1440,101 +1376,6 @@ export default function ForecastsClient() {
               drawing conclusions.
             </p>
           )}
-
-          <form
-            className={`analysis-controls ${styles.resultFilters}`}
-            onSubmit={(event) => event.preventDefault()}
-            aria-label="Stored result filters"
-          >
-            <label>
-              Area
-              <Select
-                aria-label="Forecast price area"
-                value={view.area}
-                onChange={(event) => updateView({ area: event.target.value })}
-              >
-                {availableAreas.map((area) => (
-                  <option key={area}>{area}</option>
-                ))}
-              </Select>
-            </label>
-            <DateRangePicker
-              label="Target dates"
-              value={{ start: view.start, end: view.end }}
-              onChange={(range: DateRange) => updateView(range)}
-              min={availableTargetDates[0]}
-              max={availableTargetDates.at(-1)}
-              availableDates={availableTargetDates}
-              applyLabel="Apply dates"
-            />
-            {availableSplits.length > 0 && (
-              <label>
-                Evaluation cohort
-                <Select
-                  aria-label="Evaluation cohort"
-                  value={
-                    availableSplits.includes(view.split)
-                      ? view.split
-                      : availableSplits[0]
-                  }
-                  onChange={(event) =>
-                    updateView({ split: event.target.value })
-                  }
-                >
-                  {availableSplits.map((split) => (
-                    <option key={split} value={split}>
-                      {split === "matched_holdout" || split === "holdout"
-                        ? "Matched final holdout (untouched)"
-                        : split === "validation"
-                          ? "Validation / tuning"
-                          : split.replaceAll("_", " ")}
-                    </option>
-                  ))}
-                </Select>
-              </label>
-            )}
-            {availableOrigins.length > 0 && (
-              <label>
-                Matched forecast origin
-                <Select
-                  aria-label="Matched forecast origin"
-                  value={
-                    availableOrigins.includes(view.origin)
-                      ? view.origin
-                      : availableOrigins.at(-1)
-                  }
-                  onChange={(event) =>
-                    updateView({ origin: event.target.value })
-                  }
-                >
-                  {availableOrigins.map((origin) => (
-                    <option key={origin} value={origin}>
-                      {formatDateTime(origin)}
-                    </option>
-                  ))}
-                </Select>
-              </label>
-            )}
-            <fieldset className={styles.inlineChecks}>
-              <legend>Models</legend>
-              {availableModels.map((model) => (
-                <label key={model}>
-                  <input
-                    type="checkbox"
-                    checked={view.models.includes(model)}
-                    onChange={(event) =>
-                      updateView({
-                        models: event.target.checked
-                          ? [...view.models, model]
-                          : view.models.filter((item) => item !== model),
-                      })
-                    }
-                  />{" "}
-                  {modelLabel(model)}
-                </label>
-              ))}
-            </fieldset>
-          </form>
 
           <section className={`analysis-panel ${styles.primaryChart}`}>
             <div className={styles.panelHeading}>
@@ -1550,33 +1391,129 @@ export default function ForecastsClient() {
                     : "Actual demand, baseline and model estimates"}
                 </h2>
               </div>
-              <span>
-                {view.area} · {summary?.horizon || 24} steps
-              </span>
-            </div>
-            <div className={styles.chartContext}>
-              {detail.kind === "sarimax" && (
+              <div className={styles.chartHeadingAside}>
                 <span>
-                  Future actuals are unavailable; compare the rolling backtest.
+                  {view.area} · {summary?.horizon || 24} steps
                 </span>
-              )}
-              <HelpTip label="Forecast uncertainty">
-                The shaded band is the selected model&apos;s stored predictive
-                interval. It is conditional on the fitted model; weather
-                uncertainty is included only when the artifact says so.
-              </HelpTip>
+                <HelpTip label="Forecast uncertainty">
+                  Choose which model's stored predictive interval to display.
+                  Intervals are conditional on the fitted model; weather
+                  uncertainty is included only when the artifact says so.
+                  Measured coverage describes the saved evaluation sample, not
+                  this single origin.
+                </HelpTip>
+              </div>
             </div>
-            <p className={styles.appliedScope}>
-              <strong>Applied to this chart:</strong> {view.area} · {view.start}{" "}
-              to {view.end}, inclusive · {view.models.length} model
-              {view.models.length === 1 ? "" : "s"}
-              {view.origin ? ` · origin ${formatDateTime(view.origin)}` : ""}.
-            </p>
+            <form
+              className={`analysis-controls ${styles.resultFilters}`}
+              onSubmit={(event) => event.preventDefault()}
+              aria-label="Stored result filters"
+            >
+              <label>
+                Area
+                <Select
+                  aria-label="Forecast price area"
+                  value={view.area}
+                  onChange={(event) => updateView({ area: event.target.value })}
+                >
+                  {availableAreas.map((area) => (
+                    <option key={area}>{area}</option>
+                  ))}
+                </Select>
+              </label>
+              <DateRangePicker
+                label="Target dates"
+                value={{ start: view.start, end: view.end }}
+                onChange={(range: DateRange) => updateView(range)}
+                min={availableTargetDates[0]}
+                max={availableTargetDates.at(-1)}
+                availableDates={availableTargetDates}
+                applyLabel="Apply dates"
+              />
+              {availableSplits.length > 0 && (
+                <label>
+                  Evaluation cohort
+                  <Select
+                    aria-label="Evaluation cohort"
+                    value={
+                      availableSplits.includes(view.split)
+                        ? view.split
+                        : availableSplits[0]
+                    }
+                    onChange={(event) =>
+                      updateView({ split: event.target.value })
+                    }
+                  >
+                    {availableSplits.map((split) => (
+                      <option key={split} value={split}>
+                        {split === "matched_holdout" || split === "holdout"
+                          ? "Matched final holdout (untouched)"
+                          : split === "validation"
+                            ? "Validation / tuning"
+                            : split.replaceAll("_", " ")}
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+              )}
+              {availableOrigins.length > 0 && (
+                <label>
+                  Matched forecast origin
+                  <Select
+                    aria-label="Matched forecast origin"
+                    value={
+                      availableOrigins.includes(view.origin)
+                        ? view.origin
+                        : availableOrigins.at(-1)
+                    }
+                    onChange={(event) =>
+                      updateView({ origin: event.target.value })
+                    }
+                  >
+                    {availableOrigins.map((origin) => (
+                      <option key={origin} value={origin}>
+                        {formatDateTime(origin)}
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+              )}
+              <fieldset className={styles.inlineChecks}>
+                <legend>Models</legend>
+                {availableModels.map((model) => (
+                  <label key={model}>
+                    <input
+                      type="checkbox"
+                      checked={view.models.includes(model)}
+                      onChange={(event) =>
+                        updateView({
+                          models: event.target.checked
+                            ? [...view.models, model]
+                            : view.models.filter((item) => item !== model),
+                        })
+                      }
+                    />{" "}
+                    {modelLabel(model)}
+                  </label>
+                ))}
+              </fieldset>
+            </form>
+
+            {detail.kind === "sarimax" && (
+              <p className={styles.chartContext}>
+                Future actuals are unavailable; compare the rolling backtest.
+              </p>
+            )}
             {filteredPredictions.length ? (
-              <AnalysisChart
-                option={chartOption}
+              <ForecastChart
+                key={detail.id}
+                points={forecastPoints}
+                defaultIntervalModel={metricSummary.bestModel}
+                nominalCoverage={
+                  detail.kind === "sarimax" ? 95 : nominalCoverage
+                }
+                modelLabel={modelLabel}
                 label={`${detail.title} ${view.area} ${view.split} forecast`}
-                height={440}
                 exports={
                   <>
                     <button
@@ -1621,6 +1558,12 @@ export default function ForecastsClient() {
                 No forecast rows match these filters.
               </p>
             )}
+            <p className={styles.appliedScope}>
+              <strong>Applied to this chart:</strong> {view.area} · {view.start}{" "}
+              to {view.end}, inclusive · {view.models.length} model
+              {view.models.length === 1 ? "" : "s"}
+              {view.origin ? ` · origin ${formatDateTime(view.origin)}` : ""}.
+            </p>
           </section>
 
           <details className={styles.detailDisclosure}>
@@ -1636,7 +1579,9 @@ export default function ForecastsClient() {
                 <div>
                   <Database size={17} aria-hidden="true" />
                   <span>Source</span>
-                  <strong>{String(source || "Stored versioned artifact")}</strong>
+                  <strong>
+                    {String(source || "Stored versioned artifact")}
+                  </strong>
                 </div>
                 <div>
                   <Clock3 size={17} aria-hidden="true" />
@@ -1699,17 +1644,17 @@ export default function ForecastsClient() {
                 <small>{number(numericValue(detail, "aic"), 1)} AIC</small>
               </summary>
               <div className={styles.disclosureBody}>
-              <h2>Actual, fitted and dynamic training path</h2>
-              <p>
-                One-step fitted values use preceding actuals. After the
-                configured dynamic start, the dynamic path recursively uses
-                prior predictions. Both are descriptive in-sample diagnostics.
-              </p>
-              <AnalysisChart
-                option={trainingOption}
-                label={`${detail.title} in-sample actual fitted dynamic`}
-                height={350}
-              />
+                <h2>Actual, fitted and dynamic training path</h2>
+                <p>
+                  One-step fitted values use preceding actuals. After the
+                  configured dynamic start, the dynamic path recursively uses
+                  prior predictions. Both are descriptive in-sample diagnostics.
+                </p>
+                <AnalysisChart
+                  option={trainingOption}
+                  label={`${detail.title} in-sample actual fitted dynamic`}
+                  height={350}
+                />
               </div>
             </details>
           )}
@@ -1721,17 +1666,17 @@ export default function ForecastsClient() {
                 <small>{detail.backtest?.metrics?.length || 0} models</small>
               </summary>
               <div className={styles.disclosureBody}>
-              <h2>Latest matched backtest origin</h2>
-              <p>
-                This custom backtest is a development-period diagnostic, not the
-                untouched benchmark holdout. Every displayed model uses the same
-                latest origin and target hours.
-              </p>
-              <AnalysisChart
-                option={backtestOption}
-                label={`${detail.title} latest rolling backtest`}
-                height={350}
-              />
+                <h2>Latest matched backtest origin</h2>
+                <p>
+                  This custom backtest is a development-period diagnostic, not
+                  the untouched benchmark holdout. Every displayed model uses
+                  the same latest origin and target hours.
+                </p>
+                <AnalysisChart
+                  option={backtestOption}
+                  label={`${detail.title} latest rolling backtest`}
+                  height={350}
+                />
               </div>
             </details>
           )}
@@ -1744,94 +1689,107 @@ export default function ForecastsClient() {
               </small>
             </summary>
             <div className={styles.disclosureBody}>
-            <div className={styles.panelHeading}>
-              <div>
-                <span className={styles.sectionKicker}>
-                  {detail.kind === "sarimax"
-                    ? "Rolling-origin development metrics"
-                    : ["holdout", "matched_holdout"].includes(view.split)
-                      ? "Untouched final holdout"
-                      : "Model development split"}
+              <div className={styles.panelHeading}>
+                <div>
+                  <span className={styles.sectionKicker}>
+                    {detail.kind === "sarimax"
+                      ? "Rolling-origin development metrics"
+                      : ["holdout", "matched_holdout"].includes(view.split)
+                        ? "Untouched final holdout"
+                        : "Model development split"}
+                  </span>
+                  <h2>Accuracy and interval quality</h2>
+                  {detail.kind === "evaluation" && (
+                    <p>
+                      Metrics cover all saved matched holdout origins and areas.
+                      Area, date and origin filters above apply to the forecast
+                      chart; use the Area breakdown for regional scores.
+                    </p>
+                  )}
+                </div>
+                <span>
+                  {metricSummary.rows} metric rows · {metricSummary.models}{" "}
+                  models
                 </span>
-                <h2>Accuracy and interval quality</h2>
-                {detail.kind === "evaluation" && (
-                  <p>
-                    Metrics cover all saved matched holdout origins and areas.
-                    Area, date and origin filters above apply to the forecast
-                    chart; use the Area breakdown for regional scores.
-                  </p>
-                )}
               </div>
-              <span>
-                {metricSummary.rows} metric rows · {metricSummary.models} models
-              </span>
-            </div>
-            <HelpTip label="Metric definitions">
-              MAE and RMSE use kWh. Coverage is the share of outcomes inside the
-              interval; width measures sharpness, and pinball loss evaluates
-              quantiles. MASE scales error by in-sample seasonal change. Compare
-              models on the same targets rather than treating MASE below one as
-              proof of improvement.
-            </HelpTip>
-            <label className={styles.metricBreakdownControl}>
-              Metric breakdown
-              <Select
-                aria-label="Metric breakdown"
-                value={view.dimension}
-                onChange={(event) =>
-                  updateView({ dimension: event.target.value })
-                }
-              >
-                <option value="overall">Overall</option>
-                <option value="area">Area</option>
-                <option value="season">Season</option>
-                <option value="horizon">Horizon</option>
-                <option value="isPeakPeriod">Peak period</option>
-              </Select>
-            </label>
-            <p className={styles.appliedScope}>
-              <strong>Applied to these metrics:</strong>{" "}
-              {detail.kind === "evaluation" &&
-                `${view.split.replaceAll("_", " ")} cohort, `}
-              {view.models.length} selected model
-              {view.models.length === 1 ? "" : "s"}, and{" "}
-              {view.dimension === "overall"
-                ? "overall breakdown"
-                : `${view.dimension.replaceAll("isPeakPeriod", "peak period")} breakdown`}
-              . Target dates and forecast origin apply only to the chart. Area
-              applies when the saved metric rows are area-scoped; the Area
-              breakdown compares all regions.
-            </p>
-            <MetricTable rows={filteredMetrics} dimension={view.dimension} />
-            <div className={styles.tableExport}>
-              <ExportMenu label="Export metrics">
-              <button
-                type="button"
-                disabled={!filteredMetrics.length}
-                onClick={() =>
-                  downloadCsv(
-                    `metrics-${detail.id}-${view.split}-${view.dimension}.csv`,
-                    csvRows(filteredMetrics),
-                  )
-                }
-              >
-                Download displayed metrics CSV
-              </button>
-              </ExportMenu>
-            </div>
-            {failures.length > 0 && (
-              <details className={styles.failures}>
-                <summary>
-                  {failures.length} recorded fold failure
-                  {failures.length === 1 ? "" : "s"}
-                </summary>
+              <HelpTip label="Metric definitions">
+                MAE and RMSE use kWh. Coverage is the share of outcomes inside
+                the interval; width measures sharpness, and pinball loss
+                evaluates quantiles. MASE scales error by in-sample seasonal
+                change. Compare models on the same targets rather than treating
+                MASE below one as proof of improvement.
+              </HelpTip>
+              <label className={styles.metricBreakdownControl}>
+                Metric breakdown
+                <Select
+                  aria-label="Metric breakdown"
+                  value={view.dimension}
+                  onChange={(event) =>
+                    updateView({ dimension: event.target.value })
+                  }
+                >
+                  <option value="overall">Overall</option>
+                  <option value="area">Area</option>
+                  <option value="season">Season</option>
+                  <option value="horizon">Horizon</option>
+                  <option value="isPeakPeriod">Peak period</option>
+                </Select>
+              </label>
+              <p className={styles.appliedScope}>
+                <strong>Applied to these metrics:</strong>{" "}
+                {detail.kind === "evaluation" &&
+                  `${view.split.replaceAll("_", " ")} cohort, `}
+                {view.models.length} selected model
+                {view.models.length === 1 ? "" : "s"}, and{" "}
+                {view.dimension === "overall"
+                  ? "overall breakdown"
+                  : `${view.dimension.replaceAll("isPeakPeriod", "peak period")} breakdown`}
+                . Target dates and forecast origin apply only to the chart. Area
+                applies when the saved metric rows are area-scoped; the Area
+                breakdown compares all regions.
+              </p>
+              <MetricTable rows={filteredMetrics} dimension={view.dimension} />
+              <details className={styles.allMetrics}>
+                <summary>All metrics</summary>
                 <p>
-                  Failures remain visible and are not silently removed from
-                  model comparisons.
+                  MAE, RMSE, interval width and quantile losses use kWh. MASE is
+                  unitless. Downloads retain every saved metric.
                 </p>
-                <pre>{JSON.stringify(failures, null, 2)}</pre>
+                <MetricTable
+                  rows={filteredMetrics}
+                  dimension={view.dimension}
+                  expanded
+                />
               </details>
-            )}
+              <div className={styles.tableExport}>
+                <ExportMenu label="Export metrics">
+                  <button
+                    type="button"
+                    disabled={!filteredMetrics.length}
+                    onClick={() =>
+                      downloadCsv(
+                        `metrics-${detail.id}-${view.split}-${view.dimension}.csv`,
+                        csvRows(filteredMetrics),
+                      )
+                    }
+                  >
+                    Download displayed metrics CSV
+                  </button>
+                </ExportMenu>
+              </div>
+              {failures.length > 0 && (
+                <details className={styles.failures}>
+                  <summary>
+                    {failures.length} recorded fold failure
+                    {failures.length === 1 ? "" : "s"}
+                  </summary>
+                  <p>
+                    Failures remain visible and are not silently removed from
+                    model comparisons.
+                  </p>
+                  <pre>{JSON.stringify(failures, null, 2)}</pre>
+                </details>
+              )}
             </div>
           </details>
 
@@ -1841,19 +1799,19 @@ export default function ForecastsClient() {
               <small>Artifact design and configuration</small>
             </summary>
             <div className={styles.disclosureBody}>
-            <p>
-              Prepared household-demand benchmarks use all five price areas, a
-              24-hour target, baseline, Ridge, gradient boosting and SARIMAX on
-              matched origins. Validation supports tuning; the final holdout
-              remains separate. Features and lags are defined relative to the
-              saved issue time and last available observations.
-            </p>
-            <details>
-              <summary>Artifact metadata</summary>
-              <pre>
-                {JSON.stringify({ metadata, config: detail.config }, null, 2)}
-              </pre>
-            </details>
+              <p>
+                Prepared household-demand benchmarks use all five price areas, a
+                24-hour target, baseline, Ridge, gradient boosting and SARIMAX
+                on matched origins. Validation supports tuning; the final
+                holdout remains separate. Features and lags are defined relative
+                to the saved issue time and last available observations.
+              </p>
+              <details>
+                <summary>Artifact metadata</summary>
+                <pre>
+                  {JSON.stringify({ metadata, config: detail.config }, null, 2)}
+                </pre>
+              </details>
             </div>
           </details>
         </>
@@ -1888,7 +1846,9 @@ export default function ForecastsClient() {
             <summary>
               <span>Job history</span>
               <small>
-                {selectedJob ? `${selectedJob.kind} · ${selectedJob.status}` : `${jobs.length} saved jobs`}
+                {selectedJob
+                  ? `${selectedJob.kind} · ${selectedJob.status}`
+                  : `${jobs.length} saved jobs`}
               </small>
             </summary>
             <div>
@@ -1902,7 +1862,8 @@ export default function ForecastsClient() {
                   <option value="">No job selected</option>
                   {jobs.map((job) => (
                     <option value={job.id} key={job.id}>
-                      {job.kind} · {job.status} · {formatDateTime(job.createdAt)}
+                      {job.kind} · {job.status} ·{" "}
+                      {formatDateTime(job.createdAt)}
                     </option>
                   ))}
                 </Select>
@@ -1951,7 +1912,9 @@ export default function ForecastsClient() {
                     </p>
                   )}
                   <details>
-                    <summary>Submitted configuration and enforced limits</summary>
+                    <summary>
+                      Submitted configuration and enforced limits
+                    </summary>
                     <pre>
                       {JSON.stringify(
                         {
@@ -1984,7 +1947,9 @@ export default function ForecastsClient() {
                     setExperimentKind(event.target.value as Job["kind"])
                   }
                 >
-                  <option value="evaluation">Household-demand evaluation</option>
+                  <option value="evaluation">
+                    Household-demand evaluation
+                  </option>
                   <option value="sarimax">Custom SARIMAX</option>
                 </Select>
               </label>
@@ -2020,7 +1985,15 @@ export default function ForecastsClient() {
   );
 }
 
-function MetricTable({ rows, dimension }: { rows: Json[]; dimension: string }) {
+function MetricTable({
+  rows,
+  dimension,
+  expanded = false,
+}: {
+  rows: Json[];
+  dimension: string;
+  expanded?: boolean;
+}) {
   if (!rows.length)
     return (
       <p className={styles.empty}>
@@ -2028,24 +2001,45 @@ function MetricTable({ rows, dimension }: { rows: Json[]; dimension: string }) {
       </p>
     );
   return (
-    <div className={styles.tableWrap}>
+    <div
+      className={styles.tableWrap}
+      role="region"
+      aria-label={expanded ? "All forecast metrics" : "Forecast comparison"}
+      tabIndex={0}
+    >
       <table>
+        <caption className={styles.tableCaption}>
+          {expanded ? "Complete saved metrics" : "Model comparison"} · errors in
+          kWh
+        </caption>
         <thead>
           <tr>
-            <th>Model</th>
+            <th scope="col">Model</th>
             {dimension !== "overall" && (
-              <th>{dimension === "isPeakPeriod" ? "Period" : dimension}</th>
+              <th scope="col">
+                {dimension === "isPeakPeriod" ? "Period" : dimension}
+              </th>
             )}
-            <th>MAE</th>
-            <th>RMSE</th>
-            <th>MASE</th>
-            <th>Baseline MAE</th>
-            <th>Coverage</th>
-            <th>Mean width</th>
-            <th>Pinball lower</th>
-            <th>Pinball median</th>
-            <th>Pinball upper</th>
-            <th>n</th>
+            <th scope="col">MAE</th>
+            {expanded ? (
+              <>
+                <th scope="col">RMSE</th>
+                <th scope="col">MASE</th>
+                <th scope="col">Baseline MAE</th>
+              </>
+            ) : (
+              <th scope="col">MAE vs baseline</th>
+            )}
+            <th scope="col">Coverage</th>
+            {expanded && (
+              <>
+                <th scope="col">Mean width</th>
+                <th scope="col">Pinball lower</th>
+                <th scope="col">Pinball median</th>
+                <th scope="col">Pinball upper</th>
+              </>
+            )}
+            <th scope="col">Observations</th>
           </tr>
         </thead>
         <tbody>
@@ -2061,51 +2055,73 @@ function MetricTable({ rows, dimension }: { rows: Json[]; dimension: string }) {
                   "All";
             const coverage = numericValue(row, "coverage", "intervalCoverage");
             const legacyPinball = numericValue(row, "pinball", "pinballLoss");
+            const mae = numericValue(row, "mae", "MAE");
+            const baseline = numericValue(row, "baselineMae", "baseline_mae");
+            const change =
+              mae != null && baseline != null && baseline > 0
+                ? ((mae - baseline) / baseline) * 100
+                : null;
             return (
               <tr key={`${modelKey(row)}-${dimensionValue}-${index}`}>
-                <th>{modelLabel(modelKey(row))}</th>
+                <th scope="row">{modelLabel(modelKey(row))}</th>
                 {dimension !== "overall" && <td>{dimensionValue}</td>}
-                <td>{number(numericValue(row, "mae", "MAE"), 2)}</td>
-                <td>{number(numericValue(row, "rmse", "RMSE"), 2)}</td>
-                <td>{number(numericValue(row, "mase", "MASE"), 3)}</td>
-                <td>
-                  {number(numericValue(row, "baselineMae", "baseline_mae"), 2)}
-                </td>
+                <td>{number(mae, 2)}</td>
+                {expanded ? (
+                  <>
+                    <td>{number(numericValue(row, "rmse", "RMSE"), 2)}</td>
+                    <td>{number(numericValue(row, "mase", "MASE"), 3)}</td>
+                    <td>{number(baseline, 2)}</td>
+                  </>
+                ) : (
+                  <td>
+                    {modelKey(row) === "seasonal_naive"
+                      ? "Reference"
+                      : change == null
+                        ? "—"
+                        : change === 0
+                          ? "Same MAE"
+                          : `${number(Math.abs(change), 1)}% ${change < 0 ? "lower" : "higher"}`}
+                  </td>
+                )}
                 <td>
                   {coverage == null
                     ? "—"
                     : `${number(coverage * (coverage <= 1 ? 100 : 1), 1)}%`}
                 </td>
-                <td>
-                  {number(
-                    numericValue(
-                      row,
-                      "width",
-                      "meanWidth",
-                      "intervalWidth",
-                      "meanIntervalWidth",
-                    ),
-                    2,
-                  )}
-                </td>
-                <td>
-                  {number(
-                    numericValue(row, "pinballLower") ?? legacyPinball,
-                    3,
-                  )}
-                </td>
-                <td>
-                  {number(
-                    numericValue(row, "pinballMedian") ?? legacyPinball,
-                    3,
-                  )}
-                </td>
-                <td>
-                  {number(
-                    numericValue(row, "pinballUpper") ?? legacyPinball,
-                    3,
-                  )}
-                </td>
+                {expanded && (
+                  <>
+                    <td>
+                      {number(
+                        numericValue(
+                          row,
+                          "width",
+                          "meanWidth",
+                          "intervalWidth",
+                          "meanIntervalWidth",
+                        ),
+                        2,
+                      )}
+                    </td>
+                    <td>
+                      {number(
+                        numericValue(row, "pinballLower") ?? legacyPinball,
+                        3,
+                      )}
+                    </td>
+                    <td>
+                      {number(
+                        numericValue(row, "pinballMedian") ?? legacyPinball,
+                        3,
+                      )}
+                    </td>
+                    <td>
+                      {number(
+                        numericValue(row, "pinballUpper") ?? legacyPinball,
+                        3,
+                      )}
+                    </td>
+                  </>
+                )}
                 <td>
                   {number(
                     numericValue(row, "n", "count", "observations", "points"),
@@ -2350,8 +2366,7 @@ function SarimaxForm({
   const forecastWindowEnd = new Date(
     issueTime.getTime() + Math.max(0, value.horizon) * targetStepMs,
   );
-  const horizonPresets =
-    value.frequency === "h" ? [24, 72, 168] : [7, 30, 60];
+  const horizonPresets = value.frequency === "h" ? [24, 72, 168] : [7, 30, 60];
   return (
     <form className={styles.jobForm} onSubmit={onSubmit}>
       <div className={styles.formTitle}>
@@ -2453,7 +2468,9 @@ function SarimaxForm({
         <ol className={styles.forecastFlow}>
           <li>
             <span>1 · Train</span>
-            <strong>{value.start} – {trainingEnd}</strong>
+            <strong>
+              {value.start} – {trainingEnd}
+            </strong>
             <small>Inclusive observed period</small>
           </li>
           <li>
@@ -2742,11 +2759,11 @@ function SarimaxForm({
 
       <HelpPanel label="SARIMAX limits and timing">
         <p>
-          Training uses 2–366 complete UTC days. Hourly horizons stop at 168
-          and daily horizons at 60. The issue time is the exclusive training
-          end plus the energy availability delay; the model bridges that gap
-          before returning the requested targets. Daily delays use complete
-          days. Orders must remain within the 64-state budget (current order:{" "}
+          Training uses 2–366 complete UTC days. Hourly horizons stop at 168 and
+          daily horizons at 60. The issue time is the exclusive training end
+          plus the energy availability delay; the model bridges that gap before
+          returning the requested targets. Daily delays use complete days.
+          Orders must remain within the 64-state budget (current order:{" "}
           {sarimaxStateCount(value)}).
         </p>
       </HelpPanel>
