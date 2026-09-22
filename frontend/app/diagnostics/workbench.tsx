@@ -22,10 +22,11 @@ import { downloadCsv, downloadJson } from "@/lib/download";
 import { writeDashboardUrl } from "@/lib/navigation-state";
 import SensitivityView from "./sensitivity-view";
 import DemandAnomaliesView from "./demand-anomalies-view";
+import DemandChangesView from "./demand-changes-view";
 import "./diagnostics.css";
 
-type View = "correlation" | "decomposition" | "quality" | "sensitivity" | "demand_anomalies";
-const viewOptions: View[] = ["correlation", "decomposition", "quality", "sensitivity", "demand_anomalies"];
+type View = "correlation" | "decomposition" | "quality" | "sensitivity" | "demand_anomalies" | "demand_changes";
+const viewOptions: View[] = ["correlation", "decomposition", "quality", "sensitivity", "demand_anomalies", "demand_changes"];
 type Row = { time: string } & Record<string, number | boolean | null | string>;
 type Metadata = {
   analyzedPoints: number;
@@ -157,6 +158,9 @@ function dashboardParams(filters: DiagnosticsFilters, candidate = "") {
     const params = new URLSearchParams({ view: "demand_anomalies", area: filters.area });
     if (candidate) params.set("candidate", candidate);
     return params;
+  }
+  if (filters.view === "demand_changes") {
+    return new URLSearchParams({ view: "demand_changes" });
   }
   const params = new URLSearchParams({
     view: filters.view,
@@ -533,7 +537,7 @@ export default function DiagnosticsWorkbench() {
 
   const load = useCallback(
     async (filters: DiagnosticsFilters, replaceUrl = false) => {
-      if (filters.view === "sensitivity" || filters.view === "demand_anomalies") return;
+      if (filters.view === "sensitivity" || filters.view === "demand_anomalies" || filters.view === "demand_changes") return;
       if (!filters.start || !filters.end) return;
       if (filters.end < filters.start) {
         setError("The end date must be on or after the start date.");
@@ -601,7 +605,7 @@ export default function DiagnosticsWorkbench() {
   useEffect(() => {
     if (!pendingRestore) return;
     setPendingRestore(null);
-    if (pendingRestore.view === "sensitivity" || pendingRestore.view === "demand_anomalies") return;
+    if (pendingRestore.view === "sensitivity" || pendingRestore.view === "demand_anomalies" || pendingRestore.view === "demand_changes") return;
     void load(pendingRestore, true);
   }, [load, pendingRestore]); // Initial dates and browser history restore the complete view.
 
@@ -673,7 +677,9 @@ export default function DiagnosticsWorkbench() {
                   ? "Unusual observations"
                   : item === "sensitivity"
                     ? "Demand sensitivity"
-                    : "Demand anomalies"}
+                    : item === "demand_anomalies"
+                      ? "Demand anomalies"
+                      : "Demand changes"}
           </button>
         ))}
       </div>
@@ -687,6 +693,8 @@ export default function DiagnosticsWorkbench() {
             );
           }}
         />
+      ) : view === "demand_changes" ? (
+        <DemandChangesView />
       ) : view === "demand_anomalies" ? (
         <DemandAnomaliesView
           area={area}
