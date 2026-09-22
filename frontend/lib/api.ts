@@ -50,6 +50,13 @@ export function number(value: number | null | undefined, digits = 1) {
         value,
       );
 }
+export class ApiError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 export async function getJson<T>(
   url: string,
   signal?: AbortSignal,
@@ -57,10 +64,11 @@ export async function getJson<T>(
   const response = await fetch(url, { signal });
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    throw new Error(
+    throw new ApiError(
       typeof body?.detail === "string"
         ? body.detail
         : "The data could not be loaded. Check your dates and try again.",
+      response.status,
     );
   }
   return response.json();

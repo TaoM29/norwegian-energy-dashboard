@@ -252,7 +252,6 @@ export function ErrorExplorer({ metrics, predictions, failures, coverage, config
   return <section className={styles.panel} aria-labelledby="error-explorer-title">
     <div className={styles.heading}>
       <div>
-        <span className={styles.kicker}>{exploratory ? "Exploratory" : "Saved evaluation"} · fixed matched cohort</span>
         <h2 id="error-explorer-title">Forecast error explorer</h2>
       </div>
       <ExportMenu label="Export explorer">
@@ -260,7 +259,7 @@ export function ErrorExplorer({ metrics, predictions, failures, coverage, config
         <button type="button" disabled={!exported.length} onClick={() => downloadJson(`${filename}.json`, { resultId, view, measure: view === "horizon" ? measure : undefined, cohort: coverage, rows: exported })}>Displayed view JSON</button>
       </ExportMenu>
     </div>
-    <p className={styles.intro}>These saved metrics use the full matched evaluation cohort across all price areas, models and dates. Forecast chart filters do not change this report. Negative MAE minus baseline means lower error than the seasonal baseline; positive means higher error. Values are kWh per hourly target.</p>
+    <p className={styles.intro}>{exploratory ? "Exploratory" : "Saved"} matched metrics cover all areas, models and dates; chart filters do not change them. MAE differences are kWh per hourly target: negative favors the model over the seasonal baseline.</p>
     <div className={styles.cohort} aria-label="Evaluation cohort support">
       <div><span>Attempted area-origins</span><strong>{count(cohort.attemptedOrigins)}</strong></div>
       <div><span>Matched area-origins</span><strong>{count(cohort.matchedOrigins)}</strong></div>

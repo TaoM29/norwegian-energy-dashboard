@@ -58,6 +58,17 @@
   gap: 14px;
   align-items: end;
 }
+.methodLink {
+  align-self: center;
+  color: var(--accent);
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.methodLink:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
 .summaryScope {
   margin: 12px 0 0;
   max-width: 100%;
@@ -179,6 +190,31 @@
   border-bottom: 1px solid var(--border);
   border-radius: 0;
   box-shadow: none;
+}
+.chartOptions {
+  align-self: center;
+  min-width: 0;
+}
+.chartOptions[open] {
+  flex-basis: 100%;
+}
+.chartOptions > summary {
+  width: fit-content;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 650;
+}
+.chartOptions > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.chartOptionsBody {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  padding-top: 14px;
 }
 
 .detailDisclosure {

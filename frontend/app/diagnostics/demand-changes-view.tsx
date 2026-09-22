@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import type { EChartsCoreOption } from "echarts/core";
 
+import { StudyError } from "@/components/study-error";
 import AnalysisChart from "@/components/analysis-chart";
 import { ExportMenu } from "@/components/export-menu";
-import { getJson, number } from "@/lib/api";
+import { ApiError, getJson, number } from "@/lib/api";
 import { downloadCsv } from "@/lib/download";
 import "./demand-changes.css";
 
@@ -159,6 +160,7 @@ export default function DemandChangesView() {
   const [study, setStudy] = useState<Study | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [missing, setMissing] = useState(false);
   const [retry, setRetry] = useState(0);
   const [chart, setChart] = useState<"timeline" | "distribution">("timeline");
 
@@ -167,6 +169,7 @@ export default function DemandChangesView() {
     setLoading(true);
     setStudy(null);
     setError("");
+    setMissing(false);
     setChart("timeline");
     getJson<Study>(endpoint, controller.signal)
       .then((result) => {
@@ -178,7 +181,8 @@ export default function DemandChangesView() {
       .catch((problem: unknown) => {
         if (controller.signal.aborted) return;
         setStudy(null);
-        setError(problem instanceof Error ? problem.message : "No saved demand-change study is available.");
+        setMissing(problem instanceof ApiError && problem.status === 404 && /no saved/i.test(problem.message));
+      setError(problem instanceof Error ? problem.message : "No saved demand-change study is available.");
       })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
@@ -206,15 +210,14 @@ export default function DemandChangesView() {
 
   return <div className="demand-changes-view">
     <div className="demand-changes-intro">
-      <span className="demand-changes-eyebrow">Saved retrospective study</span>
-      <h2>Did household demand shift for weeks?</h2>
-      <p>NO1 household demand after calendar and temperature adjustment. Explore daily differences from the saved baseline.</p>
+
+      <h2>Persistent demand changes</h2>
+      <p>NO1 household demand after calendar and temperature adjustment. A saved retrospective study.</p>
     </div>
     {loading && <div className="diagnostics-state" role="status">Loading saved demand-change study…</div>}
-    {error && <div className="diagnostics-state diagnostics-error" role="alert">
-      <strong>Study unavailable</strong><span>{error}</span>
-      <div className="demand-changes-error-actions"><button type="button" onClick={() => setRetry((value) => value + 1)}>Retry</button></div>
-    </div>}
+    {error && <>
+      <StudyError message={error} missing={missing} onRetry={() => setRetry((value) => value + 1)} />
+    </>}
     {study?.status === "unavailable" && !loading && <div className="diagnostics-state" role="status">
       <strong>Saved study unavailable</strong><span>{study.reason || "The fixed NO1 study could not be evaluated with the saved inputs."}</span>
     </div>}

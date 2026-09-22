@@ -102,13 +102,11 @@ export function OverviewPeriodComparison({
     >
       <div className={styles.sectionHeading}>
         <div>
-          <span className="eyebrow">PUT THIS PERIOD IN CONTEXT</span>
           <h2 id="period-comparison-title">
-            What changed from the previous period?
+            Previous period comparison
           </h2>
           <p>
-            Two consecutive {days}-day windows in {area}. Displayed dates
-            include both endpoints; daily totals use UTC.
+            Two consecutive {days}-day windows · {area} · complete UTC days.
           </p>
         </div>
       </div>

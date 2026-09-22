@@ -206,13 +206,13 @@ test("exploratory reliability stays scoped to its fixed study cohort and older r
   await mockForecastApi(page, { studyA: true });
   await page.goto("/forecasts?result=result-a");
   const panel = page.getByRole("region", { name: "Reliability comparison" });
-  await expect(page.getByRole("heading", { name: "Forecast reliability across dates" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Reliability across dates" })).toBeVisible();
   await expect(panel).toContainText("-12.4");
   await expect(panel).toContainText("2 dates: -20.0 to +5.0");
   await expect(panel).toContainText("74.0%");
   await expect(page.getByText("219", { exact: true })).toBeVisible();
   await expect(page.getByText(/Missing scheduled dates: 2025-03-14/)).toBeVisible();
-  await expect(page.getByText(/All five areas and every matched study date are pooled here/)).toBeVisible();
+  await expect(page.getByText(/pools all five areas and matched dates/)).toBeVisible();
   await page.getByText("Support and residual dependence").click();
   const diagnostics = page.getByRole("region", { name: "Residual dependence diagnostics" });
   await expect(diagnostics).toContainText("0.25");
@@ -221,7 +221,7 @@ test("exploratory reliability stays scoped to its fixed study cohort and older r
   await expect(diagnostics).not.toContainText("0.25");
   await page.getByRole("combobox", { name: "Prepared forecast result" }).click();
   await page.getByRole("option", { name: /Result B/ }).click();
-  await expect(page.getByRole("heading", { name: "Forecast reliability across dates" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Reliability across dates" })).toHaveCount(0);
 });
 
 test("a failed result switch hides stale detail and retry restores the selected result", async ({
@@ -257,15 +257,15 @@ test("saved results remain readable if job history fails in public mode", async 
   await mockForecastApi(page, { failJobs: true });
   await page.goto("/forecasts?result=result-a");
   await expect(
-    page.getByRole("heading", { name: "Saved test summary" }),
+    page.getByRole("heading", { name: "All-area benchmark" }),
   ).toBeVisible();
   await expect(page.getByText("120 kWh", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Experiment settings" }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "Run experiments locally" }),
-  ).toBeVisible();
+    page.getByRole("link", { name: "Methods & local setup" }),
+  ).toHaveAttribute("href", "/methods#local-experiments");
 });
 
 test("forecast data keeps each model's stored interval bounds distinct", async ({
@@ -274,7 +274,7 @@ test("forecast data keeps each model's stored interval bounds distinct", async (
   await mockForecastApi(page);
   await page.goto("/forecasts?result=result-a");
   await expect(
-    page.getByRole("heading", { name: "Saved test summary" }),
+    page.getByRole("heading", { name: "All-area benchmark" }),
   ).toBeVisible();
   const intervalModel = page.getByRole("combobox", { name: "Interval model" });
   await expect(intervalModel).toHaveAttribute("data-value", "ridge");

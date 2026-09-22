@@ -92,8 +92,8 @@ async function mockApi(page: Page) {
 test("saved demand anomalies keep area and candidate URL state and distinguish coverage", async ({ page }) => {
   await mockApi(page);
   await page.goto("/diagnostics?view=demand_anomalies&area=NO1");
-  await expect(page.getByRole("tab", { name: "Demand anomalies" })).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByRole("heading", { name: "Is household demand unusual for its context?" })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Analysis" })).toHaveAttribute("data-value", "demand_anomalies");
+  await expect(page.getByRole("heading", { name: "Unusual household demand" })).toBeVisible();
   await expect(page.getByText("Fixture demonstration")).toBeVisible();
   await expect(page.locator(".demand-anomalies-summary").getByText("8,500", { exact: true })).toBeVisible();
   await expect(page.getByText("Unlabeled observational flags")).toBeVisible();
@@ -102,8 +102,13 @@ test("saved demand anomalies keep area and candidate URL state and distinguish c
   await expect(ranking.getByRole("row")).toHaveCount(21);
   await ranking.getByRole("button", { name: /^2\. 8 Jan 2025/ }).click();
   await expect(page).toHaveURL(/candidate=NO1-/);
+  const peerDays = page.locator("details.study-details").filter({ hasText: "Comparable observed days" });
+  await peerDays.locator(":scope > summary").click();
   await expect(page.getByText(/target Oslo date has 23 or 25 hours/)).toBeVisible();
   await page.goBack();
+  if (!(await peerDays.evaluate((element) => (element as HTMLDetailsElement).open))) {
+    await peerDays.locator(":scope > summary").click();
+  }
   await expect(page.getByRole("region", { name: "Comparable peer days" })).toContainText("2024-01-08");
   await page.getByText("Hourly peer and selected-day observations").click();
   await expect(page.getByRole("region", { name: "2024-01-08 hourly observations" }).getByRole("cell", { name: "110", exact: true })).toBeVisible();
@@ -130,18 +135,19 @@ test("saved demand anomalies keep area and candidate URL state and distinguish c
   await expect(page.getByText("Insufficient observed pairs")).toBeVisible();
   await page.goBack();
   await expect(page.getByRole("combobox", { name: "Demand anomalies price area" })).toContainText("NO1");
-  await page.getByRole("tab", { name: "Demand anomalies" }).focus();
-  await page.keyboard.press("ArrowLeft");
-  await expect(page.getByRole("tab", { name: "Demand sensitivity" })).toHaveAttribute("aria-selected", "true");
-  await page.keyboard.press("ArrowLeft");
-  await expect(page.getByRole("tab", { name: "Unusual observations" })).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("combobox", { name: "Analysis" }).click();
+  await page.getByRole("option", { name: "Demand sensitivity" }).click();
+  await expect(page.getByRole("combobox", { name: "Analysis" })).toHaveAttribute("data-value", "sensitivity");
+  await page.getByRole("combobox", { name: "Analysis" }).click();
+  await page.getByRole("option", { name: "Unusual observations" }).click();
+  await expect(page.getByRole("combobox", { name: "Analysis" })).toHaveAttribute("data-value", "quality");
 });
 
 test("invalid candidate recovers and mobile tables remain scrollable in both themes", async ({ page }) => {
   await mockApi(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/diagnostics?view=demand_anomalies&area=NO1&candidate=unknown");
-  await expect(page.getByRole("alert").filter({ hasText: "Study unavailable" })).toContainText("The requested candidate is not in the saved review list.");
+  await expect(page.getByRole("alert").filter({ hasText: "Couldn’t load this study" })).toContainText("The requested candidate is not in the saved review list.");
   await page.getByRole("button", { name: "Clear selected candidate" }).click();
   await expect(page.getByRole("region", { name: "Ranked demand anomaly candidates" })).toBeVisible();
   for (const theme of ["Light", "Dark"]) {

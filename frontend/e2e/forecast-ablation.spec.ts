@@ -101,7 +101,7 @@ test("feature ablation shows fixed-cohort variants, signed contrasts and missing
   await mockApi(page);
   await page.goto("/forecasts?result=ablation-study");
   const panel = page.getByRole("region", { name: "Feature ablation variant comparison" });
-  await expect(page.getByRole("heading", { name: "What each forecast input adds" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What each input adds" })).toBeVisible();
   await expect(panel.getByRole("row")).toHaveCount(4);
   await expect(panel.getByRole("row", { name: /Calendar only/ })).toContainText("20.0");
   await expect(panel.getByRole("row", { name: /Calendar \+ demand history/ })).toContainText("16.0");
@@ -125,13 +125,13 @@ test("feature ablation shows fixed-cohort variants, signed contrasts and missing
   await expect(page.getByRole("link", { name: "Download complete study JSON" })).toHaveAttribute("href", /ablation-study\/artifact$/);
   const chart = page.getByRole("region", { name: "Selected saved forecast" });
   await expect(chart).toContainText("Ridge · calendar + demand + weather");
-  expect(await page.getByRole("heading", { name: "What each forecast input adds" }).evaluate((element) => {
+  expect(await page.getByRole("heading", { name: "What each input adds" }).evaluate((element) => {
     const chart = document.querySelector('[aria-label="Selected saved forecast"]');
-    return chart ? Boolean(element.compareDocumentPosition(chart) & Node.DOCUMENT_POSITION_FOLLOWING) : false;
+    return chart ? Boolean(element.compareDocumentPosition(chart) & Node.DOCUMENT_POSITION_PRECEDING) : false;
   })).toBe(true);
   await page.getByRole("combobox", { name: "Prepared forecast result" }).click();
   await page.getByRole("option", { name: /Older result/ }).click();
-  await expect(page.getByRole("heading", { name: "What each forecast input adds" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "What each input adds" })).toHaveCount(0);
 });
 
 test("feature ablation tables stay keyboard scrollable on mobile in both themes", async ({ page }) => {

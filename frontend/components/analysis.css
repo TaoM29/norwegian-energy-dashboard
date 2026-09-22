@@ -3,12 +3,6 @@
   background: var(--page);
   color: var(--text);
 }
-.analysis-workspace-compact .analysis-heading {
-  margin-bottom: 10px;
-}
-.analysis-workspace-compact .reading-guide {
-  margin-bottom: 12px;
-}
 .analysis-controls {
   display: flex;
   flex-wrap: wrap;
@@ -97,7 +91,7 @@
 .analysis-metrics > * {
   flex: 1;
   min-width: 145px;
-  padding: 18px 20px;
+  padding: 12px 18px;
   background: var(--surface);
 }
 .analysis-actions {
@@ -162,3 +156,14 @@
     max-width: 100%;
   }
 }
+
+.analysis-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; color: var(--text-muted); font-size: 12px; }
+.analysis-footer a { color: var(--text-muted); text-decoration: underline; text-underline-offset: 3px; }
+.study-error { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; padding: 24px; margin-bottom: 24px; border: 1px solid var(--border); border-radius: var(--panel-radius); background: var(--surface); }
+.study-error h3 { margin: 0 0 8px; font-size: 17px; font-weight: 600; }
+.study-error p { margin: 0; max-width: 65ch; color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+.study-error a { color: var(--accent); font-size: 14px; padding: 8px 0; }
+.study-error button { border: 1px solid var(--border); border-radius: var(--control-radius); padding: 9px 16px; background: var(--surface); color: var(--text); }
+.study-details { margin: 0 0 16px; border-top: 1px solid var(--border); }
+.study-details > summary { padding: 16px 0; font-size: 14px; color: var(--text); cursor: pointer; }
+.study-details[open] > summary { margin-bottom: 12px; }

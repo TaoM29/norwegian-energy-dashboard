@@ -761,7 +761,7 @@ export default function RegionalPage() {
       {filters.mode === "energy" ? (
         <>
           <div className={styles.modeIntro}>
-            <strong>Compare like-for-like regional energy records</strong>
+            <strong>Compare NO1–NO5</strong>
             <HelpTip label="Comparison scope">
               Choose production or consumption groups and one inclusive UTC
               date range. Every price area uses the same selection.
@@ -792,6 +792,8 @@ export default function RegionalPage() {
                 <option value="consumption">Consumption</option>
               </Select>
             </label>
+            <details className={styles.filterDetails}>
+              <summary>Energy groups · {draft.groups.length} selected</summary>
             <fieldset className={styles.groupChoices}>
               <legend>Energy groups</legend>
               <div>
@@ -817,6 +819,7 @@ export default function RegionalPage() {
                 ))}
               </div>
             </fieldset>
+            </details>
             <DateRangePicker
               value={{ start: draft.start, end: draft.end }}
               min={coverageBounds?.coverage.start}
@@ -870,7 +873,7 @@ export default function RegionalPage() {
       ) : (
         <>
           <div className={styles.modeIntro}>
-            <strong>Estimate snow transport at one coordinate</strong>
+            <strong>Estimate snow transport</strong>
             <HelpTip label="Snow model scope">
               Set the site, July–June seasons, transport assumptions, and fence
               type. This model does not use the energy comparison dates.
@@ -937,6 +940,9 @@ export default function RegionalPage() {
                 }
               />
             </label>
+            <details className={styles.filterDetails}>
+              <summary>Model assumptions · {draft.fenceType}</summary>
+              <div className={styles.filterBody}>
             <label>
               Transport distance T (m)
               <input
@@ -1002,6 +1008,8 @@ export default function RegionalPage() {
                 ))}
               </Select>
             </label>
+              </div>
+            </details>
             <button type="submit">Run snow model</button>
           </form>
           <div
@@ -1044,10 +1052,15 @@ export default function RegionalPage() {
       )}
 
       {filters.mode === "energy" && (
-      <div className="analysis-grid">
+      <div className={styles.regionalFlow}>
         <section className="analysis-panel">
           <h2>Price-area comparison</h2>
-          <p>{summary?.aggregation || "Mean of valid hourly source records."}</p>
+          <p className={styles.mapScope}>Applied: {filters.kind} · {filters.groups.join(", ")} · {summary?.aggregation || "Mean of valid hourly source records."}</p>
+          {summary?.areas.some((row) => row.partial) && (
+            <p className={styles.partialCoverage} role="note">
+              Partial coverage in {summary.areas.filter((row) => row.partial).map((row) => row.area).join(", ")}. Open regional values and coverage for counts.
+            </p>
+          )}
           <HelpTip label="Using the map">
             Select a region or map point, then open Snow model to use that
             coordinate. The regional table compares all five price areas.
@@ -1115,6 +1128,8 @@ export default function RegionalPage() {
             ))}
           </div>
         </section>
+        <details className={styles.secondaryAnalysis}>
+          <summary>Regional values and coverage</summary>
         <section className="analysis-panel">
           <h2>Regional values</h2>
           <p>
@@ -1191,6 +1206,7 @@ export default function RegionalPage() {
             </HelpPanel>
           )}
         </section>
+        </details>
       </div>
       )}
 
@@ -1250,7 +1266,7 @@ export default function RegionalPage() {
                 </small>
               </div>
             </div>
-            <div className="analysis-grid">
+            <div className={styles.regionalFlow}>
               <div>
                 <h3>Seasonal transport</h3>
                 <AnalysisChart
@@ -1284,6 +1300,8 @@ export default function RegionalPage() {
                   }
                 />
               </div>
+              <details className={styles.secondaryAnalysis}>
+                <summary>Monthly transport</summary>
               <div>
                 <h3>Average monthly transport</h3>
                 <AnalysisChart
@@ -1304,7 +1322,10 @@ export default function RegionalPage() {
                   }
                 />
               </div>
+              </details>
             </div>
+            <details className={styles.secondaryAnalysis}>
+              <summary>Wind and season detail</summary>
             <div className="analysis-grid">
               <div>
                 <h3>Directional wind potential</h3>
@@ -1352,6 +1373,7 @@ export default function RegionalPage() {
                 </div>
               </div>
             </div>
+            </details>
             <details>
               <summary>Monthly transport by season</summary>
               <div className={styles.tableWrap}>

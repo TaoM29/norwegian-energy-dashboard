@@ -1,7 +1,6 @@
 .peak-workspace { padding: clamp(18px, 3vw, 34px); }
 .peak-heading { display: flex; justify-content: space-between; align-items: end; gap: 20px; }
-.peak-heading h2 { margin: 5px 0 0; font-size: clamp(22px, 3vw, 30px); letter-spacing: -.035em; }
-.peak-eyebrow { color: var(--text-muted); font-size: 10px; font-weight: 700; letter-spacing: .11em; }
+.peak-heading h2 { margin: 0; font-size: clamp(22px, 3vw, 30px); letter-spacing: -.035em; }
 .peak-heading label { display: grid; gap: 4px; color: var(--text-muted); font-size: 11px; white-space: nowrap; }
 .peak-heading select { min-height: 36px; }
 .peak-fixture { margin: 9px 0 0; color: var(--warning) !important; font-size: 12px; }

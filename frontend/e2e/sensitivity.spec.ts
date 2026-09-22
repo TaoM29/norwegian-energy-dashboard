@@ -43,8 +43,9 @@ test("saved demand sensitivity keeps its own area and browser history", async ({
   await page.route("**/api/diagnostics/sensitivity", (route) => route.fulfill({ json: study }));
   await page.route("**/api/diagnostics/sensitivity/artifact", (route) => route.fulfill({ status: 200, body: JSON.stringify(study), headers: { "content-type": "application/json", "content-disposition": "attachment; filename=demand-sensitivity.json" } }));
   await page.goto("/diagnostics?view=sensitivity&area=NO1&start=2026-08-01&end=2026-08-28");
-  await expect(page.getByRole("tab", { name: "Demand sensitivity" })).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByText("How household demand changes with temperature")).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Analysis" })).toHaveAttribute("data-value", "sensitivity");
+  await expect(page.getByRole("heading", { name: "Temperature & demand" })).toBeVisible();
+  await page.getByText("Model comparison, coverage & residual checks", { exact: true }).click();
   await expect(page.getByText("2021-01-01–2024-01-01 UTC")).toBeVisible();
   await expect(page.getByRole("button", { name: "Run analysis" })).toHaveCount(0);
   await expect(page.getByText("Energy kind")).toHaveCount(0);
@@ -56,11 +57,12 @@ test("saved demand sensitivity keeps its own area and browser history", async ({
   await page.goBack();
   await expect(page.getByRole("combobox", { name: "Sensitivity price area" })).toContainText("NO1");
 
-  await page.getByRole("tab", { name: "Demand sensitivity" }).focus();
-  await page.keyboard.press("ArrowLeft");
-  await expect(page.getByRole("tab", { name: "Unusual observations" })).toHaveAttribute("aria-selected", "true");
-  await page.keyboard.press("ArrowRight");
-  await expect(page.getByRole("tab", { name: "Demand sensitivity" })).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("combobox", { name: "Analysis" }).click();
+  await page.getByRole("option", { name: "Unusual observations" }).click();
+  await expect(page.getByRole("combobox", { name: "Analysis" })).toHaveAttribute("data-value", "quality");
+  await page.getByRole("combobox", { name: "Analysis" }).click();
+  await page.getByRole("option", { name: "Demand sensitivity" }).click();
+  await expect(page.getByRole("combobox", { name: "Analysis" })).toHaveAttribute("data-value", "sensitivity");
 
   await page.getByRole("button", { name: "Export study" }).click();
   const download = page.waitForEvent("download");
@@ -68,17 +70,17 @@ test("saved demand sensitivity keeps its own area and browser history", async ({
   expect((await download).suggestedFilename()).toBe("demand-sensitivity.json");
 });
 
-test("unavailable saved study can be retried", async ({ page }) => {
+test("transient sensitivity failure can be retried", async ({ page }) => {
   let requests = 0;
   await page.route("**/api/diagnostics/sensitivity", (route) => {
     requests += 1;
     return requests === 1
-      ? route.fulfill({ status: 404, json: { detail: "No saved demand sensitivity study is available yet." } })
+      ? route.fulfill({ status: 503, json: { detail: "Temporary study outage" } })
       : route.fulfill({ json: study });
   });
   await page.goto("/diagnostics?view=sensitivity&area=NO1");
-  await expect(page.getByRole("alert").filter({ hasText: "Study unavailable" })).toContainText("No saved sensitivity study is available.");
+  await expect(page.getByRole("alert").filter({ hasText: "Couldn’t load this study" })).toContainText("Temporary study outage");
   await page.getByRole("button", { name: "Retry" }).click();
-  await expect(page.getByText("How household demand changes with temperature")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Temperature & demand" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Adjusted temperature response" })).toBeVisible();
 });

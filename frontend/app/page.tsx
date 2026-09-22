@@ -25,15 +25,15 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { HelpPanel, HelpTip } from "@/components/help";
+import { HelpPanel } from "@/components/help";
 import { ExportMenu } from "@/components/export-menu";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { writeDashboardUrl } from "@/lib/navigation-state";
 import { RegionComparison } from "@/components/region-comparison";
 import { OverviewPeriodComparison } from "@/components/overview-period-comparison";
-import { OverviewCaseStudies } from "@/components/overview-case-studies";
 import { AppNavigation } from "@/components/app-navigation";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { downloadJson } from "@/lib/download";
 import {
@@ -215,9 +215,7 @@ export default function Page() {
         ? null
         : d.consumption.mwh / 1000,
   }));
-  const largest = overview?.productionMix
-    .filter((d) => d.share != null)
-    .sort((a, b) => (b.share || 0) - (a.share || 0))[0];
+
 
   return (
     <div className="app-shell">
@@ -237,7 +235,7 @@ export default function Page() {
             </div>
             <div className="page-actions">
               <div className="reading-guide">
-                <HelpPanel label="New here? A 30-second guide">
+                <HelpPanel label="About this view">
                   <div>
                     <p>
                       Choose a region and time period. <strong>Production</strong>{" "}
@@ -280,20 +278,10 @@ export default function Page() {
           </div>
           <section className="filterbar" aria-label="Overview filters">
             <div className="area-filter">
-              <span className="field-label">REGION · PRICE AREA</span>
-              <div className="area-tabs" role="group" aria-label="Price area">
-                {Object.keys(areas).map((area) => (
-                  <button
-                    key={area}
-                    type="button"
-                    aria-pressed={filters?.area === area}
-                    onClick={() => draft && apply({ ...draft, area })}
-                    disabled={!draft}
-                  >
-                    {area}
-                  </button>
-                ))}
-              </div>
+              <label className="field-label" htmlFor="overview-area">Price area</label>
+              <Select id="overview-area" aria-label="Price area" value={filters?.area || "NO1"} onChange={(event) => draft && apply({ ...draft, area: event.target.value })} disabled={!draft}>
+                {Object.entries(areas).map(([area, label]) => <option key={area} value={area}>{area} · {label}</option>)}
+              </Select>
             </div>
             {draft && (
               <DateRangePicker
@@ -399,7 +387,7 @@ export default function Page() {
                 <Card className="trend-panel panel">
                   <div className="panel-heading">
                     <div>
-                      <div className="eyebrow">DAILY ENERGY</div>
+
                       <h2>Supply & demand</h2>
                     </div>
                     <div className="legend">
@@ -517,8 +505,8 @@ export default function Page() {
                 <Card className="panel mix-panel" id="production">
                   <div className="panel-heading">
                     <div>
-                      <div className="eyebrow">GENERATION SOURCES</div>
-                      <h2>What powers {selectedArea}?</h2>
+
+                      <h2>Production mix</h2>
                     </div>
                     <span className="small-label">Share of production</span>
                   </div>
@@ -555,33 +543,18 @@ export default function Page() {
                     ))}
                   </div>
                 </Card>
-                <div className="observation">
-                  <span className="observation-icon">
-                    <Waves size={21} />
-                  </span>
-                  <div>
-                    <div className="eyebrow">FROM THE OBSERVATIONS</div>
-                    <h2>
-                      {largest
-                        ? `${largest.group.charAt(0).toUpperCase() + largest.group.slice(1)} leads the mix.`
-                        : "More observations are needed."}
-                    </h2>
-                    <p>
-                      {largest
-                        ? `${number((largest.share || 0) * 100)}% of observed production in ${areas[selectedArea]} came from ${largest.group} over this period.`
-                        : "There is no observed production for this selection."}
-                    </p>
-                    <a href="#daily-data">
-                      Explore the underlying values <ArrowRight size={14} />
-                    </a>
-                  </div>
-                </div>
+                <section className="recorded-studies" aria-labelledby="recorded-studies-title">
+                  <h2 id="recorded-studies-title">Explore the analysis</h2>
+                  <p>Saved studies with fixed dates and documented methods.</p>
+                  <a href="/forecasts?result=phase4-household-24h"><span><strong>Forecast performance</strong><small>Models, errors and uncertainty</small></span><ArrowRight size={16} /></a>
+                  <a href="/diagnostics?view=sensitivity"><span><strong>Temperature & demand</strong><small>Calendar-adjusted associations</small></span><ArrowRight size={16} /></a>
+                  <a href="/methods#recorded-evidence"><span><strong>Project evidence</strong><small>Sources, validation and reproducibility</small></span><ArrowRight size={16} /></a>
+                </section>
               </div>
               <RegionComparison
                 overview={overview}
                 onSelect={(area) => filters && apply({ ...filters, area })}
               />
-              <OverviewCaseStudies />
               <details id="daily-data" className="daily-table">
                 <summary>
                   Daily values{" "}
@@ -702,9 +675,6 @@ function Metric({
           </span>
           {title}
         </span>
-        <HelpTip label={title} iconOnly>
-          {note}
-        </HelpTip>
       </div>
       <div className="metric-value">
         {number(value)}

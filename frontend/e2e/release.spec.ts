@@ -12,12 +12,13 @@ test("overview filters survive reload and export values", async ({
   await expect(
     page.getByRole("note").filter({ hasText: "Synthetic fixture data" }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "NO2", exact: true }).click();
+  await page.getByRole("combobox", { name: "Price area", exact: true }).click();
+  await page.getByRole("option", { name: /NO2 · Southern Norway/ }).click();
   await expect(page).toHaveURL(/area=NO2/);
   await page.reload();
   await expect(
-    page.getByRole("button", { name: "NO2", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
+    page.getByRole("combobox", { name: "Price area", exact: true }),
+  ).toHaveAttribute("data-value", "NO2");
   await page.getByRole("button", { name: "Export", exact: true }).click();
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export daily data" }).click();
@@ -52,10 +53,23 @@ test("overview filters survive reload and export values", async ({
   });
 });
 
+test("overview study links lead to the saved analyses and evidence", async ({ page }) => {
+  await page.goto("/");
+  const studies = page.getByRole("region", { name: "Explore the analysis" });
+  await expect(studies.getByRole("link", { name: /Forecast performance/ })).toHaveAttribute("href", "/forecasts?result=phase4-household-24h");
+  await expect(studies.getByRole("link", { name: /Temperature & demand/ })).toHaveAttribute("href", "/diagnostics?view=sensitivity");
+  const evidence = studies.getByRole("link", { name: /Project evidence/ });
+  await expect(evidence).toHaveAttribute("href", "/methods#recorded-evidence");
+  await evidence.click();
+  await expect(page).toHaveURL(/\/methods#recorded-evidence$/);
+  await expect(page.getByRole("heading", { name: "Evidence and coverage" })).toBeVisible();
+});
+
 test("analysis and regional workspaces use the offline snapshots", async ({
   page,
 }) => {
   await page.goto("/explore?area=NO1&start=2025-11-01&end=2025-11-28");
+  await page.getByText("Group totals and coverage", { exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Group totals" }),
   ).toBeVisible();
@@ -64,6 +78,7 @@ test("analysis and regional workspaces use the offline snapshots", async ({
     page.getByRole("heading", { name: "Centered rolling correlation" }),
   ).toBeVisible();
   await page.goto("/regional");
+  await page.getByText("Regional values and coverage", { exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Regional values" }),
   ).toBeVisible();
@@ -150,7 +165,7 @@ test("methods and navigation fit mobile and support keyboard focus", async ({
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/methods");
   await expect(
-    page.getByRole("heading", { name: "Published data coverage" }),
+    page.getByRole("heading", { name: "Evidence and coverage" }),
   ).toBeVisible();
   await page.keyboard.press("Tab");
   await expect(
@@ -159,9 +174,8 @@ test("methods and navigation fit mobile and support keyboard focus", async ({
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(390);
-  await expect(
-    page.getByRole("link", { name: "the original IND320 project" }),
-  ).toBeVisible();
+  await page.getByText("Architecture and reproducibility", { exact: true }).first().click();
+  await expect(page.getByRole("link", { name: "the original IND320 project" })).toBeVisible();
   await expect(page.getByText(/2025-01-01 to 2026-01-01/)).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath("methods-mobile.png"),
@@ -203,9 +217,8 @@ test("light and dark choices persist across pages and ignore device theme change
     .getByRole("link", { name: "Explore", exact: true })
     .click();
   await expect(page).toHaveURL(/area=NO2/);
-  await expect(
-    page.getByRole("heading", { name: "Group totals" }),
-  ).toBeVisible();
+  await page.getByText("Group totals and coverage", { exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Group totals" })).toBeVisible();
   await page.reload();
   await expect(
     page.getByRole("button", { name: "Light", exact: true }),
@@ -233,7 +246,7 @@ test("mobile pages keep navigation, guidance and theme controls usable", async (
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await page.getByRole("button", { name: "Dark", exact: true }).click();
-  await page.getByRole("button", { name: "New here? A 30-second guide", exact: true }).click();
+  await page.getByRole("button", { name: "About this view", exact: true }).click();
   await expect(page.getByText(/one million kWh/)).toBeVisible();
   for (const path of [
     "/",
@@ -273,12 +286,9 @@ test("mobile pages keep navigation, guidance and theme controls usable", async (
   await expect(page.getByLabel("Window, hours", { exact: true })).toBeHidden();
   await page.locator(".method-settings summary").click();
   await expect(page.getByLabel("Window, hours", { exact: true })).toBeVisible();
-  await page
-    .getByRole("tab", { name: "Weather & energy", exact: true })
-    .press("ArrowRight");
-  await expect(
-    page.getByRole("tab", { name: "Seasonal patterns", exact: true }),
-  ).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("combobox", { name: "Analysis" }).click();
+  await page.getByRole("option", { name: "Seasonal patterns", exact: true }).click();
+  await expect(page.getByRole("combobox", { name: "Analysis" })).toHaveAttribute("data-value", "decomposition");
 });
 
 test("regional table sorts and opens details without changing the selected view", async ({
@@ -315,6 +325,6 @@ test("regional table sorts and opens details without changing the selected view"
   await drawer.getByRole("button", { name: "View this region" }).click();
   await expect(page).toHaveURL(/area=NO4/);
   await expect(
-    page.getByRole("button", { name: "NO4", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
+    page.getByRole("combobox", { name: "Price area", exact: true }),
+  ).toHaveAttribute("data-value", "NO4");
 });

@@ -88,7 +88,7 @@ export function ExplorePeaksView({ result }: { result: AreaPeaks }) {
   const filename = `${study.area}-household-peaks-${result.query.start}-${result.query.end}`;
   return <section className="analysis-panel peak-workspace" aria-label="Household demand peaks">
     <div className="peak-heading">
-      <div><span className="peak-eyebrow">{study.area} · HOUSEHOLD DEMAND</span><h2>Peaks & rapid changes</h2></div>
+      <div><h2>{study.area} household demand peaks</h2></div>
       <label>Chart <Select aria-label="Peak demand chart" value={display} onChange={(event) => setDisplay(event.target.value as typeof display)}><option value="duration">Load duration</option><option value="changes">Hourly changes</option></Select></label>
     </div>
     <FixtureNote mode={result.dataMode} />
@@ -130,7 +130,7 @@ export function RegionalPeaksView({ result }: { result: RegionalPeaks }) {
   const filename = `regional-household-peaks-${result.query.start}-${result.query.end}`;
   return <section className="analysis-panel peak-workspace" aria-label="Regional household demand peaks">
     <div className="peak-heading">
-      <div><span className="peak-eyebrow">NO1–NO5 · MATCHED HOURS</span><h2>Regional peak alignment</h2></div>
+      <div><h2>Regional peak alignment</h2></div>
       <label>Scale <Select aria-label="Regional demand scale" value={display} onChange={(event) => setDisplay(event.target.value as typeof display)}><option value="absolute">Energy · kWh</option><option value="relative">Area mean · %</option></Select></label>
     </div>
     <FixtureNote mode={result.dataMode} />

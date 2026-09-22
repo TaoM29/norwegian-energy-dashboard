@@ -4,6 +4,43 @@
 .explore-controls .date-range-field {
   min-width: min(100%, 250px);
 }
+.explore-filter-details {
+  align-self: end;
+  min-width: 120px;
+}
+.explore-filter-details[open] {
+  flex-basis: 100%;
+}
+.explore-filter-details summary,
+.explore-breakdown summary {
+  width: fit-content;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+}
+.explore-filter-details summary:focus-visible,
+.explore-breakdown summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.explore-filter-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  padding: 16px 0 4px;
+}
+.explore-breakdown {
+  margin-top: 10px;
+}
+.explore-breakdown > summary {
+  padding: 12px 0;
+}
+.explore-breakdown > .analysis-grid,
+.explore-breakdown > .analysis-panel,
+.explore-breakdown > section {
+  margin-top: 14px;
+}
 .explore-options {
   display: flex;
   flex-wrap: wrap;
@@ -26,7 +63,7 @@
   color: var(--text);
 }
 .explore-coverage {
-  align-self: center;
+  flex-basis: 100%;
   color: var(--text-muted);
   line-height: 1.5;
 }
@@ -70,7 +107,7 @@
 }
 .analysis-metrics strong {
   margin: 5px 0;
-  font-size: clamp(18px, 2.4vw, 25px);
+  font-size: clamp(18px, 2vw, 21px);
 }
 .analysis-metrics span,
 .analysis-metrics small {

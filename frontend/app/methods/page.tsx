@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { OverviewCaseStudies } from "@/components/overview-case-studies";
 import { AnalysisShell } from "@/components/analysis-shell";
 import styles from "./methods.module.css";
-import { Coverage, getJson } from "@/lib/api";
+import { Coverage, getJson, shortDate } from "@/lib/api";
 
 const models = [
   [
@@ -47,8 +47,8 @@ export default function Methods() {
       description="Where the observations come from, what the models can tell us, and where their evidence ends."
     >
       <div className={styles.content}>
-        <section className="analysis-panel">
-          <h2>Published data coverage</h2>
+        <section id="recorded-evidence" className="analysis-panel">
+          <h2>Evidence and coverage</h2>
           {coverage ? (
             <>
               <p>
@@ -61,7 +61,7 @@ export default function Methods() {
               </p>
               <p>
                 Source: {coverage.snapshot.source}. Snapshot retrieved:{" "}
-                {coverage.snapshot.retrievedAt}. This is a saved snapshot, not a
+                {coverage.snapshot.retrievedAt ? `${shortDate(coverage.snapshot.retrievedAt)} ${coverage.snapshot.retrievedAt.slice(0, 4)} (UTC)` : "Unknown"}. This is a saved snapshot, not a
                 live feed; check the end date before interpreting recent
                 conditions.
               </p>
@@ -69,6 +69,11 @@ export default function Methods() {
           ) : (
             <p role="status">{error || "Checking the published snapshot…"}</p>
           )}
+          <p className={styles.sourceLinks}>
+            <a href="https://api.elhub.no/">Elhub energy</a> · <a href="https://open-meteo.com/en/docs/historical-weather-api">Open-Meteo weather</a> · <a href="https://github.com/TaoM29/norwegian-energy-dashboard/blob/main/docs/PHASE4_VALIDATION.md">Forecast validation</a> · <a href="https://github.com/TaoM29/norwegian-energy-dashboard">Source code</a>
+          </p>
+          <details className={styles.sourceDetails}>
+            <summary>How to interpret these sources</summary>
           <p>
             Energy is hourly kWh from <a href="https://api.elhub.no/">Elhub</a>.
             Overview totals use MWh and chart axes may use GWh. Production and
@@ -85,7 +90,10 @@ export default function Methods() {
             Reanalysis and revised energy records do not reconstruct what was
             known historically.
           </p>
+          </details>
         </section>
+        <details className={styles.docDisclosure}>
+          <summary>Dashboard guide</summary>
         <section className="analysis-panel">
           <h2>A two-minute walkthrough</h2>
           <ol>
@@ -115,6 +123,9 @@ export default function Methods() {
             </li>
           </ol>
         </section>
+        </details>
+        <details className={styles.docDisclosure}>
+          <summary>Forecast models and evaluation</summary>
         <section className={`analysis-panel ${styles.modelSection}`}>
           <h2>Forecast model cards</h2>
           <p>
@@ -165,6 +176,9 @@ export default function Methods() {
             </section>
           </div>
         </section>
+        </details>
+        <details className={styles.docDisclosure}>
+          <summary>Demand sensitivity</summary>
         <section className="analysis-panel">
           <h2>Weather-adjusted demand sensitivity</h2>
           <p>
@@ -192,7 +206,13 @@ export default function Methods() {
             as a ranking without that context.
           </p>
         </section>
+        </details>
+        <details className={styles.docDisclosure}>
+          <summary>Validation case studies</summary>
         <OverviewCaseStudies />
+        </details>
+        <details className={styles.docDisclosure}>
+          <summary>Architecture and reproducibility</summary>
         <section className="analysis-panel">
           <h2>Architecture and reproducibility</h2>
           <p>
@@ -231,6 +251,14 @@ export default function Methods() {
             . See its validation reports for full methods and recorded checks.
           </p>
         </section>
+        </details>
+        <details id="local-experiments" className={styles.docDisclosure}>
+          <summary>Local experiments</summary>
+          <section className="analysis-panel">
+            <p>Custom forecast jobs are disabled on the public deployment. A local installation can run bounded evaluations and SARIMAX jobs with progress reporting and cancellation.</p>
+            <p><a href="https://github.com/TaoM29/norwegian-energy-dashboard/blob/main/docs/RELEASE.md">Local setup and release instructions</a></p>
+          </section>
+        </details>
       </div>
     </AnalysisShell>
   );

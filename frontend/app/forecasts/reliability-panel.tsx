@@ -124,19 +124,16 @@ export function ReliabilityPanel({
     <section className={styles.panel} aria-labelledby="reliability-title">
       <div className={styles.heading}>
         <div>
-          <span className={styles.kicker}>Exploratory · fixed study cohort</span>
-          <h2 id="reliability-title">Forecast reliability across dates</h2>
+          <h2 id="reliability-title">Reliability across dates</h2>
         </div>
         <span className={styles.protocol}>
           {typeof study.label === "string" ? study.label : "Saved Step 2 study"}
         </span>
       </div>
       <p className={styles.intro}>
-        All five areas and every matched study date are pooled here. The area,
-        date, origin and model controls on the forecast chart do not change this
-        summary. Negative paired MAE differences favor the model over the
-        seasonal baseline; positive differences favor the baseline. Each value
-        uses the same matched target rows as its baseline.
+        This exploratory study pools all five areas and matched dates. Chart
+        filters do not change it. Negative paired MAE differences favor the
+        model over the seasonal baseline; every difference uses matched targets.
       </p>
       <div className={styles.support} aria-label="Study support">
         <div>

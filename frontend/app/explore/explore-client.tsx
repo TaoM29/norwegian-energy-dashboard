@@ -538,7 +538,11 @@ export default function ExploreClient() {
             max={shiftDay(coverage.coverage.end, -1)}
             presets
           />
-          {draft.view !== "peaks" && draft.view !== "profiles" && <label>
+          {draft.view !== "peaks" && draft.view !== "profiles" && (
+            <details className="explore-filter-details">
+              <summary>More filters · {draft.view === "energy" ? `${draft.kind}, ${draft.groups.length} groups` : `${draft.variables.length} variables`}</summary>
+              <div className="explore-filter-body">
+          <label>
             Time detail
             <Select
               aria-label="Time detail"
@@ -551,7 +555,7 @@ export default function ExploreClient() {
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
             </Select>
-          </label>}
+          </label>
           {draft.view === "energy" ? (
             <>
               <label>
@@ -642,7 +646,7 @@ export default function ExploreClient() {
               </label>
             </>
           ) : null}
-          {draft.view !== "peaks" && draft.view !== "profiles" && <details className="display-settings">
+          <details className="display-settings">
             <summary>Display options</summary>
             <label>
               Line opacity <span>{draft.opacity.toFixed(2)}</span>
@@ -657,15 +661,13 @@ export default function ExploreClient() {
                 }
               />
             </label>
-          </details>}
+          </details>
+                <p className="explore-coverage">Available energy dates: {coverage.coverage.start}–{shiftDay(coverage.coverage.end, -1)}, inclusive UTC.</p>
+              </div>
+            </details>
+          )}
           <button type="submit">Apply view</button>
-          {draft.view !== "peaks" && draft.view !== "profiles" && <div className="explore-coverage">
-            <HelpTip label="Data coverage">
-              Published common energy coverage runs from {coverage.coverage.start}{" "}
-              through {shiftDay(coverage.coverage.end, -1)}. Dates are inclusive
-              and use UTC.
-            </HelpTip>
-          </div>}
+
         </form>
       ) : null}
 
@@ -839,7 +841,9 @@ function EnergyView({
           renderedPoints={cap.rows.length}
         />
       </section>
-      <section className="analysis-grid">
+      <details className="explore-breakdown">
+        <summary>Group totals and coverage</summary>
+        <div className="analysis-grid">
         <div className="analysis-panel">
           <h2>Group totals</h2>
           <HelpTip label="How totals are calculated">
@@ -880,7 +884,8 @@ function EnergyView({
             </table>
           </div>
         </div>
-      </section>
+        </div>
+      </details>
       <HelpPanel label="Energy method and provenance">
         <pre>{JSON.stringify(response.metadata, null, 2)}</pre>
       </HelpPanel>
@@ -963,7 +968,7 @@ function WeatherView({
       <section className="analysis-panel">
         <div className="explore-panel-heading">
           <div>
-            <h2>Weather explorer</h2>
+            <h2>Weather through time</h2>
             <p>{response.valueLabel}.</p>
             <HelpTip label="Wind averages">
               Circular wind averages preserve the north boundary.
@@ -1004,8 +1009,10 @@ function WeatherView({
           renderedPoints={cap.rows.length}
         />
       </section>
+      <details className="explore-breakdown">
+        <summary>Weather breakdown</summary>
       <section className="analysis-panel">
-        <h2>Summary for selected dates</h2>
+        <h2>Selected dates</h2>
         <HelpTip label="Summary and scaling">
           Summary values retain their original units. “Compare shapes” scales
           each chart series from 0 to 1, so its axis no longer shows physical
@@ -1094,6 +1101,7 @@ function WeatherView({
           ))}
         </div>
       </section>
+      </details>
       <HelpPanel label="Weather method and provenance">
         <pre>{JSON.stringify(response.metadata, null, 2)}</pre>
       </HelpPanel>

@@ -106,7 +106,7 @@ export function AppNavigation() {
             </span>
             <span>
               norwegian energy
-              <span className="site-subtitle">Data workspace</span>
+              <span className="site-subtitle">Energy & weather</span>
             </span>
           </a>
 
@@ -132,7 +132,7 @@ export function AppNavigation() {
         >
           {navigationGroups.map((group) => (
             <div className="site-navigation-group" key={group.label}>
-              <span className="site-navigation-label">{group.label}</span>
+
               <div className="site-navigation-links">
                 {group.destinations.map(({ href, label, icon: Icon }) => {
                   const index = destinations.findIndex(
@@ -157,6 +157,7 @@ export function AppNavigation() {
             </div>
           ))}
         </nav>
+        <a className="site-source-link" href="https://github.com/TaoM29/norwegian-energy-dashboard">View source ↗</a>
       </aside>
 
       <header className="site-header">

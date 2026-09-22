@@ -55,8 +55,8 @@ async function mockStudy(page: Page, detected = true) {
 test("saved change view shows one retrospective split and keeps detail optional", async ({ page }) => {
   await mockStudy(page);
   await page.goto("/diagnostics?view=demand_changes&area=NO3&start=2026-01-01");
-  await expect(page.getByRole("tab", { name: "Demand changes" })).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByRole("heading", { name: "Did household demand shift for weeks?" })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Analysis" })).toHaveAttribute("data-value", "demand_changes");
+  await expect(page.getByRole("heading", { name: "Persistent demand changes" })).toBeVisible();
   await expect(page.getByText("Fixture demonstration")).toBeVisible();
   await expect(page.getByText("NO1 · 2025-01-01–2025-03-31 UTC")).toBeVisible();
   await expect(page.getByText("89 of 90 complete UTC days")).toBeVisible();
@@ -101,7 +101,7 @@ test("missing saved study offers retry and does not show stale findings", async 
     return route.fulfill({ json: savedStudy() });
   });
   await page.goto("/diagnostics?view=demand_changes");
-  await expect(page.getByRole("alert").filter({ hasText: "Study unavailable" })).toContainText("Saved study is not available yet.");
+  await expect(page.getByRole("alert").filter({ hasText: "Couldn’t load this study" })).toContainText("Saved study is not available yet.");
   await expect(page.getByText("Strongest exploratory split near 15 Feb 2025")).toHaveCount(0);
   available = true;
   await page.getByRole("button", { name: "Retry" }).click();

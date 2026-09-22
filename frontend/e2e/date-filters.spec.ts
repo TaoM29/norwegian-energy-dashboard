@@ -78,6 +78,7 @@ test("applied filters, navigation hrefs and Back preserve the observation worksp
   page,
 }) => {
   await page.goto("/explore?area=NO2&start=2025-11-01&end=2025-11-28");
+  await page.getByText("Group totals and coverage", { exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Group totals" }),
   ).toBeVisible();
@@ -137,9 +138,8 @@ test("diagnostic drafts retain applied results and regional groups need no modif
   await expect(
     page.getByRole("heading", { name: "Centered rolling correlation" }),
   ).toBeVisible();
-  await page
-    .getByRole("tab", { name: "Seasonal patterns", exact: true })
-    .click();
+  await page.getByRole("combobox", { name: "Analysis" }).click();
+  await page.getByRole("option", { name: "Seasonal patterns", exact: true }).click();
   await expect(
     page.getByText("Changes not applied", { exact: true }),
   ).toBeVisible();
@@ -147,13 +147,12 @@ test("diagnostic drafts retain applied results and regional groups need no modif
     page.getByRole("heading", { name: "Centered rolling correlation" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Discard changes" }).click();
-  await expect(
-    page.getByRole("tab", { name: "Weather & energy", exact: true }),
-  ).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("combobox", { name: "Analysis" })).toHaveAttribute("data-value", "correlation");
   await page
     .getByRole("navigation")
     .getByRole("link", { name: "Regional", exact: true })
     .click();
+  await page.getByText("Regional values and coverage", { exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Regional values" }),
   ).toBeVisible();
@@ -161,6 +160,7 @@ test("diagnostic drafts retain applied results and regional groups need no modif
     name: "Energy groups",
     exact: true,
   });
+  await page.getByText(/Energy groups · \d+ selected/).click();
   await groups.getByRole("checkbox", { name: "hydro", exact: true }).check();
   await expect(
     groups.getByRole("checkbox", { name: "solar", exact: true }),
@@ -170,6 +170,7 @@ test("diagnostic drafts retain applied results and regional groups need no modif
   ).toBeVisible();
   await page.getByRole("button", { name: "Compare energy" }).click();
   await expect(page).toHaveURL(/groups=hydro%2Csolar/);
+  await expect(page.getByText(/Applied: production · hydro, solar/)).toBeVisible();
 });
 
 test("mobile calendar fits, highlights a selected range, and preserves dates across reload", async ({
@@ -216,6 +217,7 @@ test("forecast target dates select a matching saved origin and preserve it on re
 }) => {
   await page.goto("/forecasts?area=NO3");
   const filters = page.getByRole("form", { name: "Stored result filters" });
+  await filters.getByText(/Model & evaluation options · \d+ models/).click();
   const origin = filters.getByRole("combobox", {
     name: "Matched forecast origin",
   });
@@ -233,6 +235,7 @@ test("forecast target dates select a matching saved origin and preserve it on re
   await expect(origin).toHaveAttribute("data-value", /2025-11-01/);
   await expect(page).toHaveURL(/origin=2025-11-01/);
   await page.reload();
+  await filters.getByText(/Model & evaluation options · \d+ models/).click();
   await expect(origin).toHaveAttribute("data-value", /2025-11-01/);
   await expect(
     filters.getByRole("button", { name: /^Target dates:/ }),
@@ -270,7 +273,7 @@ test("overview compares equal UTC windows and preserves history", async ({
 }) => {
   await page.goto("/?area=NO1&start=2025-02-01&end=2025-02-28");
   const comparison = page.getByRole("region", {
-    name: "What changed from the previous period?",
+    name: "Previous period comparison",
   });
   await expect(comparison).toContainText("2025-01-04–2025-01-31");
   const current = await (
@@ -375,6 +378,7 @@ test("regional tasks load independently and preserve mode history", async ({
   await page.goto(
     "/regional?mode=energy&area=NO1&start=2025-11-01&end=2025-11-28",
   );
+  await page.getByText("Regional values and coverage", { exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Regional values", exact: true }),
   ).toBeVisible();
@@ -400,6 +404,7 @@ test("regional tasks load independently and preserve mode history", async ({
   await expect(
     page.getByRole("tab", { name: "Energy comparison", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
+  await page.getByText("Regional values and coverage", { exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Regional values", exact: true }),
   ).toBeVisible();
@@ -417,7 +422,7 @@ test("period comparison withholds changes for incomplete observations", async ({
   });
   await page.goto("/?area=NO1&start=2025-02-01&end=2025-02-28");
   const comparison = page.getByRole("region", {
-    name: "What changed from the previous period?",
+    name: "Previous period comparison",
   });
   const consumption = comparison.getByRole("article").filter({
     has: page.getByRole("heading", { name: "Energy consumed", exact: true }),
@@ -451,30 +456,31 @@ test("styled selectors support keyboard choice and help works by hover, focus an
   await page.keyboard.press("Enter");
   await expect(area).toHaveAttribute("data-value", "NO5");
   await expect(area).toBeFocused();
-  const coverage = page.getByRole("button", {
-    name: "About Data coverage",
+  await page.getByText("Group totals and coverage", { exact: true }).click();
+  const totals = page.getByRole("button", {
+    name: "About How totals are calculated",
     exact: true,
   });
-  await coverage.hover();
+  await totals.hover();
   await expect(
-    page.getByRole("dialog", { name: "Data coverage", exact: true }),
+    page.getByRole("dialog", { name: "How totals are calculated", exact: true }),
   ).toBeVisible();
   await page.keyboard.press("Escape");
-  await coverage.focus();
+  await totals.focus();
   await expect(
-    page.getByRole("dialog", { name: "Data coverage", exact: true }),
+    page.getByRole("dialog", { name: "How totals are calculated", exact: true }),
   ).toBeVisible();
   await page.keyboard.press("Escape");
   const sources = page.getByRole("button", {
-    name: "Sources & interpretation",
+    name: "About this view",
     exact: true,
   });
   await sources.click();
   const panel = page.getByRole("dialog", {
-    name: "Sources & interpretation",
+    name: "About this view",
     exact: true,
   });
-  await expect(panel).toContainText("fixed city proxy");
+  await expect(panel).toContainText("A gap means missing observations");
   await page.keyboard.press("Escape");
   await expect(panel).toBeHidden();
   await expect(sources).toBeFocused();

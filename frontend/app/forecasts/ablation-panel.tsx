@@ -100,17 +100,14 @@ export function AblationPanel({
     <section className={styles.panel} aria-labelledby="ablation-title">
       <div className={styles.heading}>
         <div>
-          <span className={styles.kicker}>Exploratory · fixed study cohort</span>
-          <h2 id="ablation-title">What each forecast input adds</h2>
+          <h2 id="ablation-title">What each input adds</h2>
         </div>
         <span className={styles.protocol}>Feature ablation · ridge</span>
       </div>
       <p className={styles.intro}>
-        Three ridge variants use the same scheduled, previously inspected 2025 origins and availability rules.
-        Each receives the same alpha candidates (0.1, 1 and 10), selected independently per area on validation origins.
-        This ridge-only comparison does not ablate the stronger gradient boosting model from the Step 2 study.
-        The area, date, origin and model controls on the forecast chart do not change this saved comparison.
-        Results are retrospective and exploratory.
+        Three ridge variants use the same matched, previously inspected 2025 dates.
+        The controls on the forecast chart do not change this saved comparison.
+        Results are retrospective and exploratory; gradient boosting is outside this study.
       </p>
       <div className={styles.support} aria-label="Feature ablation support">
         <div><span>Scheduled dates</span><strong>{count(support.scheduledDates)}</strong></div>
@@ -193,6 +190,7 @@ export function AblationPanel({
       <details className={styles.details}>
         <summary>Bias, pinball scores, area results and exact features</summary>
         <div className={styles.detailsBody}>
+          <p>Each ridge variant uses the same availability rules and alpha candidates (0.1, 1 and 10), selected independently per area on validation origins.</p>
           {variants.map((variant, index) => {
             const model = text(variant.model);
             const overall = object(variant.overall);

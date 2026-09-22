@@ -35,6 +35,59 @@
   font-size: 12px;
   line-height: 1.55;
 }
+.filterDetails {
+  align-self: center;
+}
+.filterDetails[open] {
+  flex-basis: 100%;
+}
+.filterDetails summary,
+.secondaryAnalysis summary {
+  width: fit-content;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+}
+.filterDetails summary:focus-visible,
+.secondaryAnalysis summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.filterBody {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  padding: 16px 0 4px;
+}
+.filterDetails .groupChoices {
+  padding-top: 12px;
+}
+.regionalFlow {
+  display: grid;
+  gap: 16px;
+}
+.mapScope {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.partialCoverage {
+  color: var(--warning);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.secondaryAnalysis {
+  min-width: 0;
+}
+.secondaryAnalysis > summary {
+  padding: 12px 0;
+}
+.secondaryAnalysis > :global(.analysis-panel),
+.secondaryAnalysis > :global(.analysis-grid),
+.secondaryAnalysis > div {
+  margin-top: 12px;
+}
 .appliedModel {
   display: flex;
   flex-wrap: wrap;

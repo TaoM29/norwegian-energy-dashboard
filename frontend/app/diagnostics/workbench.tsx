@@ -631,57 +631,18 @@ export default function DiagnosticsWorkbench() {
   return (
     <AnalysisShell
       title="Patterns & anomalies"
-      description="What moves together, what repeats, and what stands out? Look for patterns in energy and weather, with the methods just a click away."
+      description="Relationships, seasonal patterns and changes in household demand."
     >
-      <div
-        className="diagnostics-tabs"
-        role="tablist"
-        aria-label="Diagnostic method"
-      >
-        {viewOptions.map((item) => (
-          <button
-            key={item}
-            type="button"
-            role="tab"
-            aria-selected={view === item}
-            tabIndex={view === item ? 0 : -1}
-            onKeyDown={(event) => {
-              const tabs = viewOptions;
-              const index = tabs.indexOf(item);
-              const next =
-                event.key === "ArrowRight"
-                  ? (index + 1) % tabs.length
-                  : event.key === "ArrowLeft"
-                    ? (index + tabs.length - 1) % tabs.length
-                    : event.key === "Home"
-                      ? 0
-                      : event.key === "End"
-                        ? tabs.length - 1
-                        : null;
-              if (next === null) return;
-              event.preventDefault();
-              chooseView(tabs[next]);
-              (
-                event.currentTarget.parentElement?.children[
-                  next
-                ] as HTMLButtonElement
-              )?.focus();
-            }}
-            onClick={() => chooseView(item)}
-          >
-            {item === "correlation"
-              ? "Weather & energy"
-              : item === "decomposition"
-                ? "Seasonal patterns"
-              : item === "quality"
-                  ? "Unusual observations"
-                  : item === "sensitivity"
-                    ? "Demand sensitivity"
-                    : item === "demand_anomalies"
-                      ? "Demand anomalies"
-                      : "Demand changes"}
-          </button>
-        ))}
+      <div className="analysis-picker">
+        <label htmlFor="analysis-view">Analysis</label>
+        <Select id="analysis-view" aria-label="Analysis" value={view} onChange={(event) => chooseView(event.target.value as View)}>
+          <option value="correlation">Weather & energy</option>
+          <option value="decomposition">Seasonal patterns</option>
+          <option value="quality">Unusual observations</option>
+          <option value="sensitivity">Demand sensitivity</option>
+          <option value="demand_anomalies">Demand anomalies</option>
+          <option value="demand_changes">Demand changes</option>
+        </Select>
       </div>
       {view === "sensitivity" ? (
         <SensitivityView

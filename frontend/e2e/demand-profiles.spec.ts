@@ -37,6 +37,7 @@ test("daily profiles retain UTC filter state and show group, scale, exports and 
   await page.goto("/explore?view=profiles&area=NO2&start=2025-10-24&end=2025-10-27");
   await firstRequest;
   await expect(page.getByRole("heading", { name: "Daily demand profiles" })).toBeVisible();
+  await expect(page.getByText("NO2 · Hourly household patterns in Oslo time")).toBeVisible();
   await expect(page.getByText("Synthetic fixture example")).toBeVisible();
   await expect(page.getByRole("img", { name: /NO2 weekday and weekend daily household demand profiles in kWh/ })).toBeVisible();
   await expect(page.getByText("1 complete 24-hour days")).toBeVisible();
@@ -103,6 +104,7 @@ test("fixture API delivers the profile contract without a browser mock", async (
   await page.getByRole("button", { name: "Coverage & method" }).click();
   await expect(page.getByRole("dialog", { name: "Coverage & method" })).toContainText("UTC midnight");
   await page.getByRole("button", { name: "Close Coverage & method" }).click();
+  await page.getByText("Representative observed days", { exact: true }).click();
   const representative = page.getByRole("button", { name: /Inspect .* representative day/ }).first();
   await expect(representative).toBeVisible();
   await representative.focus();

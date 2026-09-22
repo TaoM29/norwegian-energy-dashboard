@@ -10,12 +10,10 @@ export function AnalysisShell({
   title,
   description,
   children,
-  compact = false,
 }: {
   title: string;
   description: string;
   children: ReactNode;
-  compact?: boolean;
 }) {
   const path = usePathname();
   const guides: Record<string, string> = {
@@ -29,53 +27,28 @@ export function AnalysisShell({
       "The map compares Norway’s five electricity price areas. Demand peaks compares household energy only at hours observed in all five areas. Snow model is a separate estimate of wind-driven transport at one location. Coverage and assumptions are shown with each result.",
   };
   return (
-    <div
-      className={`analysis-workspace${compact ? " analysis-workspace-compact" : ""}`}
-    >
+    <div className="analysis-workspace">
       <a href="#analysis-main" className="skip-link">
         Skip to analysis
       </a>
       <AppNavigation />
       <main className="analysis-main" id="analysis-main" tabIndex={-1}>
         <header className="analysis-heading">
-          {!compact && (
-            <span className="eyebrow">NORWAY, THROUGH THE DATA</span>
-          )}
-          <h1>{title}</h1>
-          <p>{description}</p>
-        </header>
-        {guides[path] && (
-          <div className="reading-guide">
-            <HelpPanel label="How this works">
+          <div>
+            <h1>{title}</h1>
+            <p>{description}</p>
+          </div>
+          {guides[path] && (
+            <HelpPanel label="About this view">
               <p>{guides[path]}</p>
-              <h3>Reading the results</h3>
-              <p>
-                Use the applied filters to check which region and dates you are
-                viewing. Gaps mean missing data, not zero. Open Export for the
-                chart image and available underlying values.
-              </p>
               <a href="/methods">Methods, sources and recorded evidence →</a>
             </HelpPanel>
-          </div>
-        )}
+          )}
+        </header>
         {children}
         <footer className="analysis-footer">
-          <HelpPanel label="Sources & interpretation">
-            <h3>Energy and weather</h3>
-            <p>
-              Energy observations come from Elhub. Weather uses Open-Meteo
-              ERA5-Seamless reanalysis, with a fixed city proxy for each price
-              area. Analytical intervals use UTC.
-            </p>
-            <h3>What the results mean</h3>
-            <p>
-              Statistical flags identify candidates for investigation, not
-              verified faults. Forecast uncertainty is conditional on the saved
-              model and assumptions. Snow transport is a model estimate, not a
-              site measurement.
-            </p>
-            <a href="/methods">Open methods and data coverage →</a>
-          </HelpPanel>
+          <span>Elhub energy · Open-Meteo weather</span>
+          <a href="/methods">Methods & data</a>
         </footer>
       </main>
     </div>

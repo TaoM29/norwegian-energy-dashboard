@@ -34,7 +34,7 @@ async function mockPeaks(page: Page) {
 test("Explore peaks use the selected area and inclusive dates with chart modes and method details", async ({ page }, testInfo) => {
   await mockPeaks(page);
   await page.goto("/explore?view=peaks&area=NO2&start=2025-01-01&end=2025-01-03");
-  await expect(page.getByRole("heading", { name: "Peaks & rapid changes" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "NO2 household demand peaks" })).toBeVisible();
   await expect(page.getByText("Synthetic fixture example")).toBeVisible();
   await expect(page.getByText("140 kWh")).toBeVisible();
   await expect(page.getByRole("img", { name: /NO2 household demand load duration/ })).toBeVisible();

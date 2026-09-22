@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { EChartsCoreOption } from "echarts/core";
 
+import { StudyError } from "@/components/study-error";
 import AnalysisChart from "@/components/analysis-chart";
 import { ExportMenu } from "@/components/export-menu";
 import { HelpPanel } from "@/components/help";
 import { Select } from "@/components/ui/select";
-import { areas, number } from "@/lib/api";
+import { ApiError, getJson, areas, number } from "@/lib/api";
 import { downloadCsv } from "@/lib/download";
 import "./sensitivity.css";
 
@@ -173,17 +174,18 @@ export default function SensitivityView({ area, onAreaChange }: { area: string; 
   const [study, setStudy] = useState<Study | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [missing, setMissing] = useState(false);
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
+    setMissing(false);
     try {
-      const response = await fetch("/api/diagnostics/sensitivity");
-      if (!response.ok) throw new Error("No saved sensitivity study is available.");
-      const data = (await response.json()) as Study;
+      const data = await getJson<Study>("/api/diagnostics/sensitivity");
       if (!Array.isArray(data.areas) || data.schemaVersion !== 1) throw new Error("The saved sensitivity study could not be read.");
       setStudy(data);
     } catch (problem) {
       setStudy(null);
+      setMissing(problem instanceof ApiError && problem.status === 404 && /no saved/i.test(problem.message));
       setError(problem instanceof Error ? problem.message : "No saved sensitivity study is available.");
     } finally {
       setLoading(false);
@@ -203,9 +205,9 @@ export default function SensitivityView({ area, onAreaChange }: { area: string; 
   return <div className="sensitivity-view">
     <div className="sensitivity-intro">
       <div>
-        <span className="sensitivity-eyebrow">Saved retrospective study</span>
-        <h2>How household demand changes with temperature</h2>
-        <p>Adjusted for calendar patterns. Select an area to inspect the recorded results; the study dates and model fit are fixed.</p>
+
+        <h2>Temperature & demand</h2>
+        <p>Household demand adjusted for calendar patterns. A saved study with fixed dates.</p>
       </div>
       <label>Price area
         <Select aria-label="Sensitivity price area" value={area} onChange={(event) => onAreaChange(event.target.value)}>
@@ -214,31 +216,32 @@ export default function SensitivityView({ area, onAreaChange }: { area: string; 
       </label>
     </div>
     {loading && <div className="diagnostics-state" role="status">Loading saved demand sensitivity study…</div>}
-    {error && <div className="diagnostics-state diagnostics-error" role="alert"><strong>Study unavailable</strong><span>{error}</span><button type="button" onClick={() => void load()}>Retry</button></div>}
+    {error && <StudyError message={error} missing={missing} onRetry={() => void load()} />}
     {study && <>
       <div className="sensitivity-study-strip">
         <span>{study.dataMode === "fixture" ? "Fixture study" : "Observed-data study"}</span>
         <span>Saved {date(study.createdAt)}</span>
-        <span>Study ID: {study.id}</span>
+
         <ExportMenu label="Export study">
           <a href="/api/diagnostics/sensitivity/artifact" download>Complete artifact JSON</a>
           {data && <button type="button" onClick={() => downloadCsv(`${stem}-curve.csv`, data.curve)}>Selected area curve CSV</button>}
         </ExportMenu>
       </div>
       {data ? <>
+        <section className="analysis-panel sensitivity-primary">
+          <div className="sensitivity-section-heading"><div><h2>Adjusted temperature response</h2><p>Difference from {metric(data.referenceTemperature)} °C under the same calendar conditions. An adjusted association, not a causal effect.</p></div></div>
+          {data.selectedModel === "calendar" && <div className="sensitivity-callout">Temperature did not improve validation enough to select a temperature model. The calendar-only response is zero.</div>}
+          {curve && <AnalysisChart option={curve} height={390} label={`${area} adjusted household-demand response to temperature with 95 percent pointwise uncertainty band`} exports={<button type="button" onClick={() => downloadCsv(`${stem}-curve.csv`, data.curve)}>Curve values CSV</button>} />}
+          <p className="sensitivity-caption">Shading is an approximate 95% pointwise uncertainty band for the mean adjusted contrast, using a 168-hour dependence adjustment. It is not a prediction interval for an individual hour. Values outside observed support are withheld.</p>
+          <details><summary>Curve values and 336-hour uncertainty check</summary><div className="sensitivity-table-wrap"><table><thead><tr><th>°C</th><th>Difference (kWh)</th><th>95% band, 168 h (kWh)</th><th>95% band, 336 h (kWh)</th><th>Nearby hours</th></tr></thead><tbody>{data.curve.map((point) => <tr key={point.temperature}><th>{metric(point.temperature)}</th><td>{metric(point.effect)}</td><td>{metric(point.lower)} to {metric(point.upper)}</td><td>{metric(point.lower336)} to {metric(point.upper336)}</td><td>{number(point.count, 0)}</td></tr>)}</tbody></table></div></details>
+        </section>
         <div className="sensitivity-summary">
           <div><span>Selected response</span><strong>{modelName(data.selectedModel)}</strong><small>Chosen on validation dates</small></div>
           <div><span>Held-out test MAE</span><strong>{metric(selectedModel?.test.mae)} <em>kWh</em></strong><small>{number(selectedModel?.test.count, 0)} test hours</small></div>
           <div><span>Training coverage</span><strong>{number(data.splits.train.observedHours, 0)} / {number(data.splits.train.expectedHours, 0)}</strong><small>complete paired hours</small></div>
           <div><span>Supported temperature</span><strong>{metric(data.support.min)} to {metric(data.support.max)} <em>°C</em></strong><small>City weather proxy</small></div>
         </div>
-        <section className="analysis-panel sensitivity-primary">
-          <div className="sensitivity-section-heading"><div><h2>Adjusted temperature response</h2><p>Household demand difference relative to {metric(data.referenceTemperature)} °C, for otherwise identical calendar conditions. Zero means no estimated difference from that reference.</p></div></div>
-          {data.selectedModel === "calendar" && <div className="sensitivity-callout">Temperature did not improve validation enough to select a temperature model. The calendar-only response is zero.</div>}
-          {curve && <AnalysisChart option={curve} height={390} label={`${area} adjusted household-demand response to temperature with 95 percent pointwise uncertainty band`} exports={<button type="button" onClick={() => downloadCsv(`${stem}-curve.csv`, data.curve)}>Curve values CSV</button>} />}
-          <p className="sensitivity-caption">Shading is an approximate 95% pointwise uncertainty band for the mean adjusted contrast, using a 168-hour dependence adjustment. It is not a prediction interval for an individual hour. Values outside observed support are withheld.</p>
-          <details><summary>Curve values and 336-hour uncertainty check</summary><div className="sensitivity-table-wrap"><table><thead><tr><th>°C</th><th>Difference (kWh)</th><th>95% band, 168 h (kWh)</th><th>95% band, 336 h (kWh)</th><th>Nearby hours</th></tr></thead><tbody>{data.curve.map((point) => <tr key={point.temperature}><th>{metric(point.temperature)}</th><td>{metric(point.effect)}</td><td>{metric(point.lower)} to {metric(point.upper)}</td><td>{metric(point.lower336)} to {metric(point.upper336)}</td><td>{number(point.count, 0)}</td></tr>)}</tbody></table></div></details>
-        </section>
+        <details className="study-details"><summary>Model comparison, coverage & residual checks</summary>
         <div className="sensitivity-two-col">
           <section className="analysis-panel"><h2>Temperature support</h2><p>Training and validation hours by temperature bin. Sparse extremes are less reliable even inside the supported range.</p>{support && <AnalysisChart option={support} height={260} label={`${area} development temperature support histogram`} />}
             <details><summary>Monthly temperature support</summary><div className="sensitivity-table-wrap"><table><thead><tr><th>Month</th><th>Hours</th><th>Min °C</th><th>Max °C</th></tr></thead><tbody>{data.support.byMonth.map((row) => <tr key={row.month}><td>{new Intl.DateTimeFormat("en-GB", { month: "long", timeZone: "UTC" }).format(new Date(Date.UTC(2024, row.month - 1, 1)))}</td><td>{number(row.count, 0)}</td><td>{metric(row.min)}</td><td>{metric(row.max)}</td></tr>)}</tbody></table></div></details>
@@ -259,7 +262,8 @@ export default function SensitivityView({ area, onAreaChange }: { area: string; 
             <div className="sensitivity-table-wrap"><table><thead><tr><th>Oslo month</th><th>Mean error (kWh)</th><th>Hours</th></tr></thead><tbody>{data.residuals.byMonth.map((row) => <tr key={row.month}><td>{new Intl.DateTimeFormat("en-GB", { month: "long", timeZone: "UTC" }).format(new Date(Date.UTC(2024, row.month - 1, 1)))}</td><td>{metric(row.mean)}</td><td>{number(row.count, 0)}</td></tr>)}</tbody></table></div>
           </details>
         </section>
-        <section className="analysis-panel sensitivity-limits"><h2>How to read this result</h2><p>This is an adjusted association, not evidence that a temperature change causes the displayed demand change. The curve compares temperatures under otherwise identical calendar conditions in an additive model; it does not predict demand for an individual hour.</p><p>Weather is represented by one fixed city proxy per area, not an area-wide average. Seasonal demand and temperature overlap, and unexplained serial structure may remain. Confidence is limited near sparse temperatures. The 336-hour uncertainty sensitivity and seasonal-term check are recorded below.</p><HelpPanel label="Study method and provenance"><div className="sensitivity-method"><p><strong>Seasonal sensitivity:</strong> {data.sensitivity.notes} Maximum curve difference: {metric(data.sensitivity.maxCurveDifference)} kWh, using {data.sensitivity.harmonics} annual harmonics.</p><h3>Protocol</h3><pre>{JSON.stringify(study.protocol, null, 2)}</pre><h3>Area metadata</h3><pre>{JSON.stringify(data.metadata, null, 2)}</pre><h3>Study metadata</h3><pre>{JSON.stringify(study.metadata, null, 2)}</pre></div></HelpPanel></section>
+        </details>
+        <details className="study-details sensitivity-limits"><summary>Interpretation & study method</summary><p>This is an adjusted association, not evidence that a temperature change causes the displayed demand change. The curve compares temperatures under otherwise identical calendar conditions in an additive model; it does not predict demand for an individual hour.</p><p>Weather is represented by one fixed city proxy per area, not an area-wide average. Seasonal demand and temperature overlap, and unexplained serial structure may remain. Confidence is limited near sparse temperatures. The 336-hour uncertainty sensitivity and seasonal-term check are recorded below.</p><HelpPanel label="Study method and provenance"><div className="sensitivity-method"><p><strong>Seasonal sensitivity:</strong> {data.sensitivity.notes} Maximum curve difference: {metric(data.sensitivity.maxCurveDifference)} kWh, using {data.sensitivity.harmonics} annual harmonics.</p><h3>Protocol</h3><pre>{JSON.stringify(study.protocol, null, 2)}</pre><h3>Area metadata</h3><pre>{JSON.stringify(data.metadata, null, 2)}</pre><h3>Study metadata</h3><pre>{JSON.stringify(study.metadata, null, 2)}</pre></div></HelpPanel></details>
       </> : <div className="diagnostics-state" role="status"><strong>{area} unavailable</strong><span>{selected?.status === "unavailable" ? selected.reason : "This area is absent from the saved study."}</span></div>}
     </>}
   </div>;

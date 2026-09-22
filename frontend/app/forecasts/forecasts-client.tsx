@@ -1210,7 +1210,6 @@ export default function ForecastsClient() {
     <AnalysisShell
       title="Forecasts & evaluation"
       description="Compare saved forecasts with actual demand and inspect the evidence behind each model."
-      compact
     >
       <section
         className={styles.selectorPanel}
@@ -1251,19 +1250,7 @@ export default function ForecastsClient() {
               <Settings2 size={15} aria-hidden="true" /> Experiment settings
             </button>
           ) : (
-            <HelpPanel label="Run experiments locally">
-              <p>
-                Custom runs are disabled on this deployment. Saved results and
-                downloads remain available.
-              </p>
-              <p>
-                A local installation supports bounded evaluation and SARIMAX
-                jobs, with progress reporting and cancellation.
-              </p>
-              <a href="https://github.com/TaoM29/norwegian-energy-dashboard/blob/main/docs/RELEASE.md">
-                Local setup instructions →
-              </a>
-            </HelpPanel>
+            <a className={styles.methodLink} href="/methods#local-experiments">Methods & local setup</a>
           )}
         </div>
       </section>
@@ -1318,7 +1305,7 @@ export default function ForecastsClient() {
           >
             <div className={styles.resultSummaryHeading}>
               <div>
-                <h2 id="result-summary-title">Saved test summary</h2>
+                <h2 id="result-summary-title">{detail.kind === "evaluation" ? "All-area benchmark" : "Saved evaluation"}</h2>
                 <HelpTip label="How the summary is calculated">
                   MAE ranking uses overall rows from the selected cohort and
                   only compares models when their sample counts match. Coverage
@@ -1343,7 +1330,8 @@ export default function ForecastsClient() {
               {metricSummary.sampleCount != null
                 ? ` · ${number(metricSummary.sampleCount, 0)} target observations per model`
                 : ""}
-              . Area, dates and origin affect the chart only.
+              . Evaluation cohort and included models set these scores; chart area,
+              target dates and origin affect only the forecast below.
             </p>
             <div className={styles.evidenceSummaryGrid}>
               <div>
@@ -1392,23 +1380,6 @@ export default function ForecastsClient() {
             </div>
           </section>
 
-          {reliabilityReport != null && (
-            <ReliabilityPanel
-              report={reliabilityReport}
-              protocol={metadata.studyProtocol}
-              resultId={detail.id}
-              unit={typeof metadata.unit === "string" ? metadata.unit : "kWh"}
-            />
-          )}
-
-          {ablationReport != null && (
-            <AblationPanel
-              report={ablationReport}
-              resultId={detail.id}
-              unit={typeof metadata.unit === "string" ? metadata.unit : "kWh"}
-            />
-          )}
-
           {detail.kind === "sarimax" && detail.converged === false && (
             <p className={styles.error} role="alert">
               The optimizer did not converge. Forecasts and nominal intervals
@@ -1420,15 +1391,10 @@ export default function ForecastsClient() {
           <section ref={forecastChartRef} tabIndex={-1} aria-label="Selected saved forecast" className={`analysis-panel ${styles.primaryChart}`}>
             <div className={styles.panelHeading}>
               <div>
-                <span className={styles.sectionKicker}>
-                  {detail.kind === "sarimax"
-                    ? "Issued custom forecast"
-                    : "Matched-origin forecast"}
-                </span>
                 <h2>
                   {detail.kind === "sarimax"
-                    ? "Forecast, seasonal baseline and uncertainty"
-                    : "Actual demand, baseline and model estimates"}
+                    ? "Forecast and interval"
+                    : "Observed and forecast"}
                 </h2>
               </div>
               <div className={styles.chartHeadingAside}>
@@ -1470,6 +1436,9 @@ export default function ForecastsClient() {
                 availableDates={availableTargetDates}
                 applyLabel="Apply dates"
               />
+              <details className={styles.chartOptions}>
+                <summary>Model & evaluation options · {view.models.length} models</summary>
+                <div className={styles.chartOptionsBody}>
               {availableSplits.length > 0 && (
                 <label>
                   Evaluation cohort
@@ -1539,6 +1508,8 @@ export default function ForecastsClient() {
                   </label>
                 ))}
               </fieldset>
+                </div>
+              </details>
             </form>
 
             {detail.kind === "sarimax" && (
@@ -1607,6 +1578,23 @@ export default function ForecastsClient() {
               {view.origin ? ` · origin ${formatDateTime(view.origin)}` : ""}.
             </p>
           </section>
+
+          {reliabilityReport != null && (
+            <ReliabilityPanel
+              report={reliabilityReport}
+              protocol={metadata.studyProtocol}
+              resultId={detail.id}
+              unit={typeof metadata.unit === "string" ? metadata.unit : "kWh"}
+            />
+          )}
+
+          {ablationReport != null && (
+            <AblationPanel
+              report={ablationReport}
+              resultId={detail.id}
+              unit={typeof metadata.unit === "string" ? metadata.unit : "kWh"}
+            />
+          )}
 
           {detail.kind === "evaluation" && (
             <ErrorExplorer

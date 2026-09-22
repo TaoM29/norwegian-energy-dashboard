@@ -1,24 +1,7 @@
-.diagnostics-tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
-  overflow-x: auto;
-  padding-bottom: 3px;
-}
-.diagnostics-tabs button {
-  border: 1px solid var(--border);
-  border-radius: var(--control-radius, 10px);
-  background: var(--surface);
-  color: var(--text-muted);
-  padding: 11px 16px;
-  white-space: nowrap;
-}
-.diagnostics-tabs button[aria-selected="true"] {
-  border-color: var(--border-strong);
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-weight: 650;
-}
+.analysis-picker { display: flex; align-items: center; gap: 12px; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+.analysis-picker > label { color: var(--text-muted); font-size: 13px; }
+.analysis-picker .modern-select { width: 240px; max-width: 100%; }
+@media (max-width: 480px) { .analysis-picker { align-items: stretch; flex-direction: column; gap: 7px; } .analysis-picker .modern-select { width: 100%; } }
 .analysis-controls .check-control {
   flex-direction: row;
   align-items: center;

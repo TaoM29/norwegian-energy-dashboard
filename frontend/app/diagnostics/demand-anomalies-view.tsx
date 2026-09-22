@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import type { EChartsCoreOption } from "echarts/core";
 
+import { StudyError } from "@/components/study-error";
 import AnalysisChart from "@/components/analysis-chart";
 import { ExportMenu } from "@/components/export-menu";
 import { Select } from "@/components/ui/select";
-import { areas, getJson, number } from "@/lib/api";
+import { ApiError, areas, getJson, number } from "@/lib/api";
 import { downloadCsv } from "@/lib/download";
 import "./demand-anomalies.css";
 
@@ -188,6 +189,7 @@ export default function DemandAnomaliesView({
   const [study, setStudy] = useState<Study | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [missing, setMissing] = useState(false);
   const [retry, setRetry] = useState(0);
 
   useEffect(() => {
@@ -197,6 +199,7 @@ export default function DemandAnomaliesView({
     setLoading(true);
     setStudy(null);
     setError("");
+    setMissing(false);
     getJson<Study>(`/api/diagnostics/demand-anomalies?${params}`, controller.signal)
       .then((result) => {
         if (result.schemaVersion !== 1 || !Array.isArray(result.areas) || !result.selectedArea || !result.selection) {
@@ -207,7 +210,8 @@ export default function DemandAnomaliesView({
       .catch((problem: unknown) => {
         if (controller.signal.aborted) return;
         setStudy(null);
-        setError(problem instanceof Error ? problem.message : "No saved demand-anomaly study is available.");
+        setMissing(problem instanceof ApiError && problem.status === 404 && /no saved/i.test(problem.message));
+      setError(problem instanceof Error ? problem.message : "No saved demand-anomaly study is available.");
       })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
@@ -231,9 +235,9 @@ export default function DemandAnomaliesView({
   return <div className="demand-anomalies-view">
     <div className="demand-anomalies-intro">
       <div>
-        <span className="demand-anomalies-eyebrow">Saved retrospective study</span>
-        <h2>Is household demand unusual for its context?</h2>
-        <p>Inspect observed demand against an expected-demand baseline for hour, season and temperature. Flags are investigation candidates, not confirmed events.</p>
+
+        <h2>Unusual household demand</h2>
+        <p>Compared with expected demand for the hour, season and temperature. Flags are candidates for investigation, not confirmed events.</p>
       </div>
       <label>Price area
         <Select aria-label="Demand anomalies price area" value={area} onChange={(event) => onAreaChange(event.target.value)}>
@@ -242,15 +246,14 @@ export default function DemandAnomaliesView({
       </label>
     </div>
     {loading && <div className="diagnostics-state" role="status">Loading saved demand-anomaly study…</div>}
-    {error && <div className="diagnostics-state diagnostics-error" role="alert">
-      <strong>Study unavailable</strong><span>{error}</span>
-      <div className="demand-anomalies-error-actions"><button type="button" onClick={() => setRetry((value) => value + 1)}>Retry</button>
-        {candidate && <button type="button" onClick={() => onCandidateChange("")}>Clear selected candidate</button>}</div>
-    </div>}
+    {error && <>
+      <StudyError message={error} missing={missing} onRetry={() => setRetry((value) => value + 1)} />
+      {candidate && !missing && <button type="button" onClick={() => onCandidateChange("")}>Clear selected candidate</button>}
+    </>}
     {study && !loading && <>
       <div className="demand-anomalies-study-strip">
         <span>{study.dataMode === "fixture" ? "Fixture demonstration" : "Observed-data study"}</span>
-        <span>Saved {localTime(study.createdAt)}</span><span>Study ID: {study.id}</span>
+        <span>Saved {localTime(study.createdAt)}</span>
         <ExportMenu label="Export anomaly study">
           <a href="/api/diagnostics/demand-anomalies/artifact" download>Complete artifact JSON</a>
           <button type="button" onClick={() => downloadCsv(`${fileStem}-window.csv`, windowRows)}>Selected window CSV</button>
@@ -260,12 +263,6 @@ export default function DemandAnomaliesView({
       {selected?.status !== "ok" ? <div className="diagnostics-state" role="status">
         <strong>{area} unavailable</strong><span>{selected?.reason || "This area is absent from the saved study."}</span>
       </div> : <>
-        <div className="demand-anomalies-summary">
-          <div><span>Scored hours</span><strong>{count(summary.scoredHours)}</strong><small>of {count(summary.expectedHours)} expected in the evaluation period</small></div>
-          <div><span>Flagged hours</span><strong>{count(summary.flaggedHours)}</strong><small>Unlabeled observational flags</small></div>
-          <div><span>Flag rate</span><strong>{numeric(summary.flagRate) == null ? "Unavailable" : `${(numeric(summary.flagRate)! * 100).toFixed(2)}%`}</strong><small>Of scored hours, not a false-alarm rate</small></div>
-          <div><span>Candidate episodes</span><strong>{count(summary.episodes)}</strong><small>Top {candidates.length} shown below</small></div>
-        </div>
         <section className="analysis-panel demand-anomalies-primary" aria-labelledby="anomaly-chart-title">
           <div className="demand-anomalies-heading">
             <div><h2 id="anomaly-chart-title">Observed and expected demand</h2>
@@ -281,6 +278,13 @@ export default function DemandAnomaliesView({
             </table></div>
           </details>
         </section>
+        <div className="demand-anomalies-summary">
+          <div><span>Scored hours</span><strong>{count(summary.scoredHours)}</strong><small>of {count(summary.expectedHours)} expected in the evaluation period</small></div>
+          <div><span>Flagged hours</span><strong>{count(summary.flaggedHours)}</strong><small>Unlabeled observational flags</small></div>
+          <div><span>Flag rate</span><strong>{numeric(summary.flagRate) == null ? "Unavailable" : `${(numeric(summary.flagRate)! * 100).toFixed(2)}%`}</strong><small>Of scored hours, not a false-alarm rate</small></div>
+          <div><span>Candidate episodes</span><strong>{count(summary.episodes)}</strong><small>Top {candidates.length} shown below</small></div>
+        </div>
+
         <div className="demand-anomalies-two-col">
           <section className="analysis-panel" aria-labelledby="candidate-list-title">
             <h2 id="candidate-list-title">Ranked candidate episodes</h2>
@@ -297,12 +301,12 @@ export default function DemandAnomaliesView({
               </table>
             </div> : <p>No flagged episodes were saved for this area.</p>}
           </section>
-          <section className="analysis-panel" aria-labelledby="peer-days-title">
-            <h2 id="peer-days-title">Comparable observed days</h2>
+          <details className="study-details">
+            <summary>Comparable observed days</summary>
             <p>Pre-evaluation peers offer hour, season and temperature context. They are historical observations, not verified normal controls.</p>
             <PeerDays peers={study.selection.peers} />
             {chosen && <p className="demand-anomalies-caption">Selected peak: {metric(chosen.peakActual)} kWh observed, {metric(chosen.peakExpected)} kWh expected at {metric(chosen.peakTemperature)} °C.</p>}
-          </section>
+          </details>
         </div>
         <section className="analysis-panel demand-anomalies-details" aria-labelledby="anomaly-method-title">
           <h2 id="anomaly-method-title">Coverage and method</h2>

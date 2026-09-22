@@ -10,6 +10,42 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+.sourceLinks {
+  line-height: 1.65;
+}
+.docDisclosure,
+.sourceDetails {
+  min-width: 0;
+}
+.docDisclosure {
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--border);
+}
+.docDisclosure > summary,
+.sourceDetails > summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 650;
+}
+.docDisclosure > summary {
+  padding: 17px 0;
+}
+.sourceDetails > summary {
+  width: fit-content;
+  margin-top: 12px;
+  font-size: 13px;
+}
+.docDisclosure > summary:focus-visible,
+.sourceDetails > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.docDisclosure > :global(.analysis-panel) {
+  margin: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
 .content ol {
   padding-left: 22px;
   list-style: decimal;
