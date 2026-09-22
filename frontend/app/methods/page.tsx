@@ -103,7 +103,7 @@ export default function Methods() {
             <li>
               <a href="/diagnostics">Diagnostics</a>: examine rolling
               correlation, STL/spectra and candidate anomalies. Flags invite
-              investigation; they do not verify faults.
+              investigation; they do not verify faults. The saved <a href="/diagnostics?view=demand_changes">demand-change study</a> compares complete UTC-day residual means with a frozen calendar/weather baseline. Its exploratory threshold failed the nominal false-alarm target in synthetic controls; it is not a live alert or proof of a structural break.
             </li>
             <li>
               <a href="/regional">Regional & snow</a>: compare areas, select a
