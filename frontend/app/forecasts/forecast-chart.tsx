@@ -345,7 +345,7 @@ export function ForecastChart({
         <div className={styles.chartExplanation}>
           <span>
             {intervalModel
-              ? `${nominalCoverage == null ? "Saved" : `${number(nominalCoverage, 0)}% nominal`} interval for ${intervalLabel}; hover to read its lower and upper bounds.`
+              ? `${nominalCoverage == null ? "Saved" : `${number(nominalCoverage, 0)}% nominal`} interval for ${intervalLabel}.`
               : "No stored uncertainty interval is available for these models."}
           </span>
         </div>

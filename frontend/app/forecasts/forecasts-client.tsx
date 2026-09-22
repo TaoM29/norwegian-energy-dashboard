@@ -1398,9 +1398,7 @@ export default function ForecastsClient() {
                 </h2>
               </div>
               <div className={styles.chartHeadingAside}>
-                <span>
-                  {view.area} · {summary?.horizon || 24} steps
-                </span>
+                <span>{summary?.horizon || 24} steps</span>
                 <HelpTip label="Forecast uncertainty">
                   Choose which model's stored predictive interval to display.
                   Intervals are conditional on the fitted model; weather
@@ -1571,12 +1569,6 @@ export default function ForecastsClient() {
                 No forecast rows match these filters.
               </p>
             )}
-            <p className={styles.appliedScope}>
-              <strong>Applied to this chart:</strong> {view.area} · {view.start}{" "}
-              to {view.end}, inclusive · {view.models.length} model
-              {view.models.length === 1 ? "" : "s"}
-              {view.origin ? ` · origin ${formatDateTime(view.origin)}` : ""}.
-            </p>
           </section>
 
           {reliabilityReport != null && (
@@ -1766,13 +1758,10 @@ export default function ForecastsClient() {
                         : "Model development split"}
                   </span>
                   <h2>Accuracy and interval quality</h2>
-                  {detail.kind === "evaluation" && (
-                    <p>
-                      Metrics cover all saved matched origins and areas.
-                      Area, date and origin filters above apply to the forecast
-                      chart; use the Area breakdown for regional scores.
-                    </p>
-                  )}
+                  <p>
+                    Dates and origin filter the chart only. Area filters
+                    area-specific metrics; the Area breakdown compares all regions.
+                  </p>
                 </div>
                 <span>
                   {metricSummary.rows} metric rows · {metricSummary.models}{" "}
@@ -1802,19 +1791,6 @@ export default function ForecastsClient() {
                   <option value="isPeakPeriod">Peak period</option>
                 </Select>
               </label>
-              <p className={styles.appliedScope}>
-                <strong>Applied to these metrics:</strong>{" "}
-                {detail.kind === "evaluation" &&
-                  `${view.split.replaceAll("_", " ")} cohort, `}
-                {view.models.length} selected model
-                {view.models.length === 1 ? "" : "s"}, and{" "}
-                {view.dimension === "overall"
-                  ? "overall breakdown"
-                  : `${view.dimension.replaceAll("isPeakPeriod", "peak period")} breakdown`}
-                . Target dates and forecast origin apply only to the chart. Area
-                applies when the saved metric rows are area-scoped; the Area
-                breakdown compares all regions.
-              </p>
               <MetricTable rows={filteredMetrics} dimension={view.dimension} />
               <details className={styles.allMetrics}>
                 <summary>All metrics</summary>

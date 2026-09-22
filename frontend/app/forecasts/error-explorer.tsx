@@ -282,7 +282,7 @@ export function ErrorExplorer({ metrics, predictions, failures, coverage, config
       </select>
     </div>
     {view === "area" ? <>
-      <p className={styles.note}>Each cell is a saved area × model MAE difference. Select a cell to inspect its worst saved baseline-relative example: the largest per-origin MAE increase versus the baseline.</p>
+      <p className={styles.note}>Each cell is a saved area × model MAE difference. Inspection opens its largest saved per-origin MAE increase versus the baseline.</p>
       <div className={styles.tableWrap} role="region" aria-label="Forecast error matrix" tabIndex={0}>
         <table className={styles.heatmap}>
           <caption>MAE minus seasonal baseline by price area and model · kWh; unavailable means no saved metric</caption>
