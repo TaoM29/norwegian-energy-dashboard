@@ -13,6 +13,8 @@ Identify what the user needs to compare or decide and the real controls, data, a
 
 Choose a coherent visual direction from a small set of relevant examples: readable typography, neutral surfaces, a deliberate accent, stable semantic series colors, and compact controls with generous space around important charts. Reuse existing tokens before introducing new ones. Prefer a dominant analytical view with supporting metrics over a wall of equally weighted cards. Do not import an inspiration site's branding, demo data, or unrelated AI/chat features.
 
+Apply the owner's [Apple design](../apple-design/SKILL.md) guidance for hierarchy, typography, responsiveness and restraint; [interaction design](../interaction-design/SKILL.md) for feedback and changing states; and [beautiful shadows](../beautiful-shadows/SKILL.md) when a surface needs elevation. Review the completed flow with [better-interface](../better-interface/SKILL.md) and its six domain skills. Scope the review to the delivered flow and its meaningful states, and report unverified checks honestly. Preserve the existing scientific meaning, component system and user preferences when adapting generic recipes.
+
 ## Select components deliberately
 
 Use [the source guide](references/sources.md) when selecting a library or component. shadcn/ui is the preferred foundation for navigation, filters, overlays, tables, and states. Existing compatible project components take priority. Browse the current catalog or registry index for candidates, then inspect only the relevant demos, documentation, dependencies, and source. A full code download of every component is unnecessary; if the user requests a full inventory, retrieve catalog metadata and state coverage.

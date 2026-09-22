@@ -20,6 +20,8 @@ For substantive work with independent parts, or an explicit Astra consultation, 
 
 Use [dashboard-ui](.agents/skills/dashboard-ui/SKILL.md) for the React dashboard's layout and component work, with shadcn/ui as the preferred foundation. Use [dashboard-motion](.agents/skills/dashboard-motion/SKILL.md) when transitions help explain an interaction; Transitions.dev and selected beUI components are references. Preserve the plan's analytical meaning, accessibility, feature parity, and chart-library trial. Reuse the existing frontend and dependencies.
 
+For frontend work, also apply the owner's requested [Apple design](.agents/skills/apple-design/SKILL.md), [interaction design](.agents/skills/interaction-design/SKILL.md), [interface review](.agents/skills/better-interface/SKILL.md), and [beautiful shadows](.agents/skills/beautiful-shadows/SKILL.md) guidance through the dashboard UI workflow. Keep pages spacious, with one primary analytical view, concise explanation and visible disclosures for detail. Use motion and elevation where they clarify interaction or hierarchy; a skill example alone does not justify a new dependency or decorative effect. Upstream revisions and licenses are recorded in [UI skill sources](.agents/skills/UI_SKILL_SOURCES.md).
+
 ## Project checks and credential handling
 
 - Existing Python tests run with `python -m pytest -q`; CI covers Python 3.11 and 3.12. Choose checks relevant to the change and retain migration acceptance requirements.
