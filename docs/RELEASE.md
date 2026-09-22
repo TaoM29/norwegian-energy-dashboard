@@ -36,12 +36,14 @@ To publish updated data:
 1. Run the existing local refresh and any explicitly requested forecast analysis.
 2. Run `python scripts/prepare_vercel.py` to package a consistent SQLite backup,
    weather, geography, saved forecasts, and the prepared demand-sensitivity, demand-anomaly and demand-change studies
-   (when present) in `.vercel-deploy/api/snapshots.tar.gz`.
+   in `.vercel-deploy/api/snapshots.tar.gz`. All three studies are required; missing or empty files stop packaging before replacing the previous archive.
    The command prints the archive's SHA-256.
 3. Upload it to the `norwegian-energy-snapshots` Vercel Blob store under a new path
    containing that hash. Keep previous archives for rollback; do not overwrite.
 4. Update the URL and SHA-256 in `data/snapshot.json`. Commit and push the
    manifest with any code changes to `main` when ready.
+
+The API build also rejects archives that omit any required saved study. Upload and verify the replacement archive before committing its URL and checksum with the code; an old sensitivity-only pin cannot serve the newer study pages. Keep the old archive with its matching API version for rollback.
 
 Snapshots are fixed per commit; pushing UI code reuses the pinned data. The GitHub
 refresh workflow publishes downloadable artifacts but does not change this pin.
@@ -61,7 +63,7 @@ Regenerating an existing fixture uses `python scripts/create_fixture.py --force`
 
 For real observations, run `python scripts/refresh_data.py backfill` from the repository root. Start the API without the fixture environment variables. Generate prepared forecasts with the command in [Phase 4 validation](PHASE4_VALIDATION.md). Ordinary views read published snapshots; point snow-weather requests are the exception. No MongoDB credentials are required by the dashboard.
 
-Prepare the fixed weather-adjusted demand study with `python scripts/run_demand_sensitivity.py` after the 2021–2025 snapshots are available. See [Step 1 validation](STEP1_VALIDATION.md) for the protocol, retained-input replay, and interpretation. The API reads `analyses/demand-sensitivity.json` beside `ENERGY_DATABASE`, or the file selected by `DEMAND_SENSITIVITY_ARTIFACT`; it never fits on page visits. Keep the result and its companion input directory for audit/replay. Missing studies produce an unavailable state. The Vercel packaging command includes the default prepared study when present; it does not upload or repin the public archive automatically. Containers read the same file from their data mount.
+Prepare the fixed weather-adjusted demand study with `python scripts/run_demand_sensitivity.py` after the 2021–2025 snapshots are available. See [Step 1 validation](STEP1_VALIDATION.md) for the protocol, retained-input replay, and interpretation. The API reads `analyses/demand-sensitivity.json` beside `ENERGY_DATABASE`, or the file selected by `DEMAND_SENSITIVITY_ARTIFACT`; it never fits on page visits. Keep the result and its companion input directory for audit/replay. Missing studies produce an unavailable state. The Vercel packaging command requires the default prepared study; it does not upload or repin the public archive automatically. Containers read the same file from their data mount.
 
 The broader forecast reliability study uses the [frozen Step 2 protocol](STEP2_PROTOCOL.md)
 and `python scripts/run_forecast_reliability.py`. Retain its checksummed input
@@ -87,7 +89,7 @@ The default result is `data/analyses/demand-anomalies.json`; retain its companio
 The API reads the result beside `ENERGY_DATABASE`, or from
 `DEMAND_ANOMALIES_ARTIFACT`, without fitting on page visits. The fixture generator
 also prepares a clearly labeled synthetic demonstration. Normal snapshot
-packaging includes the default result when present. After publishing the archive,
+packaging requires the default result. After publishing the archive,
 verify **Patterns → Demand anomalies**, all five areas, candidate selection,
 coverage and the complete JSON download. See [validation](STEP5_VALIDATION.md).
 
@@ -116,7 +118,7 @@ available. Its protocol pins that source's identity and checksum. The runner
 refuses to replace an existing result; retain `data/analyses/demand-changes.json`
 and its `demand-changes-evidence/` companion for replay. Ordinary page requests
 only read the saved result. `DEMAND_CHANGES_ARTIFACT` can override its location.
-Snapshot packaging includes the result when present, so publishing requires an
+Snapshot packaging requires the result, so publishing requires an
 updated snapshot as well as application code. Verify **Patterns → Demand changes**,
 the visible calibration limitation, timeline/distribution switch, coverage,
 sensitivity checks and JSON/CSV downloads. These are exploratory candidates;
