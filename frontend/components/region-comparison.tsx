@@ -55,7 +55,7 @@ export function RegionComparison({
           <h2 id="region-table-title">
             Regional consumption <span className="count-badge">5</span>
           </h2>
-          <p>Same dates. All five price areas. Select a region for details.</p>
+          <p>Select a region for details.</p>
         </div>
         <label className="sort-pill">
           <ArrowDownWideNarrow size={15} />

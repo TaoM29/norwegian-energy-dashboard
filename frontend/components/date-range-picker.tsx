@@ -341,8 +341,7 @@ export function DateRangePicker({
             )}
             {availableDates && (
               <span>
-                Dots mark saved forecast dates; this range filters those
-                results.
+                Dots mark saved forecast dates.
               </span>
             )}
             {shortcuts.length > 0 && (

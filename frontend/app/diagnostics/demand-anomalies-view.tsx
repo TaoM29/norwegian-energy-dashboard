@@ -266,7 +266,7 @@ export default function DemandAnomaliesView({
         <section className="analysis-panel demand-anomalies-primary" aria-labelledby="anomaly-chart-title">
           <div className="demand-anomalies-heading">
             <div><h2 id="anomaly-chart-title">Observed and expected demand</h2>
-              <p>{chosen ? `Window around ${localTime(chosen.peakTime)} Oslo time` : "First week of the saved evaluation period"} · {area} household demand</p></div>
+              <p>{chosen ? `Window around ${localTime(chosen.peakTime)} Oslo time` : "First week of the saved evaluation period"}</p></div>
           </div>
           {windowRows.length ? <AnalysisChart option={option} height={360} label={`${area} observed and expected household demand around ${chosen ? `candidate ${chosen.id}` : "the first evaluation week"}`} />
             : <div className="diagnostics-state" role="status">No hourly context is available for this selection.</div>}
@@ -282,7 +282,7 @@ export default function DemandAnomaliesView({
           <div><span>Scored hours</span><strong>{count(summary.scoredHours)}</strong><small>of {count(summary.expectedHours)} expected in the evaluation period</small></div>
           <div><span>Flagged hours</span><strong>{count(summary.flaggedHours)}</strong><small>Unlabeled observational flags</small></div>
           <div><span>Flag rate</span><strong>{numeric(summary.flagRate) == null ? "Unavailable" : `${(numeric(summary.flagRate)! * 100).toFixed(2)}%`}</strong><small>Of scored hours, not a false-alarm rate</small></div>
-          <div><span>Candidate episodes</span><strong>{count(summary.episodes)}</strong><small>Top {candidates.length} shown below</small></div>
+          <div><span>Candidate episodes</span><strong>{count(summary.episodes)}</strong><small>Consecutive flagged hours</small></div>
         </div>
 
         <div className="demand-anomalies-two-col">

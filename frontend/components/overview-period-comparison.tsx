@@ -106,7 +106,7 @@ export function OverviewPeriodComparison({
             Previous period comparison
           </h2>
           <p>
-            Two consecutive {days}-day windows · {area} · complete UTC days.
+            Two consecutive {days}-day windows · complete UTC days.
           </p>
         </div>
       </div>

@@ -10,7 +10,6 @@ import {
   Check,
   ChevronDown,
   Download,
-  MapPin,
   RefreshCw,
   Waves,
   type LucideIcon,
@@ -295,15 +294,11 @@ export default function Page() {
             )}
           </section>
           <div className="scope-line">
-            <span>
-              <MapPin size={14} /> {areas[selectedArea] || selectedArea}{" "}
-              <span className="scope-code">{selectedArea}</span>
-            </span>
             <span aria-live="polite">
               {loading
                 ? "Loading observations…"
                 : overview && !error
-                  ? `${shortDate(overview.query.start)} ${overview.query.start.slice(0, 4)} – ${shortDate(shiftDay(overview.query.end, -1))} ${shiftDay(overview.query.end, -1).slice(0, 4)} · ${partial ? "Partial coverage" : "Complete daily coverage"}`
+                  ? partial ? "Partial coverage" : "Complete daily coverage"
                   : "Data unavailable"}
             </span>
           </div>
@@ -324,8 +319,7 @@ export default function Page() {
           ) : !overview ? (
             <div className="state-panel" role="status">
               <Waves size={32} />
-              <h2>Gathering the energy picture</h2>
-              <p>Reading the validated Elhub observations.</p>
+              <h2>Loading observations…</h2>
             </div>
           ) : production?.mwh == null && consumption?.mwh == null ? (
             <Card className="state-panel" role="status">
