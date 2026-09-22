@@ -36,6 +36,7 @@ import { writeDashboardUrl } from "@/lib/navigation-state";
 import styles from "./forecasts.module.css";
 import { ForecastChart, modelColour } from "./forecast-chart";
 import { ReliabilityPanel } from "./reliability-panel";
+import { ErrorExplorer, type ErrorExplorerView, type ErrorExplorerMeasure } from "./error-explorer";
 
 const benchmarkModels = [
   "seasonal_naive",
@@ -132,6 +133,8 @@ type ViewState = {
   split: string;
   dimension: string;
   origin: string;
+  explorer: ErrorExplorerView;
+  explorerMeasure: ErrorExplorerMeasure;
 };
 type EvaluationDraft = {
   areas: string[];
@@ -184,6 +187,10 @@ function initialView(): ViewState {
     split: query.get("split") || "holdout",
     dimension: query.get("dimension") || "overall",
     origin: query.get("origin") || "",
+    explorer: (["area", "season", "peak_period", "horizon"] as const).find(
+      (value) => value === query.get("explorer"),
+    ) || "area",
+    explorerMeasure: query.get("explorerMeasure") === "coverage" ? "coverage" : "error",
   };
 }
 
@@ -412,6 +419,7 @@ export default function ForecastsClient() {
   const [experimentKind, setExperimentKind] =
     useState<Job["kind"]>("evaluation");
   const experimentDialogRef = useRef<HTMLDialogElement>(null);
+  const forecastChartRef = useRef<HTMLElement>(null);
 
   const updateView = useCallback(
     (patch: Partial<ViewState>, replace = true) => {
@@ -431,6 +439,8 @@ export default function ForecastsClient() {
       params.set("split", next.split);
       params.set("dimension", next.dimension);
       if (next.origin) params.set("origin", next.origin);
+      params.set("explorer", next.explorer);
+      params.set("explorerMeasure", next.explorerMeasure);
       writeDashboardUrl(`?${params}`, { replace });
     },
     [],
@@ -1116,7 +1126,6 @@ export default function ForecastsClient() {
   const metadata = detail?.metadata || summary?.metadata || {};
   const reliabilityReport = detail?.reliability;
   const isExploratoryStudy =
-    reliabilityReport != null &&
     asObject(metadata.studyProtocol).evidenceStatus === "exploratory";
   const originsMetadata = asObject(detail?.origins);
   const holdoutOrigins = Array.isArray(originsMetadata.holdout)
@@ -1395,7 +1404,7 @@ export default function ForecastsClient() {
             </p>
           )}
 
-          <section className={`analysis-panel ${styles.primaryChart}`}>
+          <section ref={forecastChartRef} tabIndex={-1} aria-label="Selected saved forecast" className={`analysis-panel ${styles.primaryChart}`}>
             <div className={styles.panelHeading}>
               <div>
                 <span className={styles.sectionKicker}>
@@ -1585,6 +1594,39 @@ export default function ForecastsClient() {
               {view.origin ? ` · origin ${formatDateTime(view.origin)}` : ""}.
             </p>
           </section>
+
+          {detail.kind === "evaluation" && (
+            <ErrorExplorer
+              metrics={metricRows.filter((row) => !explicitSplit(row) || ["holdout", "matched_holdout"].includes(explicitSplit(row)))}
+              predictions={predictionRows.filter((row) => !explicitSplit(row) || ["holdout", "matched_holdout"].includes(explicitSplit(row)))}
+              coverage={detail.coverage}
+              failures={failures}
+              config={detail.config}
+              resultId={detail.id}
+              exploratory={isExploratoryStudy}
+              view={view.explorer}
+              measure={view.explorerMeasure}
+              onViewChange={(explorer) => updateView({ explorer }, false)}
+              onMeasureChange={(explorerMeasure) => updateView({ explorerMeasure }, false)}
+              onInspect={({ area, model, origin }) => {
+                const rows = predictionRows.filter((row) =>
+                  areaKey(row) === area && originKey(row) === origin &&
+                  (!explicitSplit(row) || ["holdout", "matched_holdout"].includes(explicitSplit(row))),
+                );
+                const dates = rows.map(targetTime).filter(Boolean).sort();
+                if (!dates.length) return;
+                updateView({
+                  area, origin,
+                  start: dates[0].slice(0, 10),
+                  end: dates.at(-1)!.slice(0, 10),
+                  models: [...new Set(["seasonal_naive", model])].filter((value) => availableModels.includes(value)),
+                  split: explicitSplit(rows[0]) || "matched_holdout",
+                }, false);
+                forecastChartRef.current?.focus();
+                forecastChartRef.current?.scrollIntoView({ block: "start" });
+              }}
+            />
+          )}
 
           <details className={styles.detailDisclosure}>
             <summary>
