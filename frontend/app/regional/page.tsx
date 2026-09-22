@@ -836,8 +836,6 @@ export default function RegionalPage() {
           </form>
           <AppliedFilters
             dirty={energyChanged(draft, filters)}
-            start={filters.start}
-            end={filters.end}
             loading={regionalLoading}
             onReset={() =>
               setDraft({
@@ -864,8 +862,6 @@ export default function RegionalPage() {
           </form>
           <AppliedFilters
             dirty={peaksChanged(draft, filters)}
-            start={filters.start}
-            end={filters.end}
             loading={peaksLoading}
             onReset={() => setDraft({ ...draft, start: filters.start, end: filters.end })}
           />
@@ -1016,10 +1012,6 @@ export default function RegionalPage() {
             className={styles.appliedModel}
             data-pending={snowChanged(draft, filters) && !snowLoading}
           >
-            <span>
-              Applied: {filters.latitude.toFixed(5)}, {filters.longitude.toFixed(5)} ·
-              seasons {filters.seasonStart}–{filters.seasonEnd}
-            </span>
             <span role="status">
               {snowLoading
                 ? "Updating result…"
@@ -1055,7 +1047,7 @@ export default function RegionalPage() {
       <div className={styles.regionalFlow}>
         <section className="analysis-panel">
           <h2>Price-area comparison</h2>
-          <p className={styles.mapScope}>Applied: {filters.kind} · {filters.groups.join(", ")} · {summary?.aggregation || "Mean of valid hourly source records."}</p>
+          <p className={styles.mapScope}>{summary?.aggregation || "Mean of valid hourly source records."}</p>
           {summary?.areas.some((row) => row.partial) && (
             <p className={styles.partialCoverage} role="note">
               Partial coverage in {summary.areas.filter((row) => row.partial).map((row) => row.area).join(", ")}. Open regional values and coverage for counts.

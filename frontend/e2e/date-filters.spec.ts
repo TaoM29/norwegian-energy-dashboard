@@ -170,7 +170,9 @@ test("diagnostic drafts retain applied results and regional groups need no modif
   ).toBeVisible();
   await page.getByRole("button", { name: "Compare energy" }).click();
   await expect(page).toHaveURL(/groups=hydro%2Csolar/);
-  await expect(page.getByText(/Applied: production · hydro, solar/)).toBeVisible();
+  await expect(page.locator(".applied-filters")).toHaveText("Filters applied");
+  await expect(groups.getByRole("checkbox", { name: "hydro", exact: true })).toBeChecked();
+  await expect(groups.getByRole("checkbox", { name: "solar", exact: true })).toBeChecked();
 });
 
 test("mobile calendar fits, highlights a selected range, and preserves dates across reload", async ({

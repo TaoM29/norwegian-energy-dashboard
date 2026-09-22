@@ -914,9 +914,6 @@ export default function DiagnosticsWorkbench() {
       {applied && (
         <AppliedFilters
           dirty={dirty}
-          start={applied.start}
-          end={applied.end}
-          area={applied.area}
           loading={Boolean(status)}
           onReset={() => {
             request.current += 1;

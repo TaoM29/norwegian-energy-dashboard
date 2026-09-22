@@ -674,9 +674,6 @@ export default function ExploreClient() {
       {active ? (
         <AppliedFilters
           dirty={dirty}
-          start={active.start}
-          end={active.end}
-          area={active.area}
           loading={loading}
           onReset={() => {
             setDraft({ ...active });
