@@ -20,6 +20,7 @@ import { AppliedFilters } from "@/components/applied-filters";
 import { HelpPanel, HelpTip } from "@/components/help";
 import { Select } from "@/components/ui/select";
 import { writeDashboardUrl } from "@/lib/navigation-state";
+import { RegionalPeaksView, type RegionalPeaks } from "@/components/demand-peaks";
 import styles from "./regional.module.css";
 
 const productionGroups = [
@@ -39,7 +40,7 @@ const consumptionGroups = [
 ];
 const fenceTypes = ["Wyoming", "Slat-and-wire", "Solid"];
 
-type Mode = "energy" | "snow";
+type Mode = "energy" | "peaks" | "snow";
 type Filters = {
   mode: Mode;
   area: string;
@@ -177,7 +178,7 @@ function initialFilters(coverage?: Coverage): Filters {
     (!requestedMode &&
       (query.has("lat") || query.has("lon") || query.has("seasonStart")))
       ? "snow"
-      : "energy";
+      : requestedMode === "peaks" ? "peaks" : "energy";
   return {
     mode,
     area: areas[query.get("area") || ""] ? query.get("area")! : "NO1",
@@ -241,6 +242,10 @@ function snowChanged(draft: Filters, applied: Filters) {
   );
 }
 
+function peaksChanged(draft: Filters, applied: Filters) {
+  return draft.start !== applied.start || draft.end !== applied.end;
+}
+
 function csvSnowRows(result: SnowResult) {
   return result.seasonal.map((row) => ({
     season: row.season,
@@ -261,6 +266,9 @@ export default function RegionalPage() {
   const [coverageBounds, setCoverageBounds] = useState<Coverage | null>(null);
   const [draft, setDraft] = useState<Filters | null>(null);
   const [summary, setSummary] = useState<RegionalSummary | null>(null);
+  const [peaks, setPeaks] = useState<RegionalPeaks | null>(null);
+  const [peaksError, setPeaksError] = useState("");
+  const [peaksLoading, setPeaksLoading] = useState(false);
   const [snow, setSnow] = useState<SnowResult | null>(null);
   const [geographyReady, setGeographyReady] = useState(false);
   const [regionalError, setRegionalError] = useState("");
@@ -278,6 +286,7 @@ export default function RegionalPage() {
       setFilters(value);
       setDraft(value);
       setRegionalLoading(value.mode === "energy");
+      setPeaksLoading(value.mode === "peaks");
       setSnowLoading(value.mode === "snow");
       writeUrl(value, true);
     };
@@ -352,6 +361,23 @@ export default function RegionalPage() {
   ]);
 
   useEffect(() => {
+    if (!filters || filters.mode !== "peaks") {
+      setPeaksLoading(false);
+      return;
+    }
+    const controller = new AbortController();
+    setPeaksLoading(true);
+    setPeaksError("");
+    setPeaks(null);
+    const query = new URLSearchParams({ start: filters.start, end: shiftDay(filters.end, 1) });
+    getJson<RegionalPeaks>(`/api/regional/demand-peaks?${query}`, controller.signal)
+      .then((value) => { if (!controller.signal.aborted) setPeaks(value); })
+      .catch((error) => { if (!controller.signal.aborted) setPeaksError(error.message); })
+      .finally(() => { if (!controller.signal.aborted) setPeaksLoading(false); });
+    return () => controller.abort();
+  }, [filters?.mode, filters?.start, filters?.end, requestRevision]);
+
+  useEffect(() => {
     if (!filters || filters.mode !== "snow") {
       setSnowLoading(false);
       return;
@@ -408,6 +434,10 @@ export default function RegionalPage() {
   function apply(event: FormEvent) {
     event.preventDefault();
     if (!draft || !filters) return;
+    if (draft.mode === "peaks" && (Date.parse(`${shiftDay(draft.end, 1)}T00:00:00Z`) - Date.parse(`${draft.start}T00:00:00Z`)) / 86400000 > 366) {
+      setPeaksError("Peak comparison supports up to 366 inclusive dates. Choose a shorter range.");
+      return;
+    }
     const next: Filters =
       draft.mode === "energy"
         ? {
@@ -419,7 +449,12 @@ export default function RegionalPage() {
             kind: draft.kind,
             groups: draft.groups,
           }
-        : {
+        : draft.mode === "peaks" ? {
+            ...filters,
+            mode: "peaks",
+            start: draft.start,
+            end: draft.end,
+          } : {
             ...filters,
             mode: "snow",
             latitude: draft.latitude,
@@ -434,6 +469,7 @@ export default function RegionalPage() {
     filtersRef.current = next;
     setFilters(next);
     setRegionalLoading(next.mode === "energy");
+    setPeaksLoading(next.mode === "peaks");
     setSnowLoading(next.mode === "snow");
     setRequestRevision((value) => value + 1);
     writeUrl(next);
@@ -446,8 +482,10 @@ export default function RegionalPage() {
     setFilters(next);
     setDraft({ ...draft, mode });
     setRegionalError("");
+    setPeaksError("");
     setSnowError("");
     setRegionalLoading(mode === "energy");
+    setPeaksLoading(mode === "peaks");
     setSnowLoading(mode === "snow");
     writeUrl(next);
   }
@@ -680,14 +718,14 @@ export default function RegionalPage() {
   return (
     <AnalysisShell
       title="Regional analysis"
-      description="Compare energy across Norway’s price areas or estimate wind-driven snow transport at one location."
+      description="Compare energy and household demand across price areas, or estimate wind-driven snow transport."
     >
       <div
         className={styles.modeSwitch}
         role="tablist"
         aria-label="Regional analysis"
       >
-        {(["energy", "snow"] as Mode[]).map((mode) => (
+        {(["energy", "peaks", "snow"] as Mode[]).map((mode) => (
           <button
             id={`regional-${mode}-tab`}
             key={mode}
@@ -706,17 +744,16 @@ export default function RegionalPage() {
               ].includes(event.key))
                 return;
               event.preventDefault();
-              const next =
-                event.key === "ArrowLeft" || event.key === "Home"
-                  ? "energy"
-                  : "snow";
+              const modes: Mode[] = ["energy", "peaks", "snow"];
+              const position = modes.indexOf(mode);
+              const next = event.key === "Home" ? modes[0] : event.key === "End" ? modes[modes.length - 1] : modes[(position + (event.key === "ArrowRight" ? 1 : -1) + modes.length) % modes.length];
               chooseMode(next);
               requestAnimationFrame(() =>
                 document.getElementById(`regional-${next}-tab`)?.focus(),
               );
             }}
           >
-            {mode === "energy" ? "Energy comparison" : "Snow model"}
+            {mode === "energy" ? "Energy comparison" : mode === "peaks" ? "Demand peaks" : "Snow model"}
           </button>
         ))}
       </div>
@@ -809,6 +846,25 @@ export default function RegionalPage() {
                 groups: filters.groups,
               })
             }
+          />
+        </>
+      ) : filters.mode === "peaks" ? (
+        <>
+          <form id="regional-peaks-panel" role="tabpanel" aria-labelledby="regional-peaks-tab" className="analysis-controls" onSubmit={apply}>
+            <DateRangePicker
+              value={{ start: draft.start, end: draft.end }}
+              min={coverageBounds?.coverage.start}
+              max={coverageBounds ? shiftDay(coverageBounds.coverage.end, -1) : undefined}
+              onChange={(range) => setDraft({ ...draft, ...range })}
+            />
+            <button type="submit">Compare matched hours</button>
+          </form>
+          <AppliedFilters
+            dirty={peaksChanged(draft, filters)}
+            start={filters.start}
+            end={filters.end}
+            loading={peaksLoading}
+            onReset={() => setDraft({ ...draft, start: filters.start, end: filters.end })}
           />
         </>
       ) : (
@@ -1136,6 +1192,14 @@ export default function RegionalPage() {
           )}
         </section>
       </div>
+      )}
+
+      {filters.mode === "peaks" && (
+        <>
+          {peaksLoading && <section className="analysis-panel" role="status">Loading matched household demand…</section>}
+          {peaksError && <section className="analysis-panel" role="alert"><p className={styles.error}>{peaksError}</p><button type="button" onClick={() => setRequestRevision((value) => value + 1)}>Try again</button></section>}
+          {!peaksLoading && !peaksError && peaks && <RegionalPeaksView result={peaks} />}
+        </>
       )}
 
       {filters.mode === "snow" && (
