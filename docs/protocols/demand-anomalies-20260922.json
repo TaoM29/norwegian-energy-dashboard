@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "id": "step5-contextual-demand-anomalies-20260922",
+  "frozenAt": "2026-09-22T10:30:37.280504+00:00",
+  "evidenceStatus": "exploratory",
+  "purpose": "Retrospective inspection with same-hour realized city-proxy temperature and revised aggregate demand. Flags are investigation candidates, not confirmed incidents, causal effects, or operational alerts. 2025 has already been inspected in prior studies.",
+  "config": {
+    "start": "2021-01-01",
+    "train_end": "2023-01-01",
+    "validation_end": "2024-01-01",
+    "calibration_end": "2025-01-01",
+    "end": "2026-01-01",
+    "minimum_coverage": 0.95,
+    "minimum_train": 10000,
+    "minimum_validation": 4000,
+    "minimum_calibration": 8000,
+    "minimum_calibration_dates": 300,
+    "minimum_test": 4000,
+    "ridge_alpha": 1.0,
+    "minimum_improvement": 0.01,
+    "minimum_absolute_improvement": 0.01,
+    "tail_fraction": 0.01,
+    "peer_limit": 20
+  },
+  "areas": [
+    "NO1",
+    "NO2",
+    "NO3",
+    "NO4",
+    "NO5"
+  ],
+  "inputManifestSha256": "e8ee286bffea81e9d0d43cb8d2d329c47e22722e4226a6f4564a608abd278de5",
+  "modelPolicy": "Step1 basis and selection rule, fresh chronology: preprocessing/train 2021\u20132022, select on 2023, refit coefficients on 2021\u20132023, signed residual calibration 2024, exploratory review 2025. No rolling updates.",
+  "thresholdPolicy": "Area-specific signed 0.005/0.995 residual quantiles. Display raw expected plus frozen median residual correction. Score signed deviation divided by its respective tail width; flag strictly above one. Not a probability or confidence interval.",
+  "supportPolicy": "Complete finite pairs only; no filling. Temperature outside development observed min/max is unsupported and unscored. At least 95% pairs per split; calibration also needs 8000 supported hours and 300 UTC dates. Report season/day-type support without separate thresholds.",
+  "episodePolicy": "Consecutive UTC flagged hours of the same sign; missing/unsupported/unflagged hours or a sign change break the episode. Rank by peak score, then timestamp. Retain all rows and episodes; show the first 20 for review.",
+  "peerPolicy": {
+    "source": "pre-2025 complete 24-hour Europe/Oslo local days",
+    "sameWeekday": true,
+    "sameHolidayStatus": true,
+    "maximumSeasonDistanceDays": 45,
+    "maximumMeanTemperatureDifferenceC": 3,
+    "count": 3,
+    "order": [
+      "absolute mean temperature difference",
+      "circular seasonal distance",
+      "most recent"
+    ],
+    "excludeDstDays": true,
+    "demandBasedFiltering": false,
+    "interpretation": "Comparable observations, not confirmed normal controls; no relaxation when unmatched."
+  },
+  "syntheticValidation": {
+    "seeds": [
+      20260922,
+      20260923,
+      20260924,
+      20260925,
+      20260926
+    ],
+    "years": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "noise": {
+      "rho": 0.8,
+      "marginalSigmaKWh": 30,
+      "stationaryInitialization": true
+    },
+    "weatherNoise": {
+      "rho": 0.95,
+      "marginalSigmaC": 3
+    },
+    "meanDemand": "1200 + 120*sin(2*pi*localHour/24) - 100*weekend - 80*NorwegianHoliday + 60*sin(2*pi*localAnnualPhase) + 20*elapsedYears - 20*temperature",
+    "temperature": "8 + 12*sin(2*pi*UTCElapsedDays/365.2425) + 2*cos(2*pi*localHour/24) + stationary AR(1) weather noise",
+    "months": [
+      1,
+      4,
+      7,
+      10
+    ],
+    "events": [
+      {
+        "type": "positive_spike",
+        "day": 10,
+        "hourUTC": 12,
+        "durationHours": 1,
+        "sigmaMultiple": 6
+      },
+      {
+        "type": "negative_spike",
+        "day": 12,
+        "hourUTC": 12,
+        "durationHours": 1,
+        "sigmaMultiple": -6
+      },
+      {
+        "type": "level_shift",
+        "day": 15,
+        "hourUTC": 0,
+        "durationHours": 48,
+        "sigmaMultipleByMonth": {
+          "1": 4,
+          "4": -4,
+          "7": 4,
+          "10": -4
+        }
+      },
+      {
+        "type": "observed_zero",
+        "day": 21,
+        "hourUTC": 0,
+        "durationHours": 6,
+        "value": 0
+      }
+    ],
+    "missingWindow": {
+      "start": "2025-11-10T00:00:00Z",
+      "hours": 6
+    },
+    "peerLimit": 0,
+    "report": "Clean known-no-event false flags/episodes separately from injected event detection, affected-hour recall, and unaffected-window flags; observed real data have no true-normal labels."
+  }
+}

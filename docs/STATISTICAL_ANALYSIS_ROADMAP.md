@@ -2,7 +2,7 @@
 
 Prepared 2026-09-21 following the project-wide analysis review.
 
-**Status: Steps 0–1 complete and published; Steps 2–4 complete locally on 2026-09-22; Steps 5–8 remain planned.** This document defines the work for step-by-step delivery and records completed checks. It does not authorize executing every step at once. Implementation proceeds in individually selected steps, with results and limitations reviewed before expanding scope.
+**Status: Steps 0–1 complete and published; Steps 2–5 complete locally on 2026-09-22; Steps 6–8 remain planned.** This document defines the work for step-by-step delivery and records completed checks. It does not authorize executing every step at once. Implementation proceeds in individually selected steps, with results and limitations reviewed before expanding scope.
 
 The goal is to answer useful questions with defensible evidence: what drives observed demand patterns, where forecasts fail, and how much confidence their results deserve. Reuse the current Next.js/FastAPI application and analytical stack. Prefer a small number of understandable studies over more models, pages, or infrastructure.
 
@@ -33,12 +33,12 @@ The sequence below puts correctness first, then the recommended initial studies.
 | 2 | Broader forecast reliability study | Frozen experiment protocol and eligible data | Medium–large | Complete locally; [validation](STEP2_VALIDATION.md) |
 | 3 | Visual forecast-error explorer | Existing saved results; extend with Step 2 later | Small–medium | Complete locally; [validation](STEP3_VALIDATION.md) |
 | 4 | Forecast feature ablation | Step 2 evaluation protocol | Medium | Complete locally; [validation](STEP4_VALIDATION.md) |
-| 5 | Contextual demand anomalies | Validated expected-demand baseline; reuse Step 1 where suitable | Medium | Planned |
+| 5 | Contextual demand anomalies | Validated expected-demand baseline; reuse Step 1 where suitable | Medium | Complete locally; [validation](STEP5_VALIDATION.md) |
 | 6 | Peak demand, rapid changes, and regional synchrony | Validated matched hourly coverage | Small–medium | Planned |
 | 7 | Daily demand profiles; optional clustering | Explicit local-day and normalization policy | Medium | Planned |
 | 8 | Persistent change and model drift | Adequate historical coverage; Step 2 for forecast-error drift | Medium–large | Planned |
 
-Recommended initial scope: Step 0, then Steps 1–3. Step 3 can be delivered before the larger benchmark finishes because it exposes existing results. Step 4 is now complete; Step 5 is the next candidate, with Steps 6–8 remaining later work.
+Recommended initial scope: Step 0, then Steps 1–3. Step 3 can be delivered before the larger benchmark finishes because it exposes existing results. Step 5 is now complete; Step 6 is the next candidate, with Steps 7–8 remaining later work.
 
 Update a row only when work starts or its acceptance criteria are met. A study that finds no improvement can still be complete. An optional technique that adds no useful evidence should be omitted with the reason recorded.
 
@@ -190,6 +190,18 @@ Report paired baseline differences, MAE/RMSE, bias, residual dependence, and exi
 - Report threshold/calibration support by relevant area or calendar group; avoid unsupported fine-grained thresholds.
 - Missing data are handled as coverage issues, not ordinary demand anomalies. Flags remain investigation candidates.
 - Preserve existing temperature SPC and precipitation LOF capabilities; this is a distinct demand analysis.
+
+### Step 5 completion record — 2026-09-22
+
+Delivered the frozen retrospective study and **Patterns → Demand anomalies**
+for all five areas, including calibrated scores, contiguous candidate episodes,
+comparable days, coverage diagnostics and exports. Preserved existing SPC/LOF.
+All 80 injected events were detected; known-no-event synthetic controls had a
+0.7606% hourly false-flag rate. Real candidate rates range from 0.68% to 2.60%
+and have no established fault labels. All five observed results replayed exactly.
+See [protocol](STEP5_PROTOCOL.md) and [validation](STEP5_VALIDATION.md) for the
+independent audit, limitations, retained evidence and checks. Changes and fitted
+results remain local; no publication, commit or push was performed in this step.
 
 ## Step 6 — Peak demand, rapid changes, and regional synchrony
 

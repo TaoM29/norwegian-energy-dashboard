@@ -35,7 +35,7 @@ To publish updated data:
 
 1. Run the existing local refresh and any explicitly requested forecast analysis.
 2. Run `python scripts/prepare_vercel.py` to package a consistent SQLite backup,
-   weather, geography, saved forecasts, and the prepared demand-sensitivity study
+   weather, geography, saved forecasts, and the prepared demand-sensitivity and demand-anomaly studies
    (when present) in `.vercel-deploy/api/snapshots.tar.gz`.
    The command prints the archive's SHA-256.
 3. Upload it to the `norwegian-energy-snapshots` Vercel Blob store under a new path
@@ -48,7 +48,7 @@ refresh workflow publishes downloadable artifacts but does not change this pin.
 Temporary point-weather caches do not persist across function instances.
 
 Verify `/api/ready`, overview, weather, regional data, saved forecasts, and
-Patterns → Demand sensitivity through the dashboard domain after deployment.
+Patterns → Demand sensitivity and Demand anomalies through the dashboard domain after deployment.
 Roll back with Vercel's deployment history;
 API and frontend releases are promoted independently. The older pinned archives
 allow Git rebuilds to reproduce the same input data.
@@ -57,7 +57,7 @@ allow Git rebuilds to reproduce the same input data.
 
 Follow the [README local setup](../README.md#local-development-optional) to install dependencies, generate the synthetic fixture, and start the API and frontend. The fixture banner distinguishes generated data from observations.
 
-Regenerating an existing fixture uses `python scripts/create_fixture.py --force`; recreate any fixture containers afterwards so their bind mounts use the replacement directory. The fixture includes every base group and area, weather, a genuinely calculated seasonal-naive evaluation, and a fitted synthetic demand-sensitivity study. It does not manufacture evidence of model performance on real data. Point-weather fixture coverage is limited to the documented default point; other points return a clear fixture-coverage message without contacting the public source.
+Regenerating an existing fixture uses `python scripts/create_fixture.py --force`; recreate any fixture containers afterwards so their bind mounts use the replacement directory. The fixture includes every base group and area, weather, a genuinely calculated seasonal-naive evaluation, and fitted synthetic demand-sensitivity and demand-anomaly studies. It does not manufacture evidence of model performance on real data. Point-weather fixture coverage is limited to the documented default point; other points return a clear fixture-coverage message without contacting the public source.
 
 For real observations, run `python scripts/refresh_data.py backfill` from the repository root. Start the API without the fixture environment variables. Generate prepared forecasts with the command in [Phase 4 validation](PHASE4_VALIDATION.md). Ordinary views read published snapshots; point snow-weather requests are the exception. No MongoDB credentials are required by the dashboard.
 
@@ -79,6 +79,17 @@ artifact is packaged by the same snapshot workflow. After publication, select
 **Feature ablation · calendar, demand and weather** in Forecasts and verify the
 comparison panel and complete JSON download. Local fitting does not update the
 public site; committing code alone does not publish the new study.
+
+The [Step 5 contextual demand anomaly study](STEP5_PROTOCOL.md) runs with
+`python scripts/run_demand_anomalies.py` using the retained Step 1 input bundle.
+The default result is `data/analyses/demand-anomalies.json`; retain its companion
+`demand-anomalies-evidence/` directory and original Step 1 inputs for replay.
+The API reads the result beside `ENERGY_DATABASE`, or from
+`DEMAND_ANOMALIES_ARTIFACT`, without fitting on page visits. The fixture generator
+also prepares a clearly labeled synthetic demonstration. Normal snapshot
+packaging includes the default result when present. After publishing the archive,
+verify **Patterns → Demand anomalies**, all five areas, candidate selection,
+coverage and the complete JSON download. See [validation](STEP5_VALIDATION.md).
 
 Saved forecast detail and complete-artifact downloads stream the stored JSON
 file. This preserves every prediction row while supporting studies larger than
