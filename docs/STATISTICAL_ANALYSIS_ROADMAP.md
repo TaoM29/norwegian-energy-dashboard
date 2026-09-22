@@ -2,7 +2,7 @@
 
 Prepared 2026-09-21 following the project-wide analysis review.
 
-**Status: Steps 0–1 complete and published; Steps 2–6 complete locally on 2026-09-22; Steps 7–8 remain planned.** This document defines the work for step-by-step delivery and records completed checks. It does not authorize executing every step at once. Implementation proceeds in individually selected steps, with results and limitations reviewed before expanding scope.
+**Status: Steps 0–1 complete and published; Steps 2–7 complete locally on 2026-09-22; Step 8 remains planned.** This document defines the work for step-by-step delivery and records completed checks. It does not authorize executing every step at once. Implementation proceeds in individually selected steps, with results and limitations reviewed before expanding scope.
 
 The goal is to answer useful questions with defensible evidence: what drives observed demand patterns, where forecasts fail, and how much confidence their results deserve. Reuse the current Next.js/FastAPI application and analytical stack. Prefer a small number of understandable studies over more models, pages, or infrastructure.
 
@@ -35,10 +35,10 @@ The sequence below puts correctness first, then the recommended initial studies.
 | 4 | Forecast feature ablation | Step 2 evaluation protocol | Medium | Complete locally; [validation](STEP4_VALIDATION.md) |
 | 5 | Contextual demand anomalies | Validated expected-demand baseline; reuse Step 1 where suitable | Medium | Complete locally; [validation](STEP5_VALIDATION.md) |
 | 6 | Peak demand, rapid changes, and regional synchrony | Validated matched hourly coverage | Small–medium | Complete locally; [validation](STEP6_VALIDATION.md) |
-| 7 | Daily demand profiles; optional clustering | Explicit local-day and normalization policy | Medium | Planned |
+| 7 | Daily demand profiles; optional clustering | Explicit local-day and normalization policy | Medium | Complete locally; [validation](STEP7_VALIDATION.md). Optional clustering omitted |
 | 8 | Persistent change and model drift | Adequate historical coverage; Step 2 for forecast-error drift | Medium–large | Planned |
 
-Recommended initial scope: Step 0, then Steps 1–3. Step 3 can be delivered before the larger benchmark finishes because it exposes existing results. Step 6 is now complete; Step 7 is the next candidate, with Step 8 remaining later work.
+Recommended initial scope: Step 0, then Steps 1–3. Step 3 can be delivered before the larger benchmark finishes because it exposes existing results. Step 7 is now complete; Step 8 is the next candidate.
 
 Update a row only when work starts or its acceptance criteria are met. A study that finds no improvement can still be complete. An optional technique that adds no useful evidence should be omitted with the reason recorded.
 

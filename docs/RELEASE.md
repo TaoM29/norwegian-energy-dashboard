@@ -98,6 +98,14 @@ is required. After a release, verify **Explore → Demand peaks** and
 absolute/relative regional curves. The same endpoints work with the synthetic
 fixture and identify it explicitly.
 
+The [Step 7 daily profiles](STEP7_VALIDATION.md) also use the published household
+energy snapshot directly. No clustering job, prepared study or additional data
+source is required. Verify **Explore → Daily profiles**, both groupings and
+scales, and the observed-day drill-down after a release. UTC picker dates remain
+inclusive; the hourly profiles use Europe/Oslo local time. Confirm boundary and
+23/25-hour DST exclusions remain visible and repeated autumn hours retain their
+different offsets in the raw-day table and downloads.
+
 Saved forecast detail and complete-artifact downloads stream the stored JSON
 file. This preserves every prediction row while supporting studies larger than
 Vercel's [buffered response limit](https://vercel.com/kb/guide/how-to-bypass-vercel-body-size-limit-serverless-functions).

@@ -17,6 +17,14 @@ result must remain visible. Review each addition in desktop/mobile and both
 themes, asking whether a first-time reader can understand the chart without
 working through paragraphs of text or a row of competing buttons.
 
+The owner's additional references are now available locally: [Apple design](../.agents/skills/apple-design/SKILL.md),
+[interaction design](../.agents/skills/interaction-design/SKILL.md),
+[Better Interface](../.agents/skills/better-interface/SKILL.md), and
+[Beautiful Shadows](../.agents/skills/beautiful-shadows/SKILL.md). Use them for
+future frontend work through `dashboard-ui`: purposeful hierarchy, immediate
+feedback, measured accessibility and restrained depth. Their examples do not
+require adding motion, glass effects or shadows to every surface.
+
 ## What changed
 
 - A persistent desktop sidebar groups the six pages into Workspace, Analysis and Project. A slim top bar keeps the current page and theme controls visible; mobile uses a compact Menu button with all destinations available on demand, Escape dismissal and focus return.
