@@ -107,6 +107,7 @@ function darkColor(value: string, palette: ChartPalette) {
     "#557c9a": palette.series[1],
     "#a55366": palette.series[4],
     "#d2a83f": palette.series[2],
+    "#a87722": palette.series[2],
     "#d18d2f": palette.series[2],
     "#c4942f": palette.series[2],
     "#b88627": palette.series[2],

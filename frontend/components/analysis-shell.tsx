@@ -20,7 +20,7 @@ export function AnalysisShell({
   const path = usePathname();
   const guides: Record<string, string> = {
     "/explore":
-      "Start with daily energy totals, switch to weather, or inspect household demand peaks and consecutive hourly changes. A gap means missing observations, not zero. Energy is shown in kilowatt-hours (kWh); hourly peaks do not measure instantaneous power. Use Export below a chart to save its image or data, and open the method details for more context.",
+      "Start with energy totals, weather or household demand peaks. Daily profiles compares weekday/weekend and seasonal patterns by Oslo hour. Its bands show variation across observed days, not uncertainty in a mean. A gap means missing observations, not zero. Use Export to save values and open each view’s method details for context.",
     "/forecasts":
       "A forecast is an estimate, not a promise. Compare the model line with what actually happened. Shaded bands show estimated uncertainty; the accuracy table shows how often those bands contained the outcome. Lower average error is better, but only when models are compared on the same observations.",
     "/diagnostics":
