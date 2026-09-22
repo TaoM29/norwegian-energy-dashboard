@@ -91,6 +91,13 @@ packaging includes the default result when present. After publishing the archive
 verify **Patterns → Demand anomalies**, all five areas, candidate selection,
 coverage and the complete JSON download. See [validation](STEP5_VALIDATION.md).
 
+The [Step 6 demand-peak views](STEP6_VALIDATION.md) calculate descriptive summaries
+from the existing published energy snapshot. No prepared study or new data source
+is required. After a release, verify **Explore → Demand peaks** and
+**Regional → Demand peaks**, including date changes, shared-hour coverage and
+absolute/relative regional curves. The same endpoints work with the synthetic
+fixture and identify it explicitly.
+
 Saved forecast detail and complete-artifact downloads stream the stored JSON
 file. This preserves every prediction row while supporting studies larger than
 Vercel's [buffered response limit](https://vercel.com/kb/guide/how-to-bypass-vercel-body-size-limit-serverless-functions).

@@ -2,7 +2,7 @@
 
 Prepared 2026-09-21 following the project-wide analysis review.
 
-**Status: Steps 0–1 complete and published; Steps 2–5 complete locally on 2026-09-22; Steps 6–8 remain planned.** This document defines the work for step-by-step delivery and records completed checks. It does not authorize executing every step at once. Implementation proceeds in individually selected steps, with results and limitations reviewed before expanding scope.
+**Status: Steps 0–1 complete and published; Steps 2–6 complete locally on 2026-09-22; Steps 7–8 remain planned.** This document defines the work for step-by-step delivery and records completed checks. It does not authorize executing every step at once. Implementation proceeds in individually selected steps, with results and limitations reviewed before expanding scope.
 
 The goal is to answer useful questions with defensible evidence: what drives observed demand patterns, where forecasts fail, and how much confidence their results deserve. Reuse the current Next.js/FastAPI application and analytical stack. Prefer a small number of understandable studies over more models, pages, or infrastructure.
 
@@ -34,11 +34,11 @@ The sequence below puts correctness first, then the recommended initial studies.
 | 3 | Visual forecast-error explorer | Existing saved results; extend with Step 2 later | Small–medium | Complete locally; [validation](STEP3_VALIDATION.md) |
 | 4 | Forecast feature ablation | Step 2 evaluation protocol | Medium | Complete locally; [validation](STEP4_VALIDATION.md) |
 | 5 | Contextual demand anomalies | Validated expected-demand baseline; reuse Step 1 where suitable | Medium | Complete locally; [validation](STEP5_VALIDATION.md) |
-| 6 | Peak demand, rapid changes, and regional synchrony | Validated matched hourly coverage | Small–medium | Planned |
+| 6 | Peak demand, rapid changes, and regional synchrony | Validated matched hourly coverage | Small–medium | Complete locally; [validation](STEP6_VALIDATION.md) |
 | 7 | Daily demand profiles; optional clustering | Explicit local-day and normalization policy | Medium | Planned |
 | 8 | Persistent change and model drift | Adequate historical coverage; Step 2 for forecast-error drift | Medium–large | Planned |
 
-Recommended initial scope: Step 0, then Steps 1–3. Step 3 can be delivered before the larger benchmark finishes because it exposes existing results. Step 5 is now complete; Step 6 is the next candidate, with Steps 7–8 remaining later work.
+Recommended initial scope: Step 0, then Steps 1–3. Step 3 can be delivered before the larger benchmark finishes because it exposes existing results. Step 6 is now complete; Step 7 is the next candidate, with Step 8 remaining later work.
 
 Update a row only when work starts or its acceptance criteria are met. A study that finds no improvement can still be complete. An optional technique that adds no useful evidence should be omitted with the reason recorded.
 
@@ -217,6 +217,20 @@ results remain local; no publication, commit or push was performed in this step.
 - Do not interpret production minus consumption as measured cross-border flow or attribute co-movement to direct transfers.
 
 **Presentation:** Integrate observed-demand summaries into Explore and aligned area comparisons into Regional; no new top-level page is required.
+
+### Step 6 completion record — 2026-09-22
+
+Added **Explore → Demand peaks** and **Regional → Demand peaks** with exact
+load-duration thresholds, consecutive-hour changes, peak timing and aligned
+absolute/relative regional curves. Every regional statistic uses the same
+complete-case hourly cohort. Zero, missing, invalid, tied and DST cases have
+explicit behavior. The views retain one dominant chart, concise metrics and
+on-demand details, with no new top-level page or dependency.
+
+The full Python suite passed 315 tests; eight relevant browser journeys passed.
+Independent calculations and exact replay validated all five areas on the
+retained 2025 snapshot. See [validation](STEP6_VALIDATION.md) for observations,
+definitions, coverage and evidence. No commit, push or deployment was performed.
 
 ## Step 7 — Daily demand profiles and optional clustering
 

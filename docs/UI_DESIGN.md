@@ -2,6 +2,21 @@
 
 Implemented 2026-09-15. The interface supports two levels of reading: a visitor can understand the energy overview and follow a question; an analyst can reach detailed controls, source values, exports and methodological limits.
 
+## Readability as features grow
+
+Keep the main reading path light: a clear question, a dominant chart, a few useful
+values and one short interpretation. New analytical features should occupy a
+focused view within an existing workspace rather than accumulate panels on its
+default screen. Show only controls relevant to the current task; reuse shared
+filters and combine related downloads in one Export menu.
+
+Use generous spacing and a clear visual hierarchy. Keep methods, long tables,
+source metadata and secondary comparisons available on demand. Units, applied
+scope, missing-data notices and limitations needed to interpret the visible
+result must remain visible. Review each addition in desktop/mobile and both
+themes, asking whether a first-time reader can understand the chart without
+working through paragraphs of text or a row of competing buttons.
+
 ## What changed
 
 - A persistent desktop sidebar groups the six pages into Workspace, Analysis and Project. A slim top bar keeps the current page and theme controls visible; mobile uses a compact Menu button with all destinations available on demand, Escape dismissal and focus return.
