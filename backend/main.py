@@ -18,6 +18,7 @@ from backend.sensitivity import router as sensitivity_router
 from backend.demand_anomalies import router as demand_anomalies_router
 from backend.demand_peaks import router as demand_peaks_router
 from backend.demand_profiles import router as demand_profiles_router
+from backend.demand_changes import router as demand_changes_router
 
 
 DEFAULT_DATABASE = Path(__file__).resolve().parents[1] / "data" / "energy.sqlite"
@@ -28,6 +29,7 @@ app.include_router(sensitivity_router)
 app.include_router(demand_anomalies_router)
 app.include_router(demand_peaks_router)
 app.include_router(demand_profiles_router)
+app.include_router(demand_changes_router)
 
 
 class DatabaseUnavailable(RuntimeError):
