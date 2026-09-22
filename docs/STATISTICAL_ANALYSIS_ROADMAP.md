@@ -2,7 +2,7 @@
 
 Prepared 2026-09-21 following the project-wide analysis review.
 
-**Status: Steps 0–1 complete and published; Step 2 complete locally on 2026-09-22; Steps 3–8 remain planned.** This document defines the work for step-by-step delivery and records completed checks. It does not authorize executing every step at once. Implementation proceeds in individually selected steps, with results and limitations reviewed before expanding scope.
+**Status: Steps 0–1 complete and published; Steps 2–3 complete locally on 2026-09-22; Steps 4–8 remain planned.** This document defines the work for step-by-step delivery and records completed checks. It does not authorize executing every step at once. Implementation proceeds in individually selected steps, with results and limitations reviewed before expanding scope.
 
 The goal is to answer useful questions with defensible evidence: what drives observed demand patterns, where forecasts fail, and how much confidence their results deserve. Reuse the current Next.js/FastAPI application and analytical stack. Prefer a small number of understandable studies over more models, pages, or infrastructure.
 
@@ -31,7 +31,7 @@ The sequence below puts correctness first, then the recommended initial studies.
 | 0 | Correct hourly correlation windows and wind-rose sectors | None | Small | Complete 2026-09-21; see completion record below |
 | 1 | Weather-adjusted demand sensitivity | Step 0; validated common coverage | Medium | Complete and published; [validation](STEP1_VALIDATION.md) |
 | 2 | Broader forecast reliability study | Frozen experiment protocol and eligible data | Medium–large | Complete locally; [validation](STEP2_VALIDATION.md) |
-| 3 | Visual forecast-error explorer | Existing saved results; extend with Step 2 later | Small–medium | Planned |
+| 3 | Visual forecast-error explorer | Existing saved results; extend with Step 2 later | Small–medium | Complete locally; [validation](STEP3_VALIDATION.md) |
 | 4 | Forecast feature ablation | Step 2 evaluation protocol | Medium | Planned |
 | 5 | Contextual demand anomalies | Validated expected-demand baseline; reuse Step 1 where suitable | Medium | Planned |
 | 6 | Peak demand, rapid changes, and regional synchrony | Validated matched hourly coverage | Small–medium | Planned |
@@ -145,6 +145,14 @@ Report paired baseline differences, MAE/RMSE, bias, residual dependence, and exi
 - Check desktop/mobile layouts, keyboard access, both themes, and non-color access to values.
 
 **Likely integration:** `backend/forecast.py` and `frontend/app/forecasts/forecasts-client.tsx`. Reuse existing result contracts where sufficient.
+
+### Step 3 completion record — 2026-09-22
+
+- Added a forecast-error explorer to Forecasts, using saved area, season, peak-period and horizon metrics. The area heatmap shows signed MAE differences from the seasonal baseline; horizon curves show MAE or measured coverage with a separate nominal reference.
+- All views explicitly use the full saved matched cohort. Each displayed metric has support counts, older artifacts derive missing support from saved predictions, and missing configured cells remain unavailable in the chart, table and exports. Seasonal comparisons are labeled descriptive.
+- Heatmap drill-down opens the saved origin with the largest paired MAE difference versus baseline for an area/model, resetting chart dates and moving keyboard focus. Explorer view and horizon measure persist in URL/history state; exports identify the selected view and cohort.
+- Reconciled all 280 breakdown rows from the original and Step 2 artifacts against saved predictions. All eight focused Forecasts browser tests passed, including legacy support, partial data, URL state, downloads and mobile keyboard scrolling. TypeScript and the production build passed; the real study was reviewed at desktop/mobile widths in both themes.
+- No model fitting, new dependency, artifact replacement, commit, push or deployment was performed. See [Step 3 validation](STEP3_VALIDATION.md) for definitions, checks and limitations.
 
 ## Step 4 — Forecast feature ablation
 
