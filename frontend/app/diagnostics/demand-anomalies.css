@@ -1,0 +1,47 @@
+.demand-anomalies-view { min-width: 0; }
+.demand-anomalies-intro { display: flex; align-items: end; justify-content: space-between; gap: 24px; padding: 12px 2px 22px; }
+.demand-anomalies-eyebrow { color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.demand-anomalies-intro h2 { margin: 7px 0 6px; font-size: clamp(20px, 2vw, 27px); letter-spacing: -.03em; }
+.demand-anomalies-intro p { max-width: 720px; margin: 0; color: var(--text-muted); line-height: 1.55; }
+.demand-anomalies-intro label { display: grid; gap: 7px; flex: 0 0 215px; color: var(--text-muted); font-size: 12px; }
+.demand-anomalies-study-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-bottom: 20px; color: var(--text-muted); font-size: 12px; }
+.demand-anomalies-study-strip > span:first-child { padding: 5px 10px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+.demand-anomalies-study-strip > :last-child { margin-left: auto; }
+.demand-anomalies-view .export-popover a[href="/api/diagnostics/demand-anomalies/artifact"] { display: flex; align-items: center; min-height: 40px; padding: 9px; border-radius: 6px; color: var(--text); text-decoration: none; font-size: 12px; }
+.demand-anomalies-view .export-popover a[href="/api/diagnostics/demand-anomalies/artifact"]:hover { background: var(--surface-muted); }
+.demand-anomalies-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+.demand-anomalies-summary > div { min-width: 0; display: grid; align-content: start; gap: 6px; padding: 19px 20px; border: 1px solid var(--border); border-radius: var(--panel-radius, 16px); background: var(--surface); box-shadow: var(--panel-shadow, none); }
+.demand-anomalies-summary span, .demand-anomalies-coverage span { color: var(--text-muted); font-size: 12px; }
+.demand-anomalies-summary strong { color: var(--text); font-size: 21px; font-weight: 600; line-height: 1.25; }
+.demand-anomalies-summary small { color: var(--text-muted); font-size: 11px; line-height: 1.5; }
+.demand-anomalies-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+.demand-anomalies-heading h2 { margin: 0 0 4px; }
+.demand-anomalies-heading p, .demand-anomalies-caption, .demand-anomalies-view .analysis-panel > p, .demand-anomalies-view .diagnostics-state > span { color: var(--text-muted); font-size: 13px; line-height: 1.55; }
+.demand-anomalies-heading p { margin: 0; }
+.demand-anomalies-primary .analysis-chart { margin-top: 16px; }
+.demand-anomalies-caption { margin: 12px 0; }
+.demand-anomalies-heading button, .demand-anomalies-error-actions button { border: 1px solid var(--border); border-radius: var(--control-radius, 10px); background: var(--surface); color: var(--text); padding: 8px 12px; cursor: pointer; }
+.demand-anomalies-error-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.demand-anomalies-two-col { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 20px; }
+.demand-anomalies-two-col > * { min-width: 0; }
+.demand-anomalies-two-col h2 { margin-top: 0; }
+.demand-anomalies-table-wrap { max-width: 100%; overflow-x: auto; margin-top: 14px; }
+.demand-anomalies-table-wrap:focus-visible, .demand-anomalies-view summary:focus-visible, .demand-anomalies-view button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.demand-anomalies-table-wrap table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.demand-anomalies-table-wrap th, .demand-anomalies-table-wrap td { padding: 10px 11px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; vertical-align: top; font-variant-numeric: tabular-nums; }
+.demand-anomalies-table-wrap thead th { color: var(--text-muted); font-size: 11px; font-weight: 650; }
+.demand-anomalies-table-wrap tbody th { color: var(--text); font-weight: 600; }
+.demand-anomalies-table-wrap .is-selected { background: var(--accent-soft); }
+.demand-anomalies-table-wrap tbody th button { padding: 0; border: 0; background: transparent; color: var(--accent); font: inherit; text-decoration: underline; cursor: pointer; }
+.demand-anomalies-table-wrap tbody th button:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+.demand-anomalies-view details { margin-top: 14px; }
+.demand-anomalies-view summary { width: fit-content; cursor: pointer; font-size: 13px; font-weight: 650; }
+.demand-anomalies-details > p { max-width: 85ch; }
+.demand-anomalies-coverage { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; overflow: hidden; border: 1px solid var(--border); border-radius: var(--control-radius, 10px); background: var(--border); }
+.demand-anomalies-coverage > div { display: grid; gap: 5px; padding: 12px 14px; background: var(--surface-muted); }
+.demand-anomalies-coverage strong { font-size: 17px; font-variant-numeric: tabular-nums; }
+.demand-anomalies-method h3 { margin: 20px 0 5px; font-size: 14px; }
+.demand-anomalies-method pre { max-width: 100%; overflow: auto; color: var(--text-muted); font-size: 11px; }
+.demand-anomalies-method p { color: var(--text-muted); font-size: 13px; line-height: 1.55; }
+@media (max-width: 900px) { .demand-anomalies-summary, .demand-anomalies-coverage { grid-template-columns: repeat(2, minmax(0, 1fr)); } .demand-anomalies-two-col { grid-template-columns: 1fr; } }
+@media (max-width: 650px) { .demand-anomalies-intro { align-items: stretch; flex-direction: column; gap: 18px; } .demand-anomalies-intro label { flex: auto; } .demand-anomalies-summary { gap: 8px; } .demand-anomalies-summary > div { padding: 14px; } .demand-anomalies-summary strong { font-size: 17px; } .demand-anomalies-study-strip > :last-child { margin-left: 0; } .demand-anomalies-heading { flex-direction: column; } }

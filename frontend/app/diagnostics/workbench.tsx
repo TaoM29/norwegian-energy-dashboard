@@ -21,9 +21,11 @@ import { ExportMenu } from "@/components/export-menu";
 import { downloadCsv, downloadJson } from "@/lib/download";
 import { writeDashboardUrl } from "@/lib/navigation-state";
 import SensitivityView from "./sensitivity-view";
+import DemandAnomaliesView from "./demand-anomalies-view";
 import "./diagnostics.css";
 
-type View = "correlation" | "decomposition" | "quality" | "sensitivity";
+type View = "correlation" | "decomposition" | "quality" | "sensitivity" | "demand_anomalies";
+const viewOptions: View[] = ["correlation", "decomposition", "quality", "sensitivity", "demand_anomalies"];
 type Row = { time: string } & Record<string, number | boolean | null | string>;
 type Metadata = {
   analyzedPoints: number;
@@ -147,9 +149,14 @@ function asNumber(params: URLSearchParams, key: string, fallback: number) {
   return Number.isFinite(value) ? value : fallback;
 }
 
-function dashboardParams(filters: DiagnosticsFilters) {
+function dashboardParams(filters: DiagnosticsFilters, candidate = "") {
   if (filters.view === "sensitivity") {
     return new URLSearchParams({ view: "sensitivity", area: filters.area });
+  }
+  if (filters.view === "demand_anomalies") {
+    const params = new URLSearchParams({ view: "demand_anomalies", area: filters.area });
+    if (candidate) params.set("candidate", candidate);
+    return params;
   }
   const params = new URLSearchParams({
     view: filters.view,
@@ -313,6 +320,7 @@ function FlagTable({
 export default function DiagnosticsWorkbench() {
   const [view, setView] = useState<View>("correlation");
   const [area, setArea] = useState("NO1");
+  const [candidate, setCandidate] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [kind, setKind] = useState<"production" | "consumption">("production");
@@ -374,7 +382,7 @@ export default function DiagnosticsWorkbench() {
     ) => {
       const restoredView = queryValue(params, "view", "correlation");
       const nextView = (
-        ["correlation", "decomposition", "quality", "sensitivity"].includes(restoredView)
+        viewOptions.includes(restoredView as View)
           ? restoredView
           : "correlation"
       ) as View;
@@ -426,6 +434,7 @@ export default function DiagnosticsWorkbench() {
         neighbors: asNumber(params, "neighbors", 60),
       };
       setDraftFilters(next);
+      setCandidate(nextView === "demand_anomalies" ? params.get("candidate") || "" : "");
       setPendingRestore(next);
     },
     [setDraftFilters],
@@ -524,7 +533,7 @@ export default function DiagnosticsWorkbench() {
 
   const load = useCallback(
     async (filters: DiagnosticsFilters, replaceUrl = false) => {
-      if (filters.view === "sensitivity") return;
+      if (filters.view === "sensitivity" || filters.view === "demand_anomalies") return;
       if (!filters.start || !filters.end) return;
       if (filters.end < filters.start) {
         setError("The end date must be on or after the start date.");
@@ -592,7 +601,7 @@ export default function DiagnosticsWorkbench() {
   useEffect(() => {
     if (!pendingRestore) return;
     setPendingRestore(null);
-    if (pendingRestore.view === "sensitivity") return;
+    if (pendingRestore.view === "sensitivity" || pendingRestore.view === "demand_anomalies") return;
     void load(pendingRestore, true);
   }, [load, pendingRestore]); // Initial dates and browser history restore the complete view.
 
@@ -603,6 +612,7 @@ export default function DiagnosticsWorkbench() {
   function chooseView(next: View) {
     request.current += 1;
     setView(next);
+    setCandidate("");
     setStatus("");
     setError("");
     writeDashboardUrl(
@@ -624,7 +634,7 @@ export default function DiagnosticsWorkbench() {
         role="tablist"
         aria-label="Diagnostic method"
       >
-        {(["correlation", "decomposition", "quality", "sensitivity"] as View[]).map((item) => (
+        {viewOptions.map((item) => (
           <button
             key={item}
             type="button"
@@ -632,12 +642,7 @@ export default function DiagnosticsWorkbench() {
             aria-selected={view === item}
             tabIndex={view === item ? 0 : -1}
             onKeyDown={(event) => {
-              const tabs = [
-                "correlation",
-                "decomposition",
-                "quality",
-                "sensitivity",
-              ] as View[];
+              const tabs = viewOptions;
               const index = tabs.indexOf(item);
               const next =
                 event.key === "ArrowRight"
@@ -664,9 +669,11 @@ export default function DiagnosticsWorkbench() {
               ? "Weather & energy"
               : item === "decomposition"
                 ? "Seasonal patterns"
-                : item === "quality"
+              : item === "quality"
                   ? "Unusual observations"
-                  : "Demand sensitivity"}
+                  : item === "sensitivity"
+                    ? "Demand sensitivity"
+                    : "Demand anomalies"}
           </button>
         ))}
       </div>
@@ -677,6 +684,24 @@ export default function DiagnosticsWorkbench() {
             setArea(next);
             writeDashboardUrl(
               `${window.location.pathname}?${dashboardParams({ ...draft, view: "sensitivity", area: next })}`,
+            );
+          }}
+        />
+      ) : view === "demand_anomalies" ? (
+        <DemandAnomaliesView
+          area={area}
+          candidate={candidate}
+          onAreaChange={(next) => {
+            setArea(next);
+            setCandidate("");
+            writeDashboardUrl(
+              `${window.location.pathname}?${dashboardParams({ ...draft, view: "demand_anomalies", area: next })}`,
+            );
+          }}
+          onCandidateChange={(next) => {
+            setCandidate(next);
+            writeDashboardUrl(
+              `${window.location.pathname}?${dashboardParams({ ...draft, view: "demand_anomalies" }, next)}`,
             );
           }}
         />
