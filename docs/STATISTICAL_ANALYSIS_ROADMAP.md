@@ -2,7 +2,7 @@
 
 Prepared 2026-09-21 following the project-wide analysis review.
 
-**Status: Steps 0–1 complete and published; Steps 2–3 complete locally on 2026-09-22; Steps 4–8 remain planned.** This document defines the work for step-by-step delivery and records completed checks. It does not authorize executing every step at once. Implementation proceeds in individually selected steps, with results and limitations reviewed before expanding scope.
+**Status: Steps 0–1 complete and published; Steps 2–4 complete locally on 2026-09-22; Steps 5–8 remain planned.** This document defines the work for step-by-step delivery and records completed checks. It does not authorize executing every step at once. Implementation proceeds in individually selected steps, with results and limitations reviewed before expanding scope.
 
 The goal is to answer useful questions with defensible evidence: what drives observed demand patterns, where forecasts fail, and how much confidence their results deserve. Reuse the current Next.js/FastAPI application and analytical stack. Prefer a small number of understandable studies over more models, pages, or infrastructure.
 
@@ -32,13 +32,13 @@ The sequence below puts correctness first, then the recommended initial studies.
 | 1 | Weather-adjusted demand sensitivity | Step 0; validated common coverage | Medium | Complete and published; [validation](STEP1_VALIDATION.md) |
 | 2 | Broader forecast reliability study | Frozen experiment protocol and eligible data | Medium–large | Complete locally; [validation](STEP2_VALIDATION.md) |
 | 3 | Visual forecast-error explorer | Existing saved results; extend with Step 2 later | Small–medium | Complete locally; [validation](STEP3_VALIDATION.md) |
-| 4 | Forecast feature ablation | Step 2 evaluation protocol | Medium | Planned |
+| 4 | Forecast feature ablation | Step 2 evaluation protocol | Medium | Complete locally; [validation](STEP4_VALIDATION.md) |
 | 5 | Contextual demand anomalies | Validated expected-demand baseline; reuse Step 1 where suitable | Medium | Planned |
 | 6 | Peak demand, rapid changes, and regional synchrony | Validated matched hourly coverage | Small–medium | Planned |
 | 7 | Daily demand profiles; optional clustering | Explicit local-day and normalization policy | Medium | Planned |
 | 8 | Persistent change and model drift | Adequate historical coverage; Step 2 for forecast-error drift | Medium–large | Planned |
 
-Recommended initial scope: Step 0, then Steps 1–3. Step 3 can be delivered before the larger benchmark finishes because it exposes existing results. Step 4 is the next experiment; Steps 5–8 remain later candidates.
+Recommended initial scope: Step 0, then Steps 1–3. Step 3 can be delivered before the larger benchmark finishes because it exposes existing results. Step 4 is now complete; Step 5 is the next candidate, with Steps 6–8 remaining later work.
 
 Update a row only when work starts or its acceptance criteria are met. A study that finds no improvement can still be complete. An optional technique that adds no useful evidence should be omitted with the reason recorded.
 
@@ -168,6 +168,14 @@ Report paired baseline differences, MAE/RMSE, bias, residual dependence, and exi
 - Save each feature-set identity and predictions. No added value from weather is a publishable outcome.
 
 **Presentation:** A compact comparison chart and table within Forecasts, connected to the Step 2 results.
+
+### Step 4 completion record — 2026-09-22
+
+- Froze and ran a ridge-only ablation on the exact retained Step 2 inputs: calendar (9 predictors), calendar + demand (17), and calendar + demand + eligible weather (29), with the same three-alpha validation budget per area/variant.
+- All 230 scheduled area-origins were retained with zero failures. Demand history reduced pooled MAE by 7.2%; adding eligible weather increased it by 4.2% and worsened all three quantile losses despite bringing coverage closer to nominal 80%. Findings are exploratory and specific to this ridge specification.
+- Saved separate variant results, exact feature identities, source/input provenance, calibration and common-cohort comparisons with paired date-block uncertainty. All 5,376 shared Step 2 ridge targets and interval bounds match exactly.
+- Added a compact MAE-bar/table comparison in Forecasts, with signed contrasts, all three block lengths, expandable area scores, exact features and complete artifact download. Verified desktop/mobile and both themes; 289 Python tests, 10 Forecasts browser tests, TypeScript and the production build passed.
+- No dependency, commit, push or deployment. See [Step 4 protocol](STEP4_PROTOCOL.md) and [validation](STEP4_VALIDATION.md) for retained evidence, numerical reconciliation and limitations.
 
 ## Step 5 — Contextual demand anomalies
 

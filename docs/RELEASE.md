@@ -71,6 +71,15 @@ command. A code push alone does not publish a newly fitted result: upload and
 repin the data archive as above. Verify the new saved result's reliability panel
 and metadata download after publishing it.
 
+The [Step 4 feature ablation](STEP4_PROTOCOL.md) runs with
+`python scripts/run_forecast_ablation.py` against those same retained Step 2
+inputs. Keep its companion `data/analyses/*-runs` directory, including the
+protocol, source archive and separate variant results. Its combined forecast
+artifact is packaged by the same snapshot workflow. After publication, select
+**Feature ablation · calendar, demand and weather** in Forecasts and verify the
+comparison panel and complete JSON download. Local fitting does not update the
+public site; committing code alone does not publish the new study.
+
 Saved forecast detail and complete-artifact downloads stream the stored JSON
 file. This preserves every prediction row while supporting studies larger than
 Vercel's [buffered response limit](https://vercel.com/kb/guide/how-to-bypass-vercel-body-size-limit-serverless-functions).

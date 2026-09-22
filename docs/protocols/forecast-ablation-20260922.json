@@ -1,0 +1,408 @@
+{
+  "schemaVersion": 1,
+  "id": "step4-household-ablation-20260922",
+  "label": "Feature ablation \u00b7 calendar, demand and weather",
+  "frozenAt": "2026-09-22T09:50:37.796690+00:00",
+  "evidenceStatus": "exploratory",
+  "interpretation": "Exploratory retrospective ridge ablation. The 2025 dates and Step 2 model outcomes were already inspected. This does not ablate the stronger gradient-boosting model, establish causal weather effects, or recreate operational data vintages.",
+  "config": {
+    "areas": [
+      "NO1",
+      "NO2",
+      "NO3",
+      "NO4",
+      "NO5"
+    ],
+    "models": [
+      "seasonal_naive",
+      "ridge"
+    ],
+    "horizon_hours": 24,
+    "train_window_days": 120,
+    "training_origin_stride_hours": 6,
+    "validation_origins": [
+      "2023-01-15T00:00:00Z",
+      "2023-02-15T00:00:00Z",
+      "2023-03-15T00:00:00Z",
+      "2023-04-15T00:00:00Z",
+      "2023-05-15T00:00:00Z",
+      "2023-06-15T00:00:00Z",
+      "2023-07-15T00:00:00Z",
+      "2023-08-15T00:00:00Z",
+      "2023-09-15T00:00:00Z",
+      "2023-10-15T00:00:00Z",
+      "2023-11-15T00:00:00Z",
+      "2023-12-15T00:00:00Z"
+    ],
+    "calibration_origins": [
+      "2024-01-01T00:00:00Z",
+      "2024-01-17T00:00:00Z",
+      "2024-02-02T00:00:00Z",
+      "2024-02-18T00:00:00Z",
+      "2024-03-05T00:00:00Z",
+      "2024-03-21T00:00:00Z",
+      "2024-04-06T00:00:00Z",
+      "2024-04-22T00:00:00Z",
+      "2024-05-08T00:00:00Z",
+      "2024-05-24T00:00:00Z",
+      "2024-06-09T00:00:00Z",
+      "2024-06-25T00:00:00Z",
+      "2024-07-11T00:00:00Z",
+      "2024-07-27T00:00:00Z",
+      "2024-08-12T00:00:00Z",
+      "2024-08-28T00:00:00Z",
+      "2024-09-13T00:00:00Z",
+      "2024-09-29T00:00:00Z",
+      "2024-10-15T00:00:00Z",
+      "2024-10-31T00:00:00Z",
+      "2024-11-16T00:00:00Z",
+      "2024-12-02T00:00:00Z",
+      "2024-12-18T00:00:00Z"
+    ],
+    "holdout_origins": [
+      "2025-01-01T00:00:00Z",
+      "2025-01-09T00:00:00Z",
+      "2025-01-17T00:00:00Z",
+      "2025-01-25T00:00:00Z",
+      "2025-02-02T00:00:00Z",
+      "2025-02-10T00:00:00Z",
+      "2025-02-18T00:00:00Z",
+      "2025-02-26T00:00:00Z",
+      "2025-03-06T00:00:00Z",
+      "2025-03-14T00:00:00Z",
+      "2025-03-22T00:00:00Z",
+      "2025-03-30T00:00:00Z",
+      "2025-04-07T00:00:00Z",
+      "2025-04-15T00:00:00Z",
+      "2025-04-23T00:00:00Z",
+      "2025-05-01T00:00:00Z",
+      "2025-05-09T00:00:00Z",
+      "2025-05-17T00:00:00Z",
+      "2025-05-25T00:00:00Z",
+      "2025-06-02T00:00:00Z",
+      "2025-06-10T00:00:00Z",
+      "2025-06-18T00:00:00Z",
+      "2025-06-26T00:00:00Z",
+      "2025-07-04T00:00:00Z",
+      "2025-07-12T00:00:00Z",
+      "2025-07-20T00:00:00Z",
+      "2025-07-28T00:00:00Z",
+      "2025-08-05T00:00:00Z",
+      "2025-08-13T00:00:00Z",
+      "2025-08-21T00:00:00Z",
+      "2025-08-29T00:00:00Z",
+      "2025-09-06T00:00:00Z",
+      "2025-09-14T00:00:00Z",
+      "2025-09-22T00:00:00Z",
+      "2025-09-30T00:00:00Z",
+      "2025-10-08T00:00:00Z",
+      "2025-10-16T00:00:00Z",
+      "2025-10-24T00:00:00Z",
+      "2025-11-01T00:00:00Z",
+      "2025-11-09T00:00:00Z",
+      "2025-11-17T00:00:00Z",
+      "2025-11-25T00:00:00Z",
+      "2025-12-03T00:00:00Z",
+      "2025-12-11T00:00:00Z",
+      "2025-12-19T00:00:00Z",
+      "2025-12-27T00:00:00Z"
+    ],
+    "weather_mode": "historical_only",
+    "feature_set": "calendar_demand_weather",
+    "energy_publication_lag_hours": 48,
+    "weather_publication_lag_hours": 120,
+    "interval_coverage": 0.8,
+    "random_seed": 20250915,
+    "ridge_alphas": [
+      0.1,
+      1.0,
+      10.0
+    ],
+    "gradient_boosting_candidates": [
+      {
+        "n_estimators": 120,
+        "learning_rate": 0.05,
+        "max_depth": 2
+      },
+      {
+        "n_estimators": 160,
+        "learning_rate": 0.04,
+        "max_depth": 3
+      }
+    ],
+    "sarimax_candidates": [
+      {
+        "order": [
+          1,
+          0,
+          1
+        ],
+        "seasonal_order": [
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "sarimax_maxiter": 75
+  },
+  "variants": [
+    {
+      "featureSet": "calendar",
+      "model": "ridge_calendar",
+      "label": "Calendar",
+      "features": {
+        "featureSet": "calendar",
+        "selectedGroups": [
+          "calendar"
+        ],
+        "columns": [
+          "horizon",
+          "hour_sin",
+          "hour_cos",
+          "dow_sin",
+          "dow_cos",
+          "year_sin",
+          "year_cos",
+          "is_weekend",
+          "is_holiday_no"
+        ],
+        "groupColumns": {
+          "calendar": [
+            "horizon",
+            "hour_sin",
+            "hour_cos",
+            "dow_sin",
+            "dow_cos",
+            "year_sin",
+            "year_cos",
+            "is_weekend",
+            "is_holiday_no"
+          ]
+        },
+        "calendar": [
+          "hour cyclic",
+          "weekday cyclic",
+          "annual cyclic",
+          "weekend",
+          "Norwegian public holiday"
+        ]
+      }
+    },
+    {
+      "featureSet": "calendar_demand",
+      "model": "ridge_calendar_demand",
+      "label": "Calendar + demand",
+      "features": {
+        "featureSet": "calendar_demand",
+        "selectedGroups": [
+          "calendar",
+          "demand"
+        ],
+        "columns": [
+          "horizon",
+          "hour_sin",
+          "hour_cos",
+          "dow_sin",
+          "dow_cos",
+          "year_sin",
+          "year_cos",
+          "is_weekend",
+          "is_holiday_no",
+          "energy_available",
+          "energy_available_lag_1",
+          "energy_available_lag_24",
+          "energy_available_lag_168",
+          "energy_roll_24_mean",
+          "energy_roll_24_std",
+          "energy_roll_168_mean",
+          "energy_roll_168_std"
+        ],
+        "groupColumns": {
+          "calendar": [
+            "horizon",
+            "hour_sin",
+            "hour_cos",
+            "dow_sin",
+            "dow_cos",
+            "year_sin",
+            "year_cos",
+            "is_weekend",
+            "is_holiday_no"
+          ],
+          "demand": [
+            "energy_available",
+            "energy_available_lag_1",
+            "energy_available_lag_24",
+            "energy_available_lag_168",
+            "energy_roll_24_mean",
+            "energy_roll_24_std",
+            "energy_roll_168_mean",
+            "energy_roll_168_std"
+          ]
+        },
+        "calendar": [
+          "hour cyclic",
+          "weekday cyclic",
+          "annual cyclic",
+          "weekend",
+          "Norwegian public holiday"
+        ],
+        "energy": {
+          "availabilityCutoff": "interval ending 48 hours before issue time; its stored interval start is one hour earlier",
+          "lagsFromCutoffHours": [
+            0,
+            1,
+            24,
+            168
+          ],
+          "rollingWindowsHours": [
+            24,
+            168
+          ]
+        }
+      }
+    },
+    {
+      "featureSet": "calendar_demand_weather",
+      "model": "ridge_calendar_demand_weather",
+      "label": "Calendar + demand + weather",
+      "features": {
+        "featureSet": "calendar_demand_weather",
+        "selectedGroups": [
+          "calendar",
+          "demand",
+          "weather"
+        ],
+        "columns": [
+          "horizon",
+          "hour_sin",
+          "hour_cos",
+          "dow_sin",
+          "dow_cos",
+          "year_sin",
+          "year_cos",
+          "is_weekend",
+          "is_holiday_no",
+          "energy_available",
+          "energy_available_lag_1",
+          "energy_available_lag_24",
+          "energy_available_lag_168",
+          "energy_roll_24_mean",
+          "energy_roll_24_std",
+          "energy_roll_168_mean",
+          "energy_roll_168_std",
+          "weather_temperature_2m_available",
+          "weather_temperature_2m_available_lag_24",
+          "weather_temperature_2m_roll_24_mean",
+          "weather_temperature_2m_roll_24_std",
+          "weather_precipitation_available",
+          "weather_precipitation_available_lag_24",
+          "weather_precipitation_roll_24_mean",
+          "weather_precipitation_roll_24_std",
+          "weather_wind_speed_10m_available",
+          "weather_wind_speed_10m_available_lag_24",
+          "weather_wind_speed_10m_roll_24_mean",
+          "weather_wind_speed_10m_roll_24_std"
+        ],
+        "groupColumns": {
+          "calendar": [
+            "horizon",
+            "hour_sin",
+            "hour_cos",
+            "dow_sin",
+            "dow_cos",
+            "year_sin",
+            "year_cos",
+            "is_weekend",
+            "is_holiday_no"
+          ],
+          "demand": [
+            "energy_available",
+            "energy_available_lag_1",
+            "energy_available_lag_24",
+            "energy_available_lag_168",
+            "energy_roll_24_mean",
+            "energy_roll_24_std",
+            "energy_roll_168_mean",
+            "energy_roll_168_std"
+          ],
+          "weather": [
+            "weather_temperature_2m_available",
+            "weather_temperature_2m_available_lag_24",
+            "weather_temperature_2m_roll_24_mean",
+            "weather_temperature_2m_roll_24_std",
+            "weather_precipitation_available",
+            "weather_precipitation_available_lag_24",
+            "weather_precipitation_roll_24_mean",
+            "weather_precipitation_roll_24_std",
+            "weather_wind_speed_10m_available",
+            "weather_wind_speed_10m_available_lag_24",
+            "weather_wind_speed_10m_roll_24_mean",
+            "weather_wind_speed_10m_roll_24_std"
+          ]
+        },
+        "calendar": [
+          "hour cyclic",
+          "weekday cyclic",
+          "annual cyclic",
+          "weekend",
+          "Norwegian public holiday"
+        ],
+        "energy": {
+          "availabilityCutoff": "interval ending 48 hours before issue time; its stored interval start is one hour earlier",
+          "lagsFromCutoffHours": [
+            0,
+            1,
+            24,
+            168
+          ],
+          "rollingWindowsHours": [
+            24,
+            168
+          ]
+        },
+        "weather": {
+          "mode": "historical_only",
+          "variables": [
+            "temperature_2m",
+            "precipitation",
+            "wind_speed_10m"
+          ],
+          "availabilityCutoff": "interval ending 120 hours before issue time",
+          "rollingWindowHours": [
+            24
+          ]
+        }
+      }
+    }
+  ],
+  "contrasts": [
+    {
+      "id": "demand",
+      "fromModel": "ridge_calendar",
+      "toModel": "ridge_calendar_demand",
+      "label": "Add demand history"
+    },
+    {
+      "id": "weather",
+      "fromModel": "ridge_calendar_demand",
+      "toModel": "ridge_calendar_demand_weather",
+      "label": "Add eligible weather"
+    }
+  ],
+  "tuningPolicy": "Independently select ridge alpha from [0.1, 1.0, 10.0] per area and variant using identical validation dates and complete-coverage-first, pooled hourly MAE selection. Equal candidate budget; no evaluation-driven retuning.",
+  "cohortPolicy": "Intersect successful complete area-origins across all three variants and the seasonal reference. Retain failures and successful rows excluded by this intersection. Do not inherit Step 2 SARIMAX exclusions.",
+  "parentProtocol": "forecast-reliability-20260921.json",
+  "inputManifestSha256": "394f07ddfd02bd5ea4c8d3a6ec40297112b9e1799f24ea64dc22367e78128519",
+  "uncertainty": {
+    "blockLengths": [
+      2,
+      4,
+      8
+    ],
+    "resamples": 2000,
+    "seed": 20260921
+  }
+}
