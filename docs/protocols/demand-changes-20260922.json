@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "id": "step8-demand-changes-20260922",
+  "frozenAt": "2026-09-22T11:47:05.105471+00:00",
+  "evidenceStatus": "exploratory",
+  "area": "NO1",
+  "sourceId": "step5-contextual-demand-anomalies-20260922",
+  "sourceSha256": "10a3fd77255831f0fe899cd9776ea83f5cb9341c80bfbaa21faa2c9e1cfa7d29",
+  "dataMode": "observed",
+  "periods": {
+    "calibration": {
+      "start": "2024-01-01",
+      "endExclusive": "2025-01-01"
+    },
+    "test": {
+      "start": "2025-01-01",
+      "endExclusive": "2026-01-01"
+    }
+  },
+  "config": {
+    "blockDays": 14,
+    "minSegmentDays": 28,
+    "bootstrapDraws": 999,
+    "alpha": 0.05,
+    "seed": 20260922
+  },
+  "purpose": "Retrospective exploratory change review for NO1 adjusted household demand. Reuse the frozen Step 5 calendar/temperature baseline, including its 2024 median correction. Previously inspected 2025 observations are not untouched evidence. No operational alert, causal claim, or claim of an abrupt break.",
+  "dailyPolicy": "Complete 24-hour UTC dates only: all hours must have status ok and finite actual/expected/residual, with residual equal to actual minus expected. Daily values are means of hourly energy in kWh, not daily totals. Preserve missing days on the calendar grid; split runs at gaps.",
+  "scanPolicy": "At most one reported candidate. Scan every split in every contiguous valid review run with the minimum segment length on each side. Standardized absolute CUSUM uses the sample standard deviation of complete calibration daily residuals. Global maximum, earliest date on an exact tie; no recursive segmentation.",
+  "calibrationPolicy": "Globally center calibration residuals; do not center individual blocks. Sample moving blocks wholly within contiguous complete calibration runs, concatenate and truncate onto the full review grid, then apply its missingness mask. Max over all eligible splits/runs per draw. Approximate stationary block null; calibration/model uncertainty and nonstationarity can invalidate nominal rates.",
+  "decisionPolicy": "Monte Carlo exceedance p=(1+count(null maxima >= observed score))/(B+1); detected if p<=alpha. With B=999 and alpha=.05, display sorted-null index949 (higher 95th percentile); require strict exceedance. Keep strongest below-threshold split as unconfirmed, never claim a change is absent.",
+  "effectPolicy": "Before/after means, medians, interquartile ranges, distributions and mean difference are descriptive after selecting the split. Do not attach ordinary confidence intervals or causal interpretations.",
+  "sensitivities": {
+    "blockDays": [
+      7,
+      28
+    ],
+    "minSegmentDays": [
+      14,
+      56
+    ],
+    "windows": [
+      {
+        "id": "jan-sep",
+        "start": "2025-01-01",
+        "endExclusive": "2025-10-01"
+      },
+      {
+        "id": "apr-dec",
+        "start": "2025-04-01",
+        "endExclusive": "2026-01-01"
+      }
+    ],
+    "removedWindows": [
+      {
+        "start": "2025-03-15",
+        "endExclusive": "2025-03-22"
+      },
+      {
+        "start": "2025-07-01",
+        "endExclusive": "2025-07-08"
+      }
+    ],
+    "seasonalAdjustment": "Subtract fixed 2024 calendar-month residual means from both calibration and review residuals and rebuild calibration. Sensitivity only, not a newly selected primary model.",
+    "revisionPerturbation": {
+      "start": "2025-07-01",
+      "endExclusive": "2026-01-01",
+      "fractions": [
+        -0.01,
+        0.01
+      ],
+      "policy": "Perturb actual demand and recompute residual holding expected fixed; no real revision vintages are available, so this is synthetic sensitivity only."
+    }
+  },
+  "controls": {
+    "seed": 20260923,
+    "replications": 200,
+    "rhos": [
+      0.0,
+      0.5,
+      0.8
+    ],
+    "calibrationDays": 366,
+    "testDays": 365,
+    "marginalSd": 1.0,
+    "stationaryInitialization": true,
+    "shiftIndex": 181,
+    "shiftSizes": [
+      -2.0,
+      -1.0,
+      1.0,
+      2.0
+    ],
+    "linearDriftEnd": 2.0,
+    "policy": "Independent Gaussian AR(1) calibration/review histories per replication. Calibrate same detector for each pair; reuse review noise for paired step/trend cases. Report Wilson95% intervals, detection and localization denominators. These controls validate the residual detector, not fitting uncertainty or observed incidents."
+  },
+  "forecastErrorDrift": "Deferred: the 46 Step2 origins eight days apart are sparse 24h windows, not a continuous daily error series.",
+  "revisionStatus": "Actual historical revision robustness is unverified; source snapshot identity is retained."
+}

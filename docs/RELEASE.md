@@ -35,7 +35,7 @@ To publish updated data:
 
 1. Run the existing local refresh and any explicitly requested forecast analysis.
 2. Run `python scripts/prepare_vercel.py` to package a consistent SQLite backup,
-   weather, geography, saved forecasts, and the prepared demand-sensitivity and demand-anomaly studies
+   weather, geography, saved forecasts, and the prepared demand-sensitivity, demand-anomaly and demand-change studies
    (when present) in `.vercel-deploy/api/snapshots.tar.gz`.
    The command prints the archive's SHA-256.
 3. Upload it to the `norwegian-energy-snapshots` Vercel Blob store under a new path
@@ -48,7 +48,7 @@ refresh workflow publishes downloadable artifacts but does not change this pin.
 Temporary point-weather caches do not persist across function instances.
 
 Verify `/api/ready`, overview, weather, regional data, saved forecasts, and
-Patterns → Demand sensitivity and Demand anomalies through the dashboard domain after deployment.
+Patterns → Demand sensitivity, Demand anomalies and Demand changes through the dashboard domain after deployment.
 Roll back with Vercel's deployment history;
 API and frontend releases are promoted independently. The older pinned archives
 allow Git rebuilds to reproduce the same input data.
@@ -57,7 +57,7 @@ allow Git rebuilds to reproduce the same input data.
 
 Follow the [README local setup](../README.md#local-development-optional) to install dependencies, generate the synthetic fixture, and start the API and frontend. The fixture banner distinguishes generated data from observations.
 
-Regenerating an existing fixture uses `python scripts/create_fixture.py --force`; recreate any fixture containers afterwards so their bind mounts use the replacement directory. The fixture includes every base group and area, weather, a genuinely calculated seasonal-naive evaluation, and fitted synthetic demand-sensitivity and demand-anomaly studies. It does not manufacture evidence of model performance on real data. Point-weather fixture coverage is limited to the documented default point; other points return a clear fixture-coverage message without contacting the public source.
+Regenerating an existing fixture uses `python scripts/create_fixture.py --force`; recreate any fixture containers afterwards so their bind mounts use the replacement directory. The fixture includes every base group and area, weather, a genuinely calculated seasonal-naive evaluation, and fitted synthetic demand-sensitivity and demand-anomaly studies plus a saved demand-change scan. It does not manufacture evidence of model performance on real data. Point-weather fixture coverage is limited to the documented default point; other points return a clear fixture-coverage message without contacting the public source.
 
 For real observations, run `python scripts/refresh_data.py backfill` from the repository root. Start the API without the fixture environment variables. Generate prepared forecasts with the command in [Phase 4 validation](PHASE4_VALIDATION.md). Ordinary views read published snapshots; point snow-weather requests are the exception. No MongoDB credentials are required by the dashboard.
 
@@ -109,6 +109,19 @@ different offsets in the raw-day table and downloads.
 Saved forecast detail and complete-artifact downloads stream the stored JSON
 file. This preserves every prediction row while supporting studies larger than
 Vercel's [buffered response limit](https://vercel.com/kb/guide/how-to-bypass-vercel-body-size-limit-serverless-functions).
+
+The [Step 8 demand-change study](STEP8_VALIDATION.md) is prepared explicitly with
+`python scripts/run_demand_changes.py` after the saved observed Step 5 artifact is
+available. Its protocol pins that source's identity and checksum. The runner
+refuses to replace an existing result; retain `data/analyses/demand-changes.json`
+and its `demand-changes-evidence/` companion for replay. Ordinary page requests
+only read the saved result. `DEMAND_CHANGES_ARTIFACT` can override its location.
+Snapshot packaging includes the result when present, so publishing requires an
+updated snapshot as well as application code. Verify **Patterns → Demand changes**,
+the visible calibration limitation, timeline/distribution switch, coverage,
+sensitivity checks and JSON/CSV downloads. These are exploratory candidates;
+synthetic false-alarm calibration did not meet the nominal 5% target. No forecast
+error monitoring or live alerts are included.
 
 ## Container deployment
 

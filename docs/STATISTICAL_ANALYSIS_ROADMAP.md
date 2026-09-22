@@ -36,9 +36,9 @@ The sequence below puts correctness first, then the recommended initial studies.
 | 5 | Contextual demand anomalies | Validated expected-demand baseline; reuse Step 1 where suitable | Medium | Complete locally; [validation](STEP5_VALIDATION.md) |
 | 6 | Peak demand, rapid changes, and regional synchrony | Validated matched hourly coverage | Small–medium | Complete locally; [validation](STEP6_VALIDATION.md) |
 | 7 | Daily demand profiles; optional clustering | Explicit local-day and normalization policy | Medium | Complete locally; [validation](STEP7_VALIDATION.md). Optional clustering omitted |
-| 8 | Persistent change and model drift | Adequate historical coverage; Step 2 for forecast-error drift | Medium–large | Planned |
+| 8 | Persistent change and model drift | Adequate historical coverage; Step 2 for forecast-error drift | Medium–large | Complete locally, exploratory demand only; [validation](STEP8_VALIDATION.md) |
 
-Recommended initial scope: Step 0, then Steps 1–3. Step 3 can be delivered before the larger benchmark finishes because it exposes existing results. Step 7 is now complete; Step 8 is the next candidate.
+Recommended initial scope: Step 0, then Steps 1–3. Step 3 can be delivered before the larger benchmark finishes because it exposes existing results. The initial sequence is now complete locally. Step 8 delivers an exploratory NO1 demand study; forecast-error drift remains deferred for insufficient sequential coverage.
 
 Update a row only when work starts or its acceptance criteria are met. A study that finds no improvement can still be complete. An optional technique that adds no useful evidence should be omitted with the reason recorded.
 
@@ -260,6 +260,25 @@ definitions, coverage and evidence. No commit, push or deployment was performed.
 - Annotate coverage changes separately. External events may supply context but do not establish the cause of a detected change.
 
 **Presentation:** A restrained timeline and before/after distributions within Patterns, with Methods & Data explaining the detection policy.
+
+### Step 8 completion record — 2026-09-22
+
+Added **Patterns → Demand changes**: one retrospective NO1 timeline, optional
+before/after distributions, descriptive effects, coverage, sensitivity checks,
+and saved-study exports. The frozen baseline is reused; reads perform no fit.
+
+The strongest split is November 14, 2025, but the nominal 5% calibration target
+failed in no-change controls (8.5%, 8.5%, 20.5% false flags across increasing
+serial dependence). Planned sensitivities move or remove the result. These
+limitations are prominent in the view; no operational alert or confirmed
+structural break is claimed. Real revision robustness is unverified, and
+forecast-error drift is deferred because saved origins are sparse.
+
+Independent recomputation matches the primary result and all eleven sensitivity
+cases. The full Python suite passes 338 tests and six focused browser journeys
+pass. See [validation](STEP8_VALIDATION.md) for the protocol, controls, retained
+evidence, UI review and release requirements. No commit, push or deployment was
+performed.
 
 ## Deferred work
 
