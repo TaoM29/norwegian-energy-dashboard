@@ -33,7 +33,9 @@ def test_frozen_protocol_has_explicit_settings_rotating_weekdays_and_embargoes()
     assert set(pd.to_datetime(config["holdout_origins"]).dayofweek) == set(range(7))
     assert set(pd.to_datetime(config["holdout_origins"]).month) == set(range(1, 13))
     assert protocol["evidenceStatus"] == "exploratory"
-    assert config == runner.engine.validate_evaluation_config(config)
+    assert {**config, "feature_set": "calendar_demand_weather"} == runner.engine.validate_evaluation_config(config)
+    # Reading/replaying the historical protocol must not rewrite its frozen bytes.
+    assert "feature_set" not in config
 
 
 def test_retained_inputs_round_trip_mask_flags_and_reject_tampering(tmp_path, monkeypatch):

@@ -238,3 +238,163 @@ def test_cancellation_stops_before_work(monkeypatch):
     energy, weather = _frames()
     with pytest.raises(fe.EvaluationCancelled):
         fe.evaluate_frames(energy, weather, _config(), cancelled=lambda: True)
+
+
+@pytest.mark.parametrize(
+    ("feature_set", "groups"),
+    [
+        ("calendar", ["calendar"]),
+        ("calendar_demand", ["calendar", "demand"]),
+        ("calendar_demand_weather", ["calendar", "demand", "weather"]),
+    ],
+)
+def test_feature_sets_have_exact_columns_and_training_test_schema(feature_set, groups):
+    energy_frame, weather_frame = _frames()
+    energy, weather = fe.regularize_hourly_frames(energy_frame, weather_frame)
+    config = fe.validate_evaluation_config(_config(feature_set=feature_set))
+    origin = pd.Timestamp("2025-02-05T00:00:00Z")
+    train, labels = fe.build_training_matrix(energy, weather, origin, config)
+    test = fe.build_origin_features(energy, weather, origin, config)
+    metadata = fe._feature_metadata(config)
+
+    assert config["feature_set"] == feature_set
+    assert metadata["featureSet"] == feature_set
+    assert metadata["selectedGroups"] == groups
+    assert list(metadata["groupColumns"]) == groups
+    assert list(train.columns) == list(test.columns) == metadata["columns"]
+    assert metadata["columns"] == [column for group in groups for column in metadata["groupColumns"][group]]
+    assert len(labels) >= 100
+    assert set(metadata["groupColumns"]["calendar"]) == set(fe.CALENDAR_COLUMNS)
+    assert len(metadata["columns"]) == {"calendar": 9, "calendar_demand": 17, "calendar_demand_weather": 29}[feature_set]
+    assert all(not name.startswith("energy_") for name in test if "demand" not in groups)
+    assert all(not name.startswith("weather_") for name in test if "weather" not in groups)
+    if "demand" not in groups:
+        assert "energy" not in metadata
+    if "weather" not in groups:
+        assert "weather" not in metadata
+
+
+def test_removed_input_families_cannot_change_features_but_labels_still_matter():
+    energy_frame, weather_frame = _frames()
+    energy, weather = fe.regularize_hourly_frames(energy_frame, weather_frame)
+    origin = pd.Timestamp("2025-02-05T00:00:00Z")
+    calendar_cfg = _config(feature_set="calendar")
+    demand_cfg = _config(feature_set="calendar_demand")
+    calendar = fe.build_origin_features(energy, weather, origin, calendar_cfg)
+    demand = fe.build_origin_features(energy, weather, origin, demand_cfg)
+    changed_energy = energy + 1000
+    changed_weather = weather + 1000
+
+    pd.testing.assert_frame_equal(
+        calendar, fe.build_origin_features(changed_energy, changed_weather, origin, calendar_cfg)
+    )
+    pd.testing.assert_frame_equal(
+        demand, fe.build_origin_features(energy, changed_weather, origin, demand_cfg)
+    )
+    pd.testing.assert_frame_equal(
+        demand,
+        fe.build_origin_features(
+            energy, changed_weather, origin,
+            _config(feature_set="calendar_demand", weather_mode="realized_future_upper_bound"),
+        ),
+    )
+    assert demand["energy_available"].ne(
+        fe.build_origin_features(changed_energy, weather, origin, demand_cfg)["energy_available"]
+    ).all()
+
+    train, labels = fe.build_training_matrix(energy, weather, origin, calendar_cfg)
+    changed_train, changed_labels = fe.build_training_matrix(changed_energy, changed_weather, origin, calendar_cfg)
+    pd.testing.assert_frame_equal(train, changed_train)
+    assert np.allclose(changed_labels.to_numpy(), labels.to_numpy() + 1000)
+    # Labels published after the issue cutoff remain ineligible even without demand predictors.
+    cutoff = fe._availability_cutoff(origin, calendar_cfg["energy_publication_lag_hours"])
+    future_energy = energy.copy()
+    future_energy.loc[future_energy.index > cutoff] += 1_000_000
+    future_train, future_labels = fe.build_training_matrix(future_energy, weather, origin, calendar_cfg)
+    pd.testing.assert_frame_equal(train, future_train)
+    pd.testing.assert_series_equal(labels, future_labels)
+
+
+def test_default_full_feature_values_and_config_round_trip():
+    energy_frame, weather_frame = _frames()
+    energy, weather = fe.regularize_hourly_frames(energy_frame, weather_frame)
+    origin = pd.Timestamp("2025-02-05T00:00:00Z")
+    default = fe.build_origin_features(energy, weather, origin, _config())
+    explicit_config = fe.validate_evaluation_config(_config(feature_set="calendar_demand_weather"))
+    pd.testing.assert_frame_equal(default, fe.build_origin_features(energy, weather, origin, explicit_config))
+    assert explicit_config == fe.validate_evaluation_config(explicit_config)
+    assert list(default.columns) == [
+        *fe.CALENDAR_COLUMNS, *fe.DEMAND_COLUMNS,
+        *(f"weather_{name}_{suffix}" for name in fe.WEATHER_COLUMNS
+          for suffix in ("available", "available_lag_24", "roll_24_mean", "roll_24_std")),
+    ]
+    energy_cutoff = origin - pd.Timedelta(hours=49)
+    weather_cutoff = origin - pd.Timedelta(hours=121)
+    first = default.iloc[0]
+    assert first["energy_available"] == energy.loc[energy_cutoff]
+    assert first["energy_available_lag_168"] == energy.loc[energy_cutoff - pd.Timedelta(hours=168)]
+    assert first["energy_roll_24_mean"] == pytest.approx(energy.loc[energy_cutoff - pd.Timedelta(hours=23):energy_cutoff].mean())
+    assert first["weather_temperature_2m_available"] == weather.loc[weather_cutoff, "temperature_2m"]
+    assert first["weather_temperature_2m_roll_24_std"] == pytest.approx(
+        weather.loc[weather_cutoff - pd.Timedelta(hours=23):weather_cutoff, "temperature_2m"].std(ddof=0)
+    )
+
+
+def test_feature_set_validation_rejects_unknown_and_sarimax_ablation():
+    with pytest.raises(ValueError, match="feature_set must be one of"):
+        fe.validate_evaluation_config(_config(feature_set="demand"))
+    with pytest.raises(ValueError, match="SARIMAX does not use tabular feature sets"):
+        fe.validate_evaluation_config(_config(feature_set="calendar", models=["sarimax", "ridge"]))
+    assert fe.validate_evaluation_config(_config(models=["sarimax"]))["feature_set"] == "calendar_demand_weather"
+
+
+def test_calendar_evaluation_keeps_baseline_and_ignores_weather_frame():
+    energy, weather = _frames()
+    config = _config(feature_set="calendar", ridge_alphas=[1.0])
+    bad_weather = pd.concat([weather, weather.iloc[[0]]], ignore_index=True)
+    ablated = fe.evaluate_frames(energy, bad_weather, config)
+    full = fe.evaluate_frames(energy, weather, _config(ridge_alphas=[1.0]))
+
+    assert ablated["config"]["feature_set"] == "calendar"
+    assert ablated["metadata"]["features"]["columns"] == list(fe.CALENDAR_COLUMNS)
+    assert ablated["coverage"]["matchedOrigins"] == full["coverage"]["matchedOrigins"]
+    ablated_baseline = [row for row in ablated["predictions"] if row["model"] == "seasonal_naive"]
+    full_baseline = [row for row in full["predictions"] if row["model"] == "seasonal_naive"]
+    assert [(row["origin"], row["prediction"], row["maseScale"]) for row in ablated_baseline] == [
+        (row["origin"], row["prediction"], row["maseScale"]) for row in full_baseline
+    ]
+
+
+def test_no_weather_feature_set_skips_snapshot_weather_reads(monkeypatch):
+    from backend import data as backend_data
+
+    def energy_frame(area, start, end, **kwargs):
+        return pd.DataFrame({"timestamp": [start], "value": [1.0]})
+
+    def unexpected_weather_read(*args, **kwargs):
+        raise AssertionError("weather snapshot was read for a weather-free feature set")
+
+    monkeypatch.setattr(backend_data, "energy_frame", energy_frame)
+    monkeypatch.setattr(backend_data, "weather_frame", unexpected_weather_read)
+    energy, weather, provenance = fe._load_frames(fe.validate_evaluation_config(_config(feature_set="calendar")))
+    assert not energy.empty
+    assert weather.empty
+    assert provenance["areas"]["NO1"]["weather"] == []
+
+
+@pytest.mark.parametrize("model,parameters", [("ridge", {"alpha": 1.0}), ("gradient_boosting", {"n_estimators": 20, "learning_rate": 0.1, "max_depth": 2})])
+def test_tabular_fit_uses_feature_set_specific_fold_and_cache(model, parameters):
+    energy_frame, weather_frame = _frames()
+    energy, weather = fe.regularize_hourly_frames(energy_frame, weather_frame)
+    origin = pd.Timestamp("2025-02-05T00:00:00Z")
+    cache = {}
+    for feature_set in fe.FEATURE_SETS:
+        config = fe.validate_evaluation_config(_config(feature_set=feature_set))
+        predicted = fe._fit_tabular_model(model, parameters, energy, weather, origin, config, cache)
+        assert predicted.shape == (config["horizon_hours"],)
+        assert np.isfinite(predicted).all()
+    assert len(cache) == len(fe.FEATURE_SETS)
+    assert {tuple(matrix.columns) for matrix, _ in cache.values()} == {
+        tuple(fe.build_origin_features(energy, weather, origin, _config(feature_set=name)).columns)
+        for name in fe.FEATURE_SETS
+    }

@@ -46,7 +46,11 @@ def read_protocol(path: Path) -> dict:
     if not identifier or any(c not in "abcdefghijklmnopqrstuvwxyz0123456789-_" for c in identifier):
         raise ValueError("Protocol id must contain lowercase letters, digits, hyphens or underscores")
     config = engine.validate_evaluation_config(protocol["config"])
-    if config != protocol["config"]:
+    # Version-1 protocols predate feature ablation and froze the full feature set.
+    # Preserve those original bytes and interpretation when replaying them.
+    frozen_config = dict(protocol["config"])
+    frozen_config.setdefault("feature_set", "calendar_demand_weather")
+    if config != frozen_config:
         raise ValueError("Protocol must explicitly freeze every normalized model setting")
     origins = pd.to_datetime(config["holdout_origins"], utc=True)
     if len(origins) < 2 or len(set(np.diff(origins.asi8))) != 1:
@@ -59,6 +63,7 @@ def read_protocol(path: Path) -> dict:
 
 def coverage_report(energy: pd.DataFrame, weather: pd.DataFrame, config: dict) -> list[dict]:
     """Inspect availability only; no fitting or forecast-error calculations."""
+    config = engine.validate_evaluation_config(config)
     rows = []
     for area in config["areas"]:
         prepared = engine._prepare_area(energy, weather, area)

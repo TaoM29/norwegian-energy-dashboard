@@ -33,6 +33,16 @@ from app_core.ingestion.models import AREAS
 SCHEMA_VERSION = "1.0"
 MODEL_NAMES = ("seasonal_naive", "ridge", "gradient_boosting", "sarimax")
 WEATHER_MODES = ("historical_only", "realized_future_upper_bound")
+FEATURE_SETS = ("calendar", "calendar_demand", "calendar_demand_weather")
+CALENDAR_COLUMNS = (
+    "horizon", "hour_sin", "hour_cos", "dow_sin", "dow_cos", "year_sin", "year_cos",
+    "is_weekend", "is_holiday_no",
+)
+DEMAND_COLUMNS = (
+    "energy_available", "energy_available_lag_1", "energy_available_lag_24",
+    "energy_available_lag_168", "energy_roll_24_mean", "energy_roll_24_std",
+    "energy_roll_168_mean", "energy_roll_168_std",
+)
 WEATHER_COLUMNS = {
     "temperature_2m": ("temperature_2m", "temperature_2m (°C)"),
     "precipitation": ("precipitation", "precipitation (mm)"),
@@ -49,6 +59,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "calibration_origins": ["2025-10-01T00:00:00Z", "2025-10-15T00:00:00Z"],
     "holdout_origins": ["2025-11-01T00:00:00Z", "2025-12-01T00:00:00Z"],
     "weather_mode": "historical_only",
+    "feature_set": "calendar_demand_weather",
     "energy_publication_lag_hours": 48,
     "weather_publication_lag_hours": 120,
     "interval_coverage": 0.80,
@@ -78,7 +89,7 @@ class _PreparedArea:
     energy: pd.Series
     weather: pd.DataFrame
     provenance: dict[str, Any]
-    training_cache: dict[pd.Timestamp, tuple[pd.DataFrame, pd.Series]] = field(default_factory=dict)
+    training_cache: dict[tuple[pd.Timestamp, str], tuple[pd.DataFrame, pd.Series]] = field(default_factory=dict)
 
 
 def _utc_hour(value: Any, field: str) -> pd.Timestamp:
@@ -198,6 +209,10 @@ def validate_evaluation_config(config: Mapping[str, Any] | None = None) -> dict[
         if merged["weather_mode"] == "operational_forecast":
             raise ValueError("operational forecast weather is unavailable; archived issue-time forecasts are not ingested")
         raise ValueError(f"weather_mode must be one of {', '.join(WEATHER_MODES)}")
+    if merged["feature_set"] not in FEATURE_SETS:
+        raise ValueError(f"feature_set must be one of {', '.join(FEATURE_SETS)}")
+    if merged["feature_set"] != "calendar_demand_weather" and "sarimax" in models:
+        raise ValueError("SARIMAX does not use tabular feature sets; exclude sarimax for feature ablation")
 
     stages: dict[str, list[pd.Timestamp]] = {}
     for key in ("validation_origins", "calibration_origins", "holdout_origins"):
@@ -328,6 +343,22 @@ def _window_stats(series: pd.Series, end: pd.Timestamp, hours: int) -> tuple[flo
     return float(np.nanmean(values)), float(np.nanstd(values))
 
 
+def _feature_groups(cfg: Mapping[str, Any]) -> dict[str, list[str]]:
+    groups = {"calendar": list(CALENDAR_COLUMNS)}
+    if cfg["feature_set"] in ("calendar_demand", "calendar_demand_weather"):
+        groups["demand"] = list(DEMAND_COLUMNS)
+    if cfg["feature_set"] == "calendar_demand_weather":
+        groups["weather"] = [
+            f"weather_{column}_{suffix}"
+            for column in WEATHER_COLUMNS
+            for suffix in (
+                ("realized_target",) if cfg["weather_mode"] == "realized_future_upper_bound"
+                else ("available", "available_lag_24", "roll_24_mean", "roll_24_std")
+            )
+        ]
+    return groups
+
+
 def _build_origin_features(
     energy: pd.Series,
     weather: pd.DataFrame,
@@ -337,16 +368,20 @@ def _build_origin_features(
     """Internal feature builder for an already normalized configuration."""
     cfg = config
     issue = _utc_hour(origin, "origin")
-    energy_cutoff = _availability_cutoff(issue, cfg["energy_publication_lag_hours"])
-    weather_cutoff = _availability_cutoff(issue, cfg["weather_publication_lag_hours"])
-    energy_24_mean, energy_24_std = _window_stats(energy, energy_cutoff, 24)
-    energy_168_mean, energy_168_std = _window_stats(energy, energy_cutoff, 168)
+    include_demand = cfg["feature_set"] in ("calendar_demand", "calendar_demand_weather")
+    include_weather = cfg["feature_set"] == "calendar_demand_weather"
+    if include_demand:
+        energy_cutoff = _availability_cutoff(issue, cfg["energy_publication_lag_hours"])
+        energy_24_mean, energy_24_std = _window_stats(energy, energy_cutoff, 24)
+        energy_168_mean, energy_168_std = _window_stats(energy, energy_cutoff, 168)
 
     holidays = _norwegian_holidays(issue.year) | _norwegian_holidays(issue.year + 1)
     weather_stats: dict[str, tuple[float, float]] = {}
-    for column in WEATHER_COLUMNS:
-        series = weather[column] if column in weather else pd.Series(dtype=float)
-        weather_stats[column] = _window_stats(series, weather_cutoff, 24)
+    if include_weather:
+        weather_cutoff = _availability_cutoff(issue, cfg["weather_publication_lag_hours"])
+        for column in WEATHER_COLUMNS:
+            series = weather[column] if column in weather else pd.Series(dtype=float)
+            weather_stats[column] = _window_stats(series, weather_cutoff, 24)
 
     rows = []
     for horizon in range(1, cfg["horizon_hours"] + 1):
@@ -362,26 +397,30 @@ def _build_origin_features(
             "year_cos": math.cos(2 * math.pi * (local_target.dayofyear - 1) / 365.25),
             "is_weekend": float(local_target.dayofweek >= 5),
             "is_holiday_no": float(local_target.date() in holidays),
-            "energy_available": _series_value(energy, energy_cutoff),
-            "energy_available_lag_1": _series_value(energy, energy_cutoff - pd.Timedelta(hours=1)),
-            "energy_available_lag_24": _series_value(energy, energy_cutoff - pd.Timedelta(hours=24)),
-            "energy_available_lag_168": _series_value(energy, energy_cutoff - pd.Timedelta(hours=168)),
-            "energy_roll_24_mean": energy_24_mean,
-            "energy_roll_24_std": energy_24_std,
-            "energy_roll_168_mean": energy_168_mean,
-            "energy_roll_168_std": energy_168_std,
         }
-        for column in WEATHER_COLUMNS:
-            series = weather[column] if column in weather else pd.Series(dtype=float)
-            if cfg["weather_mode"] == "realized_future_upper_bound":
-                row[f"weather_{column}_realized_target"] = _series_value(series, target)
-            else:
-                row[f"weather_{column}_available"] = _series_value(series, weather_cutoff)
-                row[f"weather_{column}_available_lag_24"] = _series_value(
-                    series, weather_cutoff - pd.Timedelta(hours=24)
-                )
-                row[f"weather_{column}_roll_24_mean"] = weather_stats[column][0]
-                row[f"weather_{column}_roll_24_std"] = weather_stats[column][1]
+        if include_demand:
+            row.update({
+                "energy_available": _series_value(energy, energy_cutoff),
+                "energy_available_lag_1": _series_value(energy, energy_cutoff - pd.Timedelta(hours=1)),
+                "energy_available_lag_24": _series_value(energy, energy_cutoff - pd.Timedelta(hours=24)),
+                "energy_available_lag_168": _series_value(energy, energy_cutoff - pd.Timedelta(hours=168)),
+                "energy_roll_24_mean": energy_24_mean,
+                "energy_roll_24_std": energy_24_std,
+                "energy_roll_168_mean": energy_168_mean,
+                "energy_roll_168_std": energy_168_std,
+            })
+        if include_weather:
+            for column in WEATHER_COLUMNS:
+                series = weather[column] if column in weather else pd.Series(dtype=float)
+                if cfg["weather_mode"] == "realized_future_upper_bound":
+                    row[f"weather_{column}_realized_target"] = _series_value(series, target)
+                else:
+                    row[f"weather_{column}_available"] = _series_value(series, weather_cutoff)
+                    row[f"weather_{column}_available_lag_24"] = _series_value(
+                        series, weather_cutoff - pd.Timedelta(hours=24)
+                    )
+                    row[f"weather_{column}_roll_24_mean"] = weather_stats[column][0]
+                    row[f"weather_{column}_roll_24_std"] = weather_stats[column][1]
         rows.append(row)
     index = pd.date_range(issue, periods=cfg["horizon_hours"], freq="h", tz="UTC")
     return pd.DataFrame(rows, index=index, dtype=float)
@@ -471,14 +510,22 @@ def _fit_tabular_model(
     weather: pd.DataFrame,
     origin: pd.Timestamp,
     cfg: Mapping[str, Any],
-    training_cache: dict[pd.Timestamp, tuple[pd.DataFrame, pd.Series]] | None = None,
+    training_cache: dict[tuple[pd.Timestamp, str], tuple[pd.DataFrame, pd.Series]] | None = None,
 ) -> np.ndarray:
-    if training_cache is not None and origin in training_cache:
-        X_train, y_train = training_cache[origin]
+    feature_config = {
+        key: cfg[key] for key in (
+            "feature_set", "weather_mode", "horizon_hours", "train_window_days",
+            "training_origin_stride_hours", "energy_publication_lag_hours",
+            "weather_publication_lag_hours",
+        )
+    }
+    cache_key = (origin, json.dumps(feature_config, sort_keys=True))
+    if training_cache is not None and cache_key in training_cache:
+        X_train, y_train = training_cache[cache_key]
     else:
         X_train, y_train = build_training_matrix(energy, weather, origin, cfg)
         if training_cache is not None:
-            training_cache[origin] = (X_train, y_train)
+            training_cache[cache_key] = (X_train, y_train)
     X_test = _build_origin_features(energy, weather, origin, cfg)
     if len(y_train) < 100 or y_train.nunique() < 2:
         raise ValueError("insufficient non-missing training observations")
@@ -759,13 +806,16 @@ def _frame_for_area(frame: pd.DataFrame, area: str) -> pd.DataFrame:
     return frame.loc[frame["area"].astype(str).str.upper() == area].copy()
 
 
-def _prepare_area(energy: pd.DataFrame, weather: pd.DataFrame, area: str) -> _PreparedArea:
+def _prepare_area(
+    energy: pd.DataFrame, weather: pd.DataFrame, area: str, cfg: Mapping[str, Any] | None = None
+) -> _PreparedArea:
     energy_area = _frame_for_area(energy, area)
     if "kind" in energy_area:
         energy_area = energy_area.loc[energy_area["kind"].astype(str).str.lower() == "consumption"]
     if "group" in energy_area:
         energy_area = energy_area.loc[energy_area["group"].astype(str).str.lower() == "household"]
-    weather_area = _frame_for_area(weather, area)
+    include_weather = cfg is None or cfg["feature_set"] == "calendar_demand_weather"
+    weather_area = _frame_for_area(weather, area) if include_weather else pd.DataFrame()
     provenance = {
         "energy": dict(energy_area.attrs.get("provenance", energy.attrs.get("provenance", {}))),
         "weather": dict(weather_area.attrs.get("provenance", weather.attrs.get("provenance", {}))),
@@ -785,16 +835,24 @@ def _code_commit() -> str | None:
 
 
 def _feature_metadata(cfg: Mapping[str, Any]) -> dict[str, Any]:
-    return {
+    groups = _feature_groups(cfg)
+    metadata = {
+        "featureSet": cfg["feature_set"],
+        "selectedGroups": list(groups),
+        "columns": [column for names in groups.values() for column in names],
+        "groupColumns": groups,
         "calendar": ["hour cyclic", "weekday cyclic", "annual cyclic", "weekend", "Norwegian public holiday"],
-        "energy": {
+    }
+    if "demand" in groups:
+        metadata["energy"] = {
             "availabilityCutoff": (
                 f"interval ending {cfg['energy_publication_lag_hours']} hours before issue time; "
                 "its stored interval start is one hour earlier"
             ),
             "lagsFromCutoffHours": [0, 1, 24, 168], "rollingWindowsHours": [24, 168],
-        },
-        "weather": {
+        }
+    if "weather" in groups:
+        metadata["weather"] = {
             "mode": cfg["weather_mode"],
             "variables": list(WEATHER_COLUMNS),
             "availabilityCutoff": (
@@ -802,8 +860,8 @@ def _feature_metadata(cfg: Mapping[str, Any]) -> dict[str, Any]:
                 if cfg["weather_mode"] == "historical_only" else "realized target weather (upper bound)"
             ),
             "rollingWindowHours": [24] if cfg["weather_mode"] == "historical_only" else [],
-        },
-    }
+        }
+    return metadata
 
 
 def evaluate_frames(
@@ -829,7 +887,7 @@ def evaluate_frames(
 
     for area in cfg["areas"]:
         _check_cancelled(cancelled)
-        prepared = _prepare_area(energy, weather, area)
+        prepared = _prepare_area(energy, weather, area, cfg)
         _notify(progress, completed / units, f"Selecting {area} model parameters on validation origins")
         selected = _select_parameters(area, prepared, cfg, failures, cancelled)
         selected_all[area] = _jsonable(selected)
@@ -909,6 +967,8 @@ def evaluate_frames(
             f"The last usable household-demand interval ends {cfg['energy_publication_lag_hours']} hours before issue time."
         ),
         "weatherAvailability": (
+            "Weather predictors are excluded from this feature set."
+            if cfg["feature_set"] != "calendar_demand_weather" else
             f"The last usable ERA5 interval ends {cfg['weather_publication_lag_hours']} hours before issue time."
             if cfg["weather_mode"] == "historical_only"
             else "Realized weather at each target is used as an explicitly labelled upper-bound experiment."
@@ -974,7 +1034,10 @@ def _load_frames(config: Mapping[str, Any]) -> tuple[pd.DataFrame, pd.DataFrame,
         for key in ("validation_origins", "calibration_origins", "holdout_origins")
         for value in config[key]
     ]
-    lookback_hours = max(168 + config["energy_publication_lag_hours"], 24 + config["weather_publication_lag_hours"])
+    include_weather = config["feature_set"] == "calendar_demand_weather"
+    lookback_hours = 168 + config["energy_publication_lag_hours"]
+    if include_weather:
+        lookback_hours = max(lookback_hours, 24 + config["weather_publication_lag_hours"])
     start = min(all_origins) - pd.Timedelta(days=config["train_window_days"], hours=lookback_hours)
     end = max(all_origins) + pd.Timedelta(hours=config["horizon_hours"] + 1)
     energy_parts: list[pd.DataFrame] = []
@@ -988,9 +1051,10 @@ def _load_frames(config: Mapping[str, Any]) -> tuple[pd.DataFrame, pd.DataFrame,
             e = backend_data.energy_frame(
                 area, chunk_start, chunk_end, kind="consumption", groups=["household"]
             )
-            w = backend_data.weather_frame(area, chunk_start, chunk_end)
+            w = backend_data.weather_frame(area, chunk_start, chunk_end) if include_weather else pd.DataFrame()
             area_provenance["energy"].append(dict(e.attrs.get("provenance", {})))
-            area_provenance["weather"].append(dict(w.attrs.get("provenance", {})))
+            if include_weather:
+                area_provenance["weather"].append(dict(w.attrs.get("provenance", {})))
             area_energy.append(e)
             area_weather.append(w)
         joined_energy = pd.concat(area_energy, ignore_index=True)
@@ -1027,7 +1091,11 @@ def run_evaluation(
     """Load published snapshots and run the flagship evaluation synchronously."""
     cfg = validate_evaluation_config(config)
     _check_cancelled(cancelled)
-    _notify(progress, 0.0, "Loading published household demand and ERA5 snapshots")
+    loading_message = (
+        "Loading published household demand and ERA5 snapshots"
+        if cfg["feature_set"] == "calendar_demand_weather" else "Loading published household demand snapshots"
+    )
+    _notify(progress, 0.0, loading_message)
     energy, weather, dataset_version = _load_frames(cfg)
     _check_cancelled(cancelled)
     result = evaluate_frames(energy, weather, cfg, progress=progress, cancelled=cancelled)
@@ -1036,7 +1104,7 @@ def run_evaluation(
 
 
 __all__ = [
-    "DEFAULT_CONFIG", "EvaluationCancelled", "MODEL_NAMES", "WEATHER_MODES",
+    "DEFAULT_CONFIG", "EvaluationCancelled", "FEATURE_SETS", "MODEL_NAMES", "WEATHER_MODES",
     "build_origin_features", "build_training_matrix", "evaluate_frames",
     "regularize_hourly_frames", "run_evaluation", "validate_evaluation_config",
 ]
