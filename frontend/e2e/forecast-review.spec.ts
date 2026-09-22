@@ -285,7 +285,7 @@ test("forecast data keeps each model's stored interval bounds distinct", async (
   await page.getByRole("option", { name: "Ridge" }).click();
   await page.getByText("View forecast data", { exact: true }).click();
 
-  const table = page.getByRole("table").filter({ hasText: "Ridge" });
+  const table = page.getByRole("region", { name: "Forecast data table", exact: true }).getByRole("table");
   await expect(table).toBeVisible();
   const ridge = table.getByRole("row").filter({ hasText: "Ridge" }).first();
   const baseline = table
