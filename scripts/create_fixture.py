@@ -26,6 +26,7 @@ if str(ROOT) not in sys.path:
 from app_core.analysis.forecast_evaluation import evaluate_frames, validate_evaluation_config  # noqa: E402
 from app_core.analysis.demand_sensitivity import DemandSensitivityConfig, analyze_area  # noqa: E402
 from app_core.analysis.demand_anomalies import DemandAnomalyConfig, analyze_area as analyze_demand_anomalies  # noqa: E402
+from app_core.analysis.demand_changes import scan as scan_demand_changes, summarize_daily  # noqa: E402
 from app_core.ingestion.models import AREAS, BASE_GROUPS  # noqa: E402
 from app_core.ingestion.store import EnergyStore  # noqa: E402
 from app_core.loaders import weather  # noqa: E402
@@ -379,6 +380,39 @@ def _write_demand_anomalies(root: Path, energy_path: Path, weather_frame: pd.Dat
     })
 
 
+def _write_demand_changes(root: Path) -> None:
+    """Demonstrate the saved scan on synthetic Step 5 output, without scientific claims."""
+    import hashlib
+    source_path = root / "analyses" / "demand-anomalies.json"
+    source = json.loads(source_path.read_text())
+    config = {"blockDays": 14, "minSegmentDays": 28, "bootstrapDraws": 999,
+              "alpha": .05, "seed": 20260922}
+    result = {"schemaVersion": 1, "id": "fixture-demand-changes", "createdAt": CREATED_AT,
+              "dataMode": "fixture", "area": "NO1", "protocol": {"config": config},
+              "metadata": {"sourceLabel": SYNTHETIC_SOURCE,
+                           "inputSha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
+                           "purpose": "Synthetic shortened demonstration; no observed evidence or validation claim."}}
+    area = next(item for item in source["areas"] if item["area"] == "NO1")
+    try:
+        if area["status"] != "ok":
+            raise ValueError("Insufficient synthetic baseline support")
+        periods, coverages = {}, {}
+        for period, key in (("calibration", "calibrationRows"), ("test", "rows")):
+            rows = area[key]
+            if not rows:
+                raise ValueError("No synthetic hourly support")
+            start = pd.Timestamp(rows[0]["time"]).floor("D").date().isoformat()
+            end = (pd.Timestamp(rows[-1]["time"]).floor("D") + pd.Timedelta(days=1)).date().isoformat()
+            periods[period], coverages[period] = summarize_daily(rows, start, end, period)
+        primary = scan_demand_changes(periods["calibration"], periods["test"])
+        result.update(status="ok", coverage=coverages,
+                      dailyRows=periods["calibration"] + periods["test"], primary=primary,
+                      sensitivities=[], controlledValidation={"specification": {}, "summary": []})
+    except ValueError as error:
+        result.update(status="unavailable", reason=str(error))
+    _atomic_json(root / "analyses" / "demand-changes.json", result)
+
+
 def create_fixture(
     output: Path = DEFAULT_OUTPUT,
     *,
@@ -406,6 +440,7 @@ def create_fixture(
         )
         _write_sensitivity(staging, energy_path, area_weather, start, end)
         _write_demand_anomalies(staging, energy_path, area_weather, start, end)
+        _write_demand_changes(staging)
         manifest = {
             "schemaVersion": 1,
             "dataMode": "fixture",

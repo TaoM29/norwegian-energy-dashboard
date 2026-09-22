@@ -19,7 +19,7 @@ with tempfile.TemporaryDirectory() as temporary:
             archive.add(ROOT / "data" / name, arcname=f"data/{name}")
         for name in ("manifest.json", "results"):
             archive.add(ROOT / "data/forecasts" / name, arcname=f"data/forecasts/{name}")
-        for name in ("demand-sensitivity.json", "demand-anomalies.json"):
+        for name in ("demand-sensitivity.json", "demand-anomalies.json", "demand-changes.json"):
             study = ROOT / "data/analyses" / name
             if study.is_file():
                 archive.add(study, arcname=f"data/analyses/{name}")
