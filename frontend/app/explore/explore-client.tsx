@@ -13,8 +13,9 @@ import { downloadCsv, downloadJson } from "@/lib/download";
 import { areas, getJson, number, shiftDay, type Coverage } from "@/lib/api";
 import { writeDashboardUrl } from "@/lib/navigation-state";
 import { ExplorePeaksView, type AreaPeaks } from "@/components/demand-peaks";
+import { DemandProfilesView, type DemandProfilesResponse } from "@/components/demand-profiles";
 
-type View = "energy" | "weather" | "peaks";
+type View = "energy" | "weather" | "peaks" | "profiles";
 type Aggregation = "hourly" | "daily" | "weekly";
 type Kind = "production" | "consumption";
 type Filters = {
@@ -154,7 +155,7 @@ function oneYearDefault(coverage: Coverage) {
 function readFilters(coverage: Coverage): Filters {
   const params = new URLSearchParams(window.location.search);
   const fallback = oneYearDefault(coverage);
-  const view = params.get("view") === "weather" ? "weather" : params.get("view") === "peaks" ? "peaks" : "energy";
+  const view = params.get("view") === "weather" ? "weather" : params.get("view") === "peaks" ? "peaks" : params.get("view") === "profiles" ? "profiles" : "energy";
   const area = Object.hasOwn(areas, params.get("area") || "")
     ? params.get("area")!
     : coverage.areas[0];
@@ -291,6 +292,7 @@ export default function ExploreClient() {
   const [energy, setEnergy] = useState<EnergyResponse | null>(null);
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const [peaks, setPeaks] = useState<AreaPeaks | null>(null);
+  const [profiles, setProfiles] = useState<DemandProfilesResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
@@ -345,15 +347,17 @@ export default function ExploreClient() {
     setEnergy(null);
     setWeather(null);
     setPeaks(null);
-    getJson<EnergyResponse | WeatherResponse | AreaPeaks>(
-      `/api/explore/${active.view === "peaks" ? "demand-peaks" : active.view}?${params}`,
+    setProfiles(null);
+    getJson<EnergyResponse | WeatherResponse | AreaPeaks | DemandProfilesResponse>(
+      `/api/explore/${active.view === "peaks" ? "demand-peaks" : active.view === "profiles" ? "demand-profiles" : active.view}?${params}`,
       controller.signal,
     )
       .then((value) => {
         if (controller.signal.aborted) return;
         if (active.view === "energy") setEnergy(value as EnergyResponse);
         else if (active.view === "weather") setWeather(value as WeatherResponse);
-        else setPeaks(value as AreaPeaks);
+        else if (active.view === "peaks") setPeaks(value as AreaPeaks);
+        else setProfiles(value as DemandProfilesResponse);
       })
       .catch((reason) => {
         if (reason.name !== "AbortError") setError(reason.message);
@@ -368,8 +372,8 @@ export default function ExploreClient() {
       setError("The end date must be on or after the start date.");
       return;
     }
-    if (draft.view === "peaks" && (Date.parse(`${shiftDay(draft.end, 1)}T00:00:00Z`) - Date.parse(`${draft.start}T00:00:00Z`)) / 86400000 > 366) {
-      setError("Peak analysis supports up to 366 inclusive dates. Choose a shorter range.");
+    if ((draft.view === "peaks" || draft.view === "profiles") && (Date.parse(`${shiftDay(draft.end, 1)}T00:00:00Z`) - Date.parse(`${draft.start}T00:00:00Z`)) / 86400000 > 366) {
+      setError(`${draft.view === "peaks" ? "Peak" : "Daily profile"} analysis supports up to 366 inclusive dates. Choose a shorter range.`);
       return;
     }
     if (draft.view === "energy" && !draft.groups.length) {
@@ -510,6 +514,7 @@ export default function ExploreClient() {
               <option value="energy">Energy</option>
               <option value="weather">Weather</option>
               <option value="peaks">Demand peaks</option>
+              <option value="profiles">Daily profiles</option>
             </Select>
           </label>
           <label>
@@ -533,7 +538,7 @@ export default function ExploreClient() {
             max={shiftDay(coverage.coverage.end, -1)}
             presets
           />
-          {draft.view !== "peaks" && <label>
+          {draft.view !== "peaks" && draft.view !== "profiles" && <label>
             Time detail
             <Select
               aria-label="Time detail"
@@ -637,7 +642,7 @@ export default function ExploreClient() {
               </label>
             </>
           ) : null}
-          {draft.view !== "peaks" && <details className="display-settings">
+          {draft.view !== "peaks" && draft.view !== "profiles" && <details className="display-settings">
             <summary>Display options</summary>
             <label>
               Line opacity <span>{draft.opacity.toFixed(2)}</span>
@@ -654,7 +659,7 @@ export default function ExploreClient() {
             </label>
           </details>}
           <button type="submit">Apply view</button>
-          {draft.view !== "peaks" && <div className="explore-coverage">
+          {draft.view !== "peaks" && draft.view !== "profiles" && <div className="explore-coverage">
             <HelpTip label="Data coverage">
               Published common energy coverage runs from {coverage.coverage.start}{" "}
               through {shiftDay(coverage.coverage.end, -1)}. Dates are inclusive
@@ -719,6 +724,7 @@ export default function ExploreClient() {
         />
       ) : null}
       {!loading && !error && peaks ? <ExplorePeaksView result={peaks} /> : null}
+      {!loading && !error && profiles ? <DemandProfilesView result={profiles} /> : null}
     </AnalysisShell>
   );
 }

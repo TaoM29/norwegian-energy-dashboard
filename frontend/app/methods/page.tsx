@@ -95,8 +95,10 @@ export default function Methods() {
             </li>
             <li>
               <a href="/explore">Explore</a>: inspect individual energy groups
-              and weather. Daily energy and precipitation are summed; direction
-              uses circular means.
+              and weather, or compare <a href="/explore?view=profiles">daily
+              household profiles</a>. Daily energy and precipitation are summed;
+              direction uses circular means. Profile bands show between-day
+              variation, not uncertainty in the mean.
             </li>
             <li>
               <a href="/diagnostics">Diagnostics</a>: examine rolling
@@ -202,8 +204,10 @@ export default function Methods() {
           </p>
           <p>
             UTC intervals use an exclusive end; browser date controls include
-            both selected dates. Forecast calendar features use Europe/Oslo,
-            including daylight saving. Missing hours remain on the regular grid.
+            both selected dates. Calendar features and daily profiles use
+            Europe/Oslo. Profiles exclude partial, incomplete and 23/25-hour
+            daylight-saving days from their 24-hour comparison, while retaining
+            those days for inspection. Missing hours remain on the regular grid.
             Aggregation and display sampling are disclosed alongside each
             analysis.
           </p>
