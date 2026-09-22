@@ -25,6 +25,7 @@ if str(ROOT) not in sys.path:
 
 from app_core.analysis.forecast_evaluation import evaluate_frames, validate_evaluation_config  # noqa: E402
 from app_core.analysis.demand_sensitivity import DemandSensitivityConfig, analyze_area  # noqa: E402
+from app_core.analysis.demand_anomalies import DemandAnomalyConfig, analyze_area as analyze_demand_anomalies  # noqa: E402
 from app_core.ingestion.models import AREAS, BASE_GROUPS  # noqa: E402
 from app_core.ingestion.store import EnergyStore  # noqa: E402
 from app_core.loaders import weather  # noqa: E402
@@ -343,6 +344,41 @@ def _write_sensitivity(root: Path, energy_path: Path, weather_frame: pd.DataFram
     })
 
 
+def _write_demand_anomalies(root: Path, energy_path: Path, weather_frame: pd.DataFrame,
+                            start: pd.Timestamp, end: pd.Timestamp) -> None:
+    """Fit a synthetic retrospective review from the same fixture observations."""
+    duration = end - start
+    config = DemandAnomalyConfig(
+        start=start.isoformat(), train_end=(start + duration * .4).floor("h").isoformat(),
+        validation_end=(start + duration * .6).floor("h").isoformat(),
+        calibration_end=(start + duration * .8).floor("h").isoformat(), end=end.isoformat(),
+        minimum_train=100, minimum_validation=100, minimum_calibration=100,
+        minimum_calibration_dates=3, minimum_test=100, peer_limit=20,
+    )
+    energy = pd.DataFrame(EnergyStore(energy_path).query(
+        start=start.to_pydatetime(), end=end.to_pydatetime(), areas=list(AREAS),
+        kinds=["consumption"], groups=["household"],
+    ))
+    energy["timestamp"] = pd.to_datetime(energy["timestamp"], utc=True)
+    results = []
+    with threadpool_limits(limits=1):
+        for area in AREAS:
+            demand = energy[energy["area"].eq(area)].set_index("timestamp")["value"]
+            temperature = weather_frame[weather_frame["area"].eq(area)].set_index("time")["temperature_2m (°C)"]
+            try:
+                results.append(analyze_demand_anomalies(
+                    pd.DataFrame({"demand": demand, "temperature": temperature}), area, config,
+                ))
+            except ValueError as error:
+                results.append({"area": area, "status": "unavailable", "reason": str(error)})
+    _atomic_json(root / "analyses" / "demand-anomalies.json", {
+        "schemaVersion": 1, "id": "fixture-demand-anomalies", "createdAt": CREATED_AT,
+        "dataMode": "fixture", "protocol": asdict(config), "areas": results,
+        "metadata": {"sourceLabel": SYNTHETIC_SOURCE, "generator": "scripts/create_fixture.py",
+                     "purpose": "Synthetic retrospective anomaly demonstration; not evidence of real faults or false-alarm rates."},
+    })
+
+
 def create_fixture(
     output: Path = DEFAULT_OUTPUT,
     *,
@@ -369,6 +405,7 @@ def create_fixture(
             staging / "forecasts", energy_path, area_weather, forecast_config, start, end
         )
         _write_sensitivity(staging, energy_path, area_weather, start, end)
+        _write_demand_anomalies(staging, energy_path, area_weather, start, end)
         manifest = {
             "schemaVersion": 1,
             "dataMode": "fixture",

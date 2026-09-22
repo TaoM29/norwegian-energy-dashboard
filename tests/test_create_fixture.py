@@ -98,6 +98,12 @@ def test_create_fixture_writes_api_readable_snapshots_and_prepared_result(tmp_pa
     assert len(sensitivity["areas"]) == 5
     assert all(area["status"] == "ok" for area in sensitivity["areas"])
     assert sensitivity["protocol"]["end"].startswith("2025-04-01")
+    from backend.demand_anomalies import read_study
+    anomalies = read_study(output / "analyses/demand-anomalies.json")
+    assert anomalies["dataMode"] == "fixture"
+    assert len(anomalies["areas"]) == 5
+    assert all(area["status"] == "ok" for area in anomalies["areas"])
+    assert anomalies["protocol"]["end"].startswith("2025-04-01")
     fixture_manifest = json.loads((output / "fixture-manifest.json").read_text())
     assert fixture_manifest == manifest
 
