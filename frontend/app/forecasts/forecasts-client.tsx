@@ -36,6 +36,7 @@ import { writeDashboardUrl } from "@/lib/navigation-state";
 import styles from "./forecasts.module.css";
 import { ForecastChart, modelColour } from "./forecast-chart";
 import { ReliabilityPanel } from "./reliability-panel";
+import { AblationPanel } from "./ablation-panel";
 import { ErrorExplorer, type ErrorExplorerView, type ErrorExplorerMeasure } from "./error-explorer";
 
 const benchmarkModels = [
@@ -48,6 +49,9 @@ const modelLabels: Record<string, string> = {
   baseline: "Seasonal baseline",
   seasonal_naive: "Seasonal baseline",
   ridge: "Ridge",
+  ridge_calendar: "Ridge · calendar",
+  ridge_calendar_demand: "Ridge · calendar + demand",
+  ridge_calendar_demand_weather: "Ridge · calendar + demand + weather",
   gradient_boosting: "Gradient boosting",
   gradientboosting: "Gradient boosting",
   gb: "Gradient boosting",
@@ -1125,6 +1129,7 @@ export default function ForecastsClient() {
 
   const metadata = detail?.metadata || summary?.metadata || {};
   const reliabilityReport = detail?.reliability;
+  const ablationReport = detail?.ablation;
   const isExploratoryStudy =
     asObject(metadata.studyProtocol).evidenceStatus === "exploratory";
   const originsMetadata = asObject(detail?.origins);
@@ -1391,6 +1396,14 @@ export default function ForecastsClient() {
             <ReliabilityPanel
               report={reliabilityReport}
               protocol={metadata.studyProtocol}
+              resultId={detail.id}
+              unit={typeof metadata.unit === "string" ? metadata.unit : "kWh"}
+            />
+          )}
+
+          {ablationReport != null && (
+            <AblationPanel
+              report={ablationReport}
               resultId={detail.id}
               unit={typeof metadata.unit === "string" ? metadata.unit : "kWh"}
             />

@@ -36,6 +36,9 @@ const viewLabels: Record<ErrorExplorerView, string> = {
 const knownModels: Record<string, string> = {
   seasonal_naive: "Seasonal baseline",
   ridge: "Ridge",
+  ridge_calendar: "Ridge · calendar",
+  ridge_calendar_demand: "Ridge · calendar + demand",
+  ridge_calendar_demand_weather: "Ridge · calendar + demand + weather",
   gradient_boosting: "Gradient boosting",
   sarimax: "SARIMAX",
 };
