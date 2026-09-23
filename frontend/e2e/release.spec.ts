@@ -284,7 +284,7 @@ test("mobile pages keep navigation, guidance and theme controls usable", async (
   });
   await page.goto("/diagnostics?area=NO1&start=2025-11-01&end=2025-11-28");
   await expect(page.getByLabel("Window, hours", { exact: true })).toBeHidden();
-  await page.locator(".method-settings summary").click();
+  await page.getByText("Method settings", { exact: true }).click();
   await expect(page.getByLabel("Window, hours", { exact: true })).toBeVisible();
   await page.getByRole("combobox", { name: "Analysis" }).click();
   await page.getByRole("option", { name: "Seasonal patterns", exact: true }).click();

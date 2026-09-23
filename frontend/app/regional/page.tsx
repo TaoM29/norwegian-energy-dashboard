@@ -792,7 +792,7 @@ export default function RegionalPage() {
                 <option value="consumption">Consumption</option>
               </Select>
             </label>
-            <details className={styles.filterDetails}>
+            <details className={`filter-disclosure ${styles.filterDetails}`}>
               <summary>Energy groups · {draft.groups.length} selected</summary>
             <fieldset className={styles.groupChoices}>
               <legend>Energy groups</legend>
@@ -936,7 +936,7 @@ export default function RegionalPage() {
                 }
               />
             </label>
-            <details className={styles.filterDetails}>
+            <details className={`filter-disclosure ${styles.filterDetails}`}>
               <summary>Model assumptions · {draft.fenceType}</summary>
               <div className={styles.filterBody}>
             <label>

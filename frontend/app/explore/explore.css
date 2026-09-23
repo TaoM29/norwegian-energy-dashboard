@@ -4,21 +4,12 @@
 .explore-controls .date-range-field {
   min-width: min(100%, 250px);
 }
-.explore-filter-details {
-  align-self: end;
-  min-width: 120px;
-}
-.explore-filter-details[open] {
-  flex-basis: 100%;
-}
-.explore-filter-details summary,
 .explore-breakdown summary {
   width: fit-content;
   color: var(--accent);
   cursor: pointer;
   font-weight: 600;
 }
-.explore-filter-details summary:focus-visible,
 .explore-breakdown summary:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
@@ -187,11 +178,8 @@
   }
 }
 
-.display-settings {
-  margin: 0 !important;
-}
-.display-settings summary {
-  font-size: 12px;
+.display-settings[open] > label {
+  margin-top: 12px;
 }
 .display-settings input {
   accent-color: var(--accent);

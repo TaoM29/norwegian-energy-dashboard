@@ -733,7 +733,7 @@ export default function DiagnosticsWorkbench() {
             </label>
           </>
         )}
-        <details className="method-settings">
+        <details className="filter-disclosure">
           <summary>Method settings</summary>
           <div className="method-settings-fields">
             {view === "correlation" && (

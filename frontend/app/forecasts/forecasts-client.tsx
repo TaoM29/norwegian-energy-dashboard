@@ -1434,7 +1434,7 @@ export default function ForecastsClient() {
                 availableDates={availableTargetDates}
                 applyLabel="Apply dates"
               />
-              <details className={styles.chartOptions}>
+              <details className="filter-disclosure">
                 <summary>Model & evaluation options · {view.models.length} models</summary>
                 <div className={styles.chartOptionsBody}>
               {availableSplits.length > 0 && (

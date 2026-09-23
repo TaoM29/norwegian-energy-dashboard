@@ -539,7 +539,7 @@ export default function ExploreClient() {
             presets
           />
           {draft.view !== "peaks" && draft.view !== "profiles" && (
-            <details className="explore-filter-details">
+            <details className="filter-disclosure">
               <summary>More filters · {draft.view === "energy" ? `${draft.kind}, ${draft.groups.length} groups` : `${draft.variables.length} variables`}</summary>
               <div className="explore-filter-body">
           <label>
@@ -646,7 +646,7 @@ export default function ExploreClient() {
               </label>
             </>
           ) : null}
-          <details className="display-settings">
+          <details className="filter-disclosure display-settings">
             <summary>Display options</summary>
             <label>
               Line opacity <span>{draft.opacity.toFixed(2)}</span>

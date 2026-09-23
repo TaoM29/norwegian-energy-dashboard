@@ -41,7 +41,7 @@
 .analysis-controls button,
 .analysis-panel > button,
 .analysis-actions button {
-  min-height: 38px;
+  min-height: 40px;
   padding: 7px 13px;
   border: 1px solid var(--border);
   border-radius: var(--control-radius, 10px);
@@ -125,6 +125,66 @@
   cursor: pointer;
   color: var(--accent);
   padding: 8px 0;
+}
+.analysis-main details.filter-disclosure {
+  align-self: flex-end;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+}
+.analysis-controls > .filter-disclosure[open] {
+  flex-basis: 100%;
+}
+.analysis-main .filter-disclosure > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--control-radius, 10px);
+  background: var(--surface-muted);
+  color: var(--text);
+  box-shadow: var(--control-shadow);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  list-style: none;
+  cursor: pointer;
+}
+.filter-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.filter-disclosure > summary::after {
+  content: "";
+  flex: 0 0 7px;
+  width: 7px;
+  height: 7px;
+  margin: -3px 2px 0;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+.filter-disclosure[open] > summary::after {
+  margin-top: 3px;
+  transform: rotate(225deg);
+}
+.analysis-main .filter-disclosure[open] > summary {
+  border-color: var(--accent);
+}
+@media (hover: hover) {
+  .analysis-main .filter-disclosure:not([open]) > summary:hover {
+    border-color: var(--border-strong);
+  }
+}
+@media (max-width: 680px) {
+  .analysis-main .filter-disclosure > summary,
+  .analysis-controls > button {
+    min-height: 44px;
+  }
 }
 .analysis-main pre {
   white-space: pre-wrap;

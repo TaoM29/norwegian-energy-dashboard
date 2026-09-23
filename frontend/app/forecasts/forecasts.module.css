@@ -191,24 +191,6 @@
   border-radius: 0;
   box-shadow: none;
 }
-.chartOptions {
-  align-self: center;
-  min-width: 0;
-}
-.chartOptions[open] {
-  flex-basis: 100%;
-}
-.chartOptions > summary {
-  width: fit-content;
-  color: var(--accent);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 650;
-}
-.chartOptions > summary:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
 .chartOptionsBody {
   display: flex;
   flex-wrap: wrap;

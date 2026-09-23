@@ -97,29 +97,10 @@
     flex-direction: column;
   }
 }
-.method-settings {
-  flex-basis: 100%;
-  margin: 0 !important;
-  border-top: 1px solid var(--border);
-}
-.method-settings summary {
-  font-size: 13px;
-}
-.method-settings summary span {
-  color: var(--text-muted);
-  font-size: 12px;
-  margin-left: 10px;
-}
 .method-settings-fields {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
   gap: 16px;
   padding: 12px 0;
-}
-@media (max-width: 760px) {
-  .method-settings summary span {
-    display: block;
-    margin: 4px 0 0;
-  }
 }

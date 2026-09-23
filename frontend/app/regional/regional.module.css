@@ -35,20 +35,12 @@
   font-size: 12px;
   line-height: 1.55;
 }
-.filterDetails {
-  align-self: center;
-}
-.filterDetails[open] {
-  flex-basis: 100%;
-}
-.filterDetails summary,
 .secondaryAnalysis summary {
   width: fit-content;
   color: var(--accent);
   cursor: pointer;
   font-weight: 600;
 }
-.filterDetails summary:focus-visible,
 .secondaryAnalysis summary:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
@@ -61,7 +53,11 @@
   padding: 16px 0 4px;
 }
 .filterDetails .groupChoices {
+  margin-top: 14px;
   padding-top: 12px;
+}
+.filterDetails .groupChoices > div {
+  max-width: none;
 }
 .regionalFlow {
   display: grid;
