@@ -44,10 +44,10 @@ export function shortDate(date: string) {
   }).format(new Date(`${date.slice(0, 10)}T00:00:00Z`));
 }
 export function number(value: number | null | undefined, digits = 1) {
-  return value == null
+  return value == null || !Number.isFinite(value)
     ? "—"
     : new Intl.NumberFormat("en-GB", { maximumFractionDigits: digits }).format(
-        value,
+        Object.is(Number(value.toFixed(digits)), -0) ? 0 : value,
       );
 }
 export class ApiError extends Error {
