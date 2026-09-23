@@ -2,6 +2,7 @@
 
 import { type ReactNode, useEffect, useRef } from "react";
 import { ExportMenu } from "./export-menu";
+import { formatChartNumbers } from "@/lib/chart-format";
 import * as echarts from "echarts/core";
 import {
   BarChart,
@@ -356,7 +357,7 @@ export default function AnalysisChart({
       {
         animation: false,
         textStyle: { fontFamily: readPalette().fontFamily },
-        ...option,
+        ...formatChartNumbers(option),
       },
       { notMerge: true },
     );
@@ -383,7 +384,7 @@ export default function AnalysisChart({
           ...imageOption,
           animation: false,
         } as EChartsCoreOption;
-        snapshot.setOption(snapshotOption, { notMerge: true });
+        snapshot.setOption(formatChartNumbers(snapshotOption), { notMerge: true });
         applyTheme(snapshot, snapshotOption, currentTheme.current);
         imageUrl = snapshot.getDataURL({
           type: "png",

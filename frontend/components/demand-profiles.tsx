@@ -8,6 +8,7 @@ import { ExportMenu } from "@/components/export-menu";
 import { HelpPanel } from "@/components/help";
 import { Select } from "@/components/ui/select";
 import { number } from "@/lib/api";
+import { chartNumber } from "@/lib/number-format";
 import { downloadCsv, downloadJson } from "@/lib/download";
 import "./demand-profiles.css";
 
@@ -127,7 +128,7 @@ export function DemandProfilesView({ result }: { result: DemandProfilesResponse 
     grid: { left: 76, right: 20, top: 32, bottom: 58, containLabel: false },
     tooltip: { trigger: "axis", valueFormatter: (value: unknown) => value == null ? "—" : `${number(Number(value), scale === "actual" ? 0 : 1)} ${scale === "actual" ? "kWh" : "% of daily mean"}` },
     xAxis: { type: "category", boundaryGap: false, data: Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, "0")), name: "Hour · Oslo", nameLocation: "middle", nameGap: 32, axisLabel: { interval: 3, hideOverlap: true, formatter: "{value}:00" } },
-    yAxis: { type: "value", min: 0, name: scale === "actual" ? "Hourly energy (kWh)" : "Daily mean (%)", nameLocation: "middle", nameGap: 57, axisLabel: { formatter: (value: number) => Math.abs(value) >= 1e6 ? `${(value / 1e6).toFixed(1)}m` : Math.abs(value) >= 1e3 ? `${Math.round(value / 1e3)}k` : String(value) }, splitLine: { lineStyle: { color: "#e2e8e2" } } },
+    yAxis: { type: "value", min: 0, name: scale === "actual" ? "Hourly energy (kWh)" : "Daily mean (%)", nameLocation: "middle", nameGap: 57, axisLabel: { formatter: (value: number) => Math.abs(value) >= 1e6 ? `${(value / 1e6).toFixed(1)}m` : Math.abs(value) >= 1e3 ? `${Math.round(value / 1e3)}k` : chartNumber(value) }, splitLine: { lineStyle: { color: "#e2e8e2" } } },
     series: groups.flatMap((group) => {
       const data = scale === "actual" ? group.actual : group.normalized;
       const band = data.map((row) => values(row, scale));
