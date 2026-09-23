@@ -1,6 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
+import { formatDisplayValue } from "@/lib/number-format";
 import { modelColour } from "./forecast-chart";
 import styles from "./ablation-panel.module.css";
 
@@ -25,19 +26,17 @@ function text(value: unknown): string {
 
 function count(value: unknown): string {
   const parsed = numeric(value);
-  return parsed == null ? "Unavailable" : parsed.toLocaleString("en-GB");
+  return parsed == null ? "Unavailable" : formatDisplayValue(parsed, 0);
 }
 
 function measure(value: unknown, digits = 1): string {
   const parsed = numeric(value);
-  return parsed == null ? "Unavailable" : parsed.toLocaleString("en-GB", {
-    minimumFractionDigits: digits, maximumFractionDigits: digits,
-  });
+  return parsed == null ? "Unavailable" : formatDisplayValue(parsed, digits);
 }
 
 function percent(value: unknown): string {
   const parsed = numeric(value);
-  return parsed == null ? "Unavailable" : `${(parsed * 100).toFixed(1)}%`;
+  return parsed == null ? "Unavailable" : `${formatDisplayValue(parsed * 100, 1)}%`;
 }
 
 function signed(value: unknown, suffix = " kWh"): string {

@@ -5,6 +5,7 @@ import type { EChartsCoreOption } from "echarts/core";
 import AnalysisChart from "@/components/analysis-chart";
 import { ExportMenu } from "@/components/export-menu";
 import { downloadCsv, downloadJson } from "@/lib/download";
+import { formatDisplayValue } from "@/lib/number-format";
 import { modelColour } from "./forecast-chart";
 import styles from "./error-explorer.module.css";
 
@@ -54,7 +55,7 @@ function numeric(value: unknown): number | null {
 
 function count(value: unknown): string {
   const parsed = numeric(value);
-  return parsed == null ? "Unavailable" : parsed.toLocaleString("en-GB");
+  return parsed == null ? "Unavailable" : formatDisplayValue(parsed, 0);
 }
 
 function text(value: unknown): string {
@@ -83,11 +84,11 @@ function metricDelta(row: Row): number | null {
 
 function formatted(value: number | null, unit = " kWh", signed = false): string {
   if (value == null) return "Unavailable";
-  return `${signed && value > 0 ? "+" : ""}${value.toLocaleString("en-GB", { maximumFractionDigits: 1, minimumFractionDigits: 1 })}${unit}`;
+  return `${signed && value > 0 ? "+" : ""}${formatDisplayValue(value, 1)}${unit}`;
 }
 
 function coverageText(value: number | null): string {
-  return value == null ? "Unavailable" : `${(value * 100).toFixed(1)}%`;
+  return value == null ? "Unavailable" : `${formatDisplayValue(value * 100, 1)}%`;
 }
 
 function scopeLabel(row: Row, view: ErrorExplorerView): string {
@@ -154,7 +155,7 @@ function tooltip(params: unknown): string {
     const value = Array.isArray(point.value) ? point.value.at(-1) : point.value;
     const number = numeric(value);
     const unit = text(point.seriesName).includes("coverage") || text(point.seriesName).includes("Nominal") ? "%" : " kWh";
-    return `${escapeHtml(point.seriesName)}: ${number == null ? "Unavailable" : escapeHtml(number.toFixed(1) + unit)}`;
+    return `${escapeHtml(point.seriesName)}: ${number == null ? "Unavailable" : escapeHtml(formatDisplayValue(number, 1) + unit)}`;
   }).join("<br />");
   return `${hour ? `<strong>Hour ${escapeHtml(hour)} ahead</strong><br />` : ""}${values}`;
 }

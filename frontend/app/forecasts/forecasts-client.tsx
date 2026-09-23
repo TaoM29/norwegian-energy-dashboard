@@ -33,6 +33,7 @@ import { Select } from "@/components/ui/select";
 import { areas, number, shiftDay } from "@/lib/api";
 import { downloadCsv, downloadJson } from "@/lib/download";
 import { writeDashboardUrl } from "@/lib/navigation-state";
+import { displayJson, formatDisplayValue } from "@/lib/number-format";
 import styles from "./forecasts.module.css";
 import { ForecastChart, modelColour } from "./forecast-chart";
 import { ReliabilityPanel } from "./reliability-panel";
@@ -1830,7 +1831,7 @@ export default function ForecastsClient() {
                     Failures remain visible and are not silently removed from
                     model comparisons.
                   </p>
-                  <pre>{JSON.stringify(failures, null, 2)}</pre>
+                  <pre>{displayJson(failures)}</pre>
                 </details>
               )}
             </div>
@@ -1854,7 +1855,7 @@ export default function ForecastsClient() {
               <details>
                 <summary>Artifact metadata</summary>
                 <pre>
-                  {JSON.stringify({ metadata, config: detail.config }, null, 2)}
+                  {displayJson({ metadata, config: detail.config })}
                 </pre>
               </details>
             </div>
@@ -1961,14 +1962,10 @@ export default function ForecastsClient() {
                       Submitted configuration and enforced limits
                     </summary>
                     <pre>
-                      {JSON.stringify(
-                        {
-                          config: selectedJob.config,
-                          limits: selectedJob.limits,
-                        },
-                        null,
-                        2,
-                      )}
+                      {displayJson({
+                        config: selectedJob.config,
+                        limits: selectedJob.limits,
+                      })}
                     </pre>
                   </details>
                 </section>
@@ -2096,7 +2093,12 @@ function MetricTable({
                   ? "Peak"
                   : "Off-peak"
                 : textValue(row, dimension, "bucket", "label") ||
-                  numericValue(row, dimension)?.toString() ||
+                  (numericValue(row, dimension) == null
+                    ? ""
+                    : formatDisplayValue(
+                        numericValue(row, dimension),
+                        dimension === "horizon" ? 0 : 2,
+                      )) ||
                   "All";
             const coverage = numericValue(row, "coverage", "intervalCoverage");
             const legacyPinball = numericValue(row, "pinball", "pinballLoss");
@@ -2114,7 +2116,7 @@ function MetricTable({
                 {expanded ? (
                   <>
                     <td>{number(numericValue(row, "rmse", "RMSE"), 2)}</td>
-                    <td>{number(numericValue(row, "mase", "MASE"), 3)}</td>
+                    <td>{formatDisplayValue(numericValue(row, "mase", "MASE"), 3)}</td>
                     <td>{number(baseline, 2)}</td>
                   </>
                 ) : (
@@ -2148,19 +2150,19 @@ function MetricTable({
                       )}
                     </td>
                     <td>
-                      {number(
+                      {formatDisplayValue(
                         numericValue(row, "pinballLower") ?? legacyPinball,
                         3,
                       )}
                     </td>
                     <td>
-                      {number(
+                      {formatDisplayValue(
                         numericValue(row, "pinballMedian") ?? legacyPinball,
                         3,
                       )}
                     </td>
                     <td>
-                      {number(
+                      {formatDisplayValue(
                         numericValue(row, "pinballUpper") ?? legacyPinball,
                         3,
                       )}

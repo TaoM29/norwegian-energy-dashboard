@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatDisplayValue } from "@/lib/number-format";
 import styles from "./reliability-panel.module.css";
 
 type RecordValue = Record<string, unknown>;
@@ -25,19 +26,17 @@ function numeric(value: unknown): number | null {
 
 function count(value: unknown): string {
   const number = numeric(value);
-  return number == null ? "Unavailable" : number.toLocaleString("en-GB");
+  return number == null ? "Unavailable" : formatDisplayValue(number, 0);
 }
 
 function measure(value: unknown, digits = 1): string {
   const number = numeric(value);
-  return number == null
-    ? "—"
-    : number.toLocaleString("en-GB", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  return number == null ? "—" : formatDisplayValue(number, digits);
 }
 
 function percent(value: unknown): string {
   const number = numeric(value);
-  return number == null ? "—" : `${(number * 100).toFixed(1)}%`;
+  return number == null ? "—" : `${formatDisplayValue(number * 100, 1)}%`;
 }
 
 function delta(value: unknown): string {
@@ -259,7 +258,7 @@ export function ReliabilityPanel({
                   return <tr key={`${index}-${key}`}>
                     <th scope="row">{modelName(model.model)}</th>
                     <td>{label}</td><td>{count(diagnostic.pairs)}</td>
-                    <td>{measure(diagnostic.correlation, 2)}{typeof diagnostic.reason === "string" && diagnostic.reason ? ` (${diagnostic.reason})` : ""}</td>
+                    <td>{numeric(diagnostic.correlation) == null ? "—" : formatDisplayValue(diagnostic.correlation, 3)}{typeof diagnostic.reason === "string" && diagnostic.reason ? ` (${diagnostic.reason})` : ""}</td>
                   </tr>;
                 }))}
               </tbody>
