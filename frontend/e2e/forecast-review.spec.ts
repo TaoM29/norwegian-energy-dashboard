@@ -211,9 +211,9 @@ test("exploratory reliability stays scoped to its fixed study cohort and older r
   await expect(panel).toContainText("2 dates: -20 to +5");
   await expect(panel).toContainText("74%");
   await expect(page.getByText("219", { exact: true })).toBeVisible();
-  await expect(page.getByText(/Missing scheduled dates: 2025-03-14/)).toBeVisible();
-  await expect(page.getByText(/pools all five areas and matched dates/)).toBeVisible();
+  await expect(page.getByText(/Missing dates: 2025-03-14/)).toBeVisible();
   await page.getByText("Support and residual dependence").click();
+  await expect(page.getByText(/pools all areas and matched dates/)).toBeVisible();
   const diagnostics = page.getByRole("region", { name: "Residual dependence diagnostics" });
   await expect(diagnostics).toContainText("0.25");
   await page.getByRole("combobox", { name: "Residual area" }).selectOption("NO2");

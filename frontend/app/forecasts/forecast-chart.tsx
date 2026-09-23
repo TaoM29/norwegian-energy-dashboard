@@ -342,16 +342,14 @@ export function ForecastChart({
   return (
     <div className={styles.forecastChart}>
       <div className={styles.chartHeader}>
-        <div className={styles.chartExplanation}>
-          <span>
-            {intervalModel
-              ? `${nominalCoverage == null ? "Saved" : `${number(nominalCoverage, 0)}% nominal`} interval for ${intervalLabel}.`
-              : "No stored uncertainty interval is available for these models."}
-          </span>
-        </div>
+        {!intervalModel && (
+          <div className={styles.chartExplanation}>
+            <span>No stored uncertainty interval is available.</span>
+          </div>
+        )}
         {intervalModels.length > 0 && (
           <label className={styles.intervalControl}>
-            Interval model
+            Interval model{nominalCoverage == null ? "" : ` · ${number(nominalCoverage, 0)}% nominal`}
             <Select
               aria-label="Interval model"
               value={intervalModel}
@@ -424,9 +422,6 @@ export function ForecastChart({
         height={400}
         exports={exports}
       />
-      <span className={styles.rowCount}>
-        {sortedPoints.length} displayed rows
-      </span>
       <details className={styles.valuesDisclosure}>
         <summary>View forecast data</summary>
         <div
@@ -436,7 +431,7 @@ export function ForecastChart({
           tabIndex={0}
         >
           <table>
-            <caption>Displayed target times and values, in UTC and kWh</caption>
+            <caption>Forecast values · UTC · kWh</caption>
             <thead>
               <tr>
                 <th scope="col">Target time (UTC)</th>

@@ -129,11 +129,6 @@ export function ReliabilityPanel({
           {typeof study.label === "string" ? study.label : "Saved Step 2 study"}
         </span>
       </div>
-      <p className={styles.intro}>
-        This exploratory study pools all five areas and matched dates. Chart
-        filters do not change it. Negative paired MAE differences favor the
-        model over the seasonal baseline; every difference uses matched targets.
-      </p>
       <div className={styles.support} aria-label="Study support">
         <div>
           <span>Scheduled dates</span>
@@ -152,15 +147,13 @@ export function ReliabilityPanel({
           <strong>{count(support.excludedAreaOrigins)}</strong>
         </div>
       </div>
-      <p className={styles.context}>
-        {scheduled == null ? "Scheduled area-origins unavailable" : `${count(scheduled)} scheduled area-origins`}
-        {excluded != null && excluded > 0
-          ? "; exclusions and failures reduce the matched cohort."
-          : "; all scheduled area-origins matched."}
-        {missingDates.length
-          ? ` Missing scheduled dates: ${missingDates.map((date) => date.slice(0, 10)).join(", ")}.`
-          : " No scheduled date is missing."}
-      </p>
+      {(scheduled == null || excluded == null || (excluded ?? 0) > 0 || missingDates.length > 0) && (
+        <p className={styles.context}>
+          {scheduled == null ? "Scheduled area-origin count unavailable. " : ""}
+          {excluded == null ? "Exclusion count unavailable. " : excluded > 0 ? "Exclusions and failures reduce the matched cohort. " : ""}
+          {missingDates.length ? `Missing dates: ${missingDates.map((date) => date.slice(0, 10)).join(", ")}.` : ""}
+        </p>
+      )}
       <div className={styles.tableWrap} role="region" aria-label="Reliability comparison" tabIndex={0}>
         <table>
           <caption>Paired differences and measured 80% predictive intervals · {unit} unless shown as %</caption>
@@ -206,24 +199,17 @@ export function ReliabilityPanel({
           </tbody>
         </table>
       </div>
-      <p className={styles.limitations}>
-        The 80% target is nominal; coverage is measured on these saved outcomes.
-        Bias is actual minus forecast, so a positive value means underprediction.
-        The approximate ranges resample consecutive origin dates in blocks of
-        2, 4 and 8, keeping areas together. Dependence and the limited number
-        of dates can make these ranges unstable; a range crossing zero does not
-        establish an improvement. This previously reviewed period is
-        exploratory, not an untouched confirmation set.
-      </p>
       <p className={styles.intro}>
         <a href={`/api/forecasts/results/${encodeURIComponent(resultId)}/artifact`}>
           Download complete study JSON
         </a>
-        {" · "}Includes predictions, calibration residuals, uncertainty ranges and provenance.
       </p>
       <details className={styles.details}>
         <summary>Support and residual dependence</summary>
         <div className={styles.detailsBody}>
+          <p>
+            This exploratory study pools all areas and matched dates; chart filters do not alter it. Negative paired MAE differences favor the model. The 80% target is nominal, while coverage is measured. Bias is actual minus forecast, so positive means underprediction. Approximate ranges resample consecutive origin dates in blocks of 2, 4 and 8 with areas kept together. Dependence and limited dates can make ranges unstable; crossing zero does not establish improvement. This is not an untouched confirmation set.
+          </p>
           <p>
             {typeof method.supportRule === "string" ? method.supportRule : "Rows are weighted equally across matched area-origins."}
           </p>

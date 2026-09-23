@@ -219,7 +219,7 @@ test("forecast target dates select a matching saved origin and preserve it on re
 }) => {
   await page.goto("/forecasts?area=NO3");
   const filters = page.getByRole("form", { name: "Stored result filters" });
-  await filters.getByText(/Model & evaluation options · \d+ models/).click();
+  await filters.getByText("Model & evaluation options", { exact: true }).click();
   const origin = filters.getByRole("combobox", {
     name: "Matched forecast origin",
   });
@@ -237,7 +237,7 @@ test("forecast target dates select a matching saved origin and preserve it on re
   await expect(origin).toHaveAttribute("data-value", /2025-11-01/);
   await expect(page).toHaveURL(/origin=2025-11-01/);
   await page.reload();
-  await filters.getByText(/Model & evaluation options · \d+ models/).click();
+  await filters.getByText("Model & evaluation options", { exact: true }).click();
   await expect(origin).toHaveAttribute("data-value", /2025-11-01/);
   await expect(
     filters.getByRole("button", { name: /^Target dates:/ }),

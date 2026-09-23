@@ -111,10 +111,10 @@ test("feature ablation shows fixed-cohort variants, signed contrasts and missing
   await expect(contrasts.getByRole("row", { name: /Add demand history/ })).toContainText("+2 pp");
   await expect(contrasts.getByRole("row", { name: /Add demand history/ })).toContainText("8 dates: Unavailable (Too few date blocks)");
   await expect(contrasts.getByRole("row", { name: /Add eligible weather/ })).toContainText("+1 kWh");
-  await expect(page.getByText(/230 scheduled area-origins; exclusions and failures/)).toBeVisible();
-  await expect(page.getByText(/Missing scheduled dates: 2025-03-14/)).toBeVisible();
-  await expect(page.getByText(/chart do not change this saved comparison/)).toBeVisible();
+  await expect(page.getByText(/Exclusions and failures reduce the matched cohort/)).toBeVisible();
+  await expect(page.getByText(/Missing dates: 2025-03-14/)).toBeVisible();
   await page.getByText("Bias, pinball scores, area results and exact features").click();
+  await expect(page.getByText(/same matched, previously reviewed dates/)).toBeVisible();
   await expect(page.getByRole("region", { name: "Calendar + demand + eligible weather details" })).toContainText("weather_temperature_2m_roll_24_mean");
   await expect(page.getByRole("region", { name: "Calendar only area results" })).toContainText("NO1");
   await expect(page.getByRole("region", { name: "Calendar only area results" })).toContainText("1,056");

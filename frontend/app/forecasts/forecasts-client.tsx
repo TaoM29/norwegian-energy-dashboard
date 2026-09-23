@@ -1303,10 +1303,12 @@ export default function ForecastsClient() {
             <div className={styles.resultSummaryHeading}>
               <div>
                 <h2 id="result-summary-title">{detail.kind === "evaluation" ? "All-area benchmark" : "Saved evaluation"}</h2>
-                <HelpTip label="How the summary is calculated">
+                <HelpTip label="How the summary is calculated" iconOnly>
                   MAE ranking uses overall rows from the selected cohort and
                   only compares models when their sample counts match. Coverage
                   should be read together with interval width in Metric details.
+                  Summary scores use the saved evaluation cohort and models;
+                  chart dates and origin do not alter them.
                 </HelpTip>
               </div>
               <span>
@@ -1315,21 +1317,6 @@ export default function ForecastsClient() {
                   : "Retrospective · not operational"}
               </span>
             </div>
-            <p className={styles.summaryScope}>
-              {detail.kind === "evaluation"
-                ? `All ${availableAreas.length} saved areas · ${isExploratoryStudy ? "exploratory study" : view.split.replaceAll("_", " ")}`
-                : "Rolling-origin development evaluation"}
-              {detail.kind === "evaluation" &&
-              ["holdout", "matched_holdout"].includes(view.split) &&
-              typeof asObject(detail.coverage).matchedOrigins === "number"
-                ? ` · ${asObject(detail.coverage).matchedOrigins} matched area-origins`
-                : ""}
-              {metricSummary.sampleCount != null
-                ? ` · ${number(metricSummary.sampleCount, 0)} target observations per model`
-                : ""}
-              . Evaluation cohort and included models set these scores; chart area,
-              target dates and origin affect only the forecast below.
-            </p>
             <div className={styles.evidenceSummaryGrid}>
               <div>
                 <span>Average error (MAE)</span>
@@ -1357,7 +1344,6 @@ export default function ForecastsClient() {
                       ? "Reference model"
                       : `${number(Math.abs(maeChange), 1)}% ${maeChange >= 0 ? "lower" : "higher"} MAE`}
                 </strong>
-                <small>Weekly seasonal reference</small>
               </div>
               <div>
                 <span>Outcomes inside interval</span>
@@ -1396,7 +1382,7 @@ export default function ForecastsClient() {
               </div>
               <div className={styles.chartHeadingAside}>
                 <span>{summary?.horizon || 24} steps</span>
-                <HelpTip label="Forecast uncertainty">
+                <HelpTip label="Forecast uncertainty" iconOnly>
                   Choose which model's stored predictive interval to display.
                   Intervals are conditional on the fitted model; weather
                   uncertainty is included only when the artifact says so.
@@ -1432,7 +1418,7 @@ export default function ForecastsClient() {
                 applyLabel="Apply dates"
               />
               <details className="filter-disclosure">
-                <summary>Model & evaluation options · {view.models.length} models</summary>
+                <summary>Model & evaluation options</summary>
                 <div className={styles.chartOptionsBody}>
               {availableSplits.length > 0 && (
                 <label>
@@ -1509,7 +1495,7 @@ export default function ForecastsClient() {
 
             {detail.kind === "sarimax" && (
               <p className={styles.chartContext}>
-                Future actuals are unavailable; compare the rolling backtest.
+                Future actuals are unavailable.
               </p>
             )}
             {filteredPredictions.length ? (
@@ -1621,7 +1607,6 @@ export default function ForecastsClient() {
           <details className={styles.detailDisclosure}>
             <summary>
               <span>Evidence, availability and limitations</span>
-              <small>Source, issue time and publication cutoffs</small>
             </summary>
             <div className={styles.disclosureBody}>
               <section
@@ -1738,9 +1723,6 @@ export default function ForecastsClient() {
           <details className={styles.detailDisclosure}>
             <summary>
               <span>Metric details and downloads</span>
-              <small>
-                {metricSummary.rows} rows · {metricSummary.models} models
-              </small>
             </summary>
             <div className={styles.disclosureBody}>
               <div className={styles.panelHeading}>
@@ -1755,17 +1737,9 @@ export default function ForecastsClient() {
                         : "Model development split"}
                   </span>
                   <h2>Accuracy and interval quality</h2>
-                  <p>
-                    Dates and origin filter the chart only. Area filters
-                    area-specific metrics; the Area breakdown compares all regions.
-                  </p>
                 </div>
-                <span>
-                  {metricSummary.rows} metric rows · {metricSummary.models}{" "}
-                  models
-                </span>
               </div>
-              <HelpTip label="Metric definitions">
+              <HelpTip label="Metric definitions" iconOnly>
                 MAE and RMSE use kWh. Coverage is the share of outcomes inside
                 the interval; width measures sharpness, and pinball loss
                 evaluates quantiles. MASE scales error by in-sample seasonal
@@ -1791,10 +1765,6 @@ export default function ForecastsClient() {
               <MetricTable rows={filteredMetrics} dimension={view.dimension} />
               <details className={styles.allMetrics}>
                 <summary>All metrics</summary>
-                <p>
-                  MAE, RMSE, interval width and quantile losses use kWh. MASE is
-                  unitless. Downloads retain every saved metric.
-                </p>
                 <MetricTable
                   rows={filteredMetrics}
                   dimension={view.dimension}
@@ -1823,10 +1793,6 @@ export default function ForecastsClient() {
                     {failures.length} recorded fold failure
                     {failures.length === 1 ? "" : "s"}
                   </summary>
-                  <p>
-                    Failures remain visible and are not silently removed from
-                    model comparisons.
-                  </p>
                   <pre>{displayJson(failures)}</pre>
                 </details>
               )}
@@ -1836,7 +1802,6 @@ export default function ForecastsClient() {
           <details className={styles.detailDisclosure}>
             <summary>
               <span>Methods, sources and limitations</span>
-              <small>Artifact design and configuration</small>
             </summary>
             <div className={styles.disclosureBody}>
               <p>
@@ -1879,11 +1844,6 @@ export default function ForecastsClient() {
           </button>
         </div>
         <div className={styles.drawerBody}>
-          <p className={styles.drawerIntroduction}>
-            Compare a prepared set of areas and models, or configure a focused
-            SARIMAX forecast. Submitted runs report progress and can be
-            cancelled.
-          </p>
           <details className={styles.drawerJobs}>
             <summary>
               <span>Job history</span>
@@ -2197,7 +2157,7 @@ function EvaluationForm({
         <div>
           <h3>
             Household-demand evaluation{" "}
-            <HelpTip label="Matched evaluation">
+            <HelpTip label="Matched evaluation" iconOnly>
               Models share the same forecast origins and targets so their
               recorded errors can be compared directly.
             </HelpTip>
@@ -2416,7 +2376,7 @@ function SarimaxForm({
         <div>
           <h3>
             Custom SARIMAX{" "}
-            <HelpTip label="About SARIMAX experiments">
+            <HelpTip label="About SARIMAX experiments" iconOnly>
               This model combines an energy time series with optional weather
               regressors. Results are retrospective experiments on revised
               observations, not operational forecasts.

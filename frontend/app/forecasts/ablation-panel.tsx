@@ -103,27 +103,19 @@ export function AblationPanel({
         </div>
         <span className={styles.protocol}>Feature ablation · ridge</span>
       </div>
-      <p className={styles.intro}>
-        Three ridge variants use the same matched, previously inspected 2025 dates.
-        The controls on the forecast chart do not change this saved comparison.
-        Results are retrospective and exploratory; gradient boosting is outside this study.
-      </p>
       <div className={styles.support} aria-label="Feature ablation support">
         <div><span>Scheduled dates</span><strong>{count(support.scheduledDates)}</strong></div>
         <div><span>Observed dates</span><strong>{count(support.observedDates)}</strong></div>
         <div><span>Matched area-origins</span><strong>{count(support.matchedAreaOrigins)}</strong></div>
         <div><span>Excluded area-origins</span><strong>{count(support.excludedAreaOrigins)}</strong></div>
       </div>
-      <p className={styles.context}>
-        {scheduled == null ? "Scheduled area-origins unavailable" : `${count(scheduled)} scheduled area-origins`}
-        {excluded == null ? "; exclusion count unavailable."
-          : excluded > 0 ? "; exclusions and failures reduce the common matched cohort."
-          : "; all scheduled area-origins matched."}
-        {!missingDatesKnown ? " Missing-date status unavailable."
-          : missingDates.length
-          ? ` Missing scheduled dates: ${missingDates.map((date) => date.slice(0, 10)).join(", ")}.`
-          : " No scheduled date is missing."}
-      </p>
+      {(scheduled == null || excluded == null || excluded > 0 || !missingDatesKnown || missingDates.length > 0) && (
+        <p className={styles.context}>
+          {scheduled == null ? "Scheduled area-origin count unavailable. " : ""}
+          {excluded == null ? "Exclusion count unavailable. " : excluded > 0 ? "Exclusions and failures reduce the matched cohort. " : ""}
+          {!missingDatesKnown ? "Missing-date status unavailable." : missingDates.length ? `Missing dates: ${missingDates.map((date) => date.slice(0, 10)).join(", ")}.` : ""}
+        </p>
+      )}
       <div className={styles.tableWrap} role="region" aria-label="Feature ablation variant comparison" tabIndex={0}>
         <table>
           <caption>Absolute error and measured predictive interval quality · {unit} unless shown as %. MAE bars share a zero baseline.</caption>
@@ -180,15 +172,12 @@ export function AblationPanel({
           })}</tbody>
         </table>
       </div>
-      <p className={styles.limitations}>
-        Coverage changes are percentage points. Higher coverage is not automatically better without considering width;
-        a narrower interval alone is not an improvement. Approximate ranges resample consecutive origin dates
-        in blocks of 2, 4 and 8, keeping areas together. Missing ranges remain unavailable. Predictive value
-        does not establish a causal weather effect.
-      </p>
       <details className={styles.details}>
         <summary>Bias, pinball scores, area results and exact features</summary>
         <div className={styles.detailsBody}>
+          <p>
+            The three ridge variants use the same matched, previously reviewed dates; chart controls do not alter this retrospective comparison. Gradient boosting is outside the study. Coverage and width must be read together. Approximate ranges resample consecutive origin dates in blocks of 2, 4 and 8 with areas kept together; missing ranges stay unavailable. Predictive value does not establish a causal weather effect.
+          </p>
           <p>Each ridge variant uses the same availability rules and alpha candidates (0.1, 1 and 10), selected independently per area on validation origins.</p>
           {variants.map((variant, index) => {
             const model = text(variant.model);

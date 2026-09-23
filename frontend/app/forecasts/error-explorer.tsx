@@ -4,6 +4,7 @@ import { useMemo, type CSSProperties } from "react";
 import type { EChartsCoreOption } from "echarts/core";
 import AnalysisChart from "@/components/analysis-chart";
 import { ExportMenu } from "@/components/export-menu";
+import { HelpTip } from "@/components/help";
 import { downloadCsv, downloadJson } from "@/lib/download";
 import { formatDisplayValue } from "@/lib/number-format";
 import { modelColour } from "./forecast-chart";
@@ -247,6 +248,10 @@ export function ErrorExplorer({ metrics, predictions, failures, coverage, config
   const filename = `forecast-error-${resultId.replace(/[^a-zA-Z0-9_-]/g, "-")}-${view}`;
   const holdoutFailures = failures.filter((row) => ["holdout", "matched_holdout"].includes(text(row.stage || row.split || row.cohort)));
   const excluded = Array.isArray(cohort.areas) ? cohort.areas.filter((item): item is Row => !!item && typeof item === "object" && !Array.isArray(item)) : [];
+  const attemptedOrigins = numeric(cohort.attemptedOrigins);
+  const matchedOrigins = numeric(cohort.matchedOrigins);
+  const failedOrigins = numeric(cohort.failedOrigins);
+  const showCohortExceptions = attemptedOrigins == null || matchedOrigins == null || failedOrigins == null || attemptedOrigins !== matchedOrigins || failedOrigins > 0;
   const horizonChart = useMemo(() => horizonOption(rows, measure, nominal, hours, horizonModels), [rows, measure, nominal, hours, horizonModels]);
 
   if (!saved.length) return null;
@@ -254,17 +259,19 @@ export function ErrorExplorer({ metrics, predictions, failures, coverage, config
     <div className={styles.heading}>
       <div>
         <h2 id="error-explorer-title">Forecast error explorer</h2>
+        <HelpTip label="Explorer scope" iconOnly>
+          {exploratory ? "Exploratory" : "Saved"} metrics use the matched cohort across all areas, models and dates; chart filters do not alter them. MAE minus baseline is kWh per hourly target, with negative values favoring the model. Season and peak-period views use saved Europe/Oslo target-time classifications; sparse groups show their support and no missing combinations are inferred.
+        </HelpTip>
       </div>
       <ExportMenu label="Export explorer">
         <button type="button" disabled={!exported.length} onClick={() => downloadCsv(`${filename}.csv`, exported)}>Displayed view CSV</button>
         <button type="button" disabled={!exported.length} onClick={() => downloadJson(`${filename}.json`, { resultId, view, measure: view === "horizon" ? measure : undefined, cohort: coverage, rows: exported })}>Displayed view JSON</button>
       </ExportMenu>
     </div>
-    <p className={styles.intro}>{exploratory ? "Exploratory" : "Saved"} matched metrics cover all areas, models and dates; chart filters do not change them. MAE differences are kWh per hourly target: negative favors the model over the seasonal baseline.</p>
     <div className={styles.cohort} aria-label="Evaluation cohort support">
-      <div><span>Attempted area-origins</span><strong>{count(cohort.attemptedOrigins)}</strong></div>
+      {showCohortExceptions && <div><span>Attempted area-origins</span><strong>{count(cohort.attemptedOrigins)}</strong></div>}
       <div><span>Matched area-origins</span><strong>{count(cohort.matchedOrigins)}</strong></div>
-      <div><span>Excluded area-origins</span><strong>{count(cohort.failedOrigins)}</strong></div>
+      {showCohortExceptions && <div><span>Excluded area-origins</span><strong>{count(cohort.failedOrigins)}</strong></div>}
     </div>
     {(excluded.some((item) => Array.isArray(item.excludedOrigins) && item.excludedOrigins.length) || holdoutFailures.length > 0) && <details className={styles.exclusions}>
       <summary>Excluded origins and recorded failures</summary>
@@ -283,7 +290,6 @@ export function ErrorExplorer({ metrics, predictions, failures, coverage, config
       </select>
     </div>
     {view === "area" ? <>
-      <p className={styles.note}>Each cell is a saved area × model MAE difference. Inspection opens its largest saved per-origin MAE increase versus the baseline.</p>
       <div className={styles.tableWrap} role="region" aria-label="Forecast error matrix" tabIndex={0}>
         <table className={styles.heatmap}>
           <caption>MAE minus seasonal baseline by price area and model · kWh; unavailable means no saved metric</caption>
@@ -310,10 +316,9 @@ export function ErrorExplorer({ metrics, predictions, failures, coverage, config
             <option value="error">Error (MAE)</option><option value="coverage">Observed coverage</option>
           </select>
         </div>
-        <p className={styles.note}>{measure === "coverage" ? `Lines show observed interval coverage. The dotted nominal ${coverageText(nominal)} reference is a target, not measured coverage.` : "Lines show saved MAE by hours ahead. The dashed seasonal baseline is the same matched target cohort."} Gaps indicate unavailable saved metrics.</p>
+        {measure === "coverage" && <p className={styles.note}>Dotted line: nominal {coverageText(nominal)} target. Gaps: unavailable metrics.</p>}
         {rows.length > 0 && <AnalysisChart option={horizonChart} imageOption={{ title: { left: 20, top: 12, text: `${measure === "coverage" ? "Observed coverage" : "MAE"} by forecast hour`, subtext: `Saved matched cohort · ${resultId}` }, legend: { type: "plain", left: 20, right: 20, top: 62, textStyle: { fontSize: 11 } }, grid: { left: 58, right: 22, top: 110, bottom: 48, containLabel: true } }} label={`${measure === "coverage" ? "Observed interval coverage" : "Forecast MAE"} by hours ahead for saved matched cohort ${resultId}`} height={360} />}
       </>}
-      {(view === "season" || view === "peak_period") && <p className={styles.note}>These comparisons are descriptive and use the artifact’s saved Europe/Oslo target-time classifications. Smaller seasonal or peak-period groups may be sparse; support is shown for each saved row. No unsaved group combinations are inferred.</p>}
       <div className={styles.tableWrap} role="region" aria-label={`${viewLabels[view]} saved metric comparison`} tabIndex={0}>
         <table>
           <caption>{viewLabels[view]} · saved metrics and support; unavailable values are never zero</caption>

@@ -147,7 +147,9 @@ test("explorer view, horizon measure, missing values and exports retain their sa
   await page.goto("/forecasts?result=error-study&explorer=season");
   const explorer = page.getByRole("region", { name: "Forecast error explorer", exact: true });
   await expect(explorer.getByRole("combobox", { name: "Error explorer view" })).toHaveValue("season");
-  await expect(explorer).toContainText(/descriptive/i);
+  await explorer.getByRole("button", { name: "About Explorer scope" }).click();
+  await expect(page.getByText(/saved Europe\/Oslo target-time classifications/)).toBeVisible();
+  await page.keyboard.press("Escape");
   await expect(explorer.getByRole("row").filter({ hasText: "summer" }).filter({ hasText: "Ridge" })).toContainText("+15 kWh");
   await choose(page, "Error explorer view", "Peak periods");
   await expect(page).toHaveURL(/explorer=peak_period/);
