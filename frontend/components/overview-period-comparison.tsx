@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ArrowLeft, RefreshCw } from "lucide-react";
+import { HelpTip } from "@/components/help";
 import { Button } from "@/components/ui/button";
 import {
   Coverage,
@@ -102,12 +103,8 @@ export function OverviewPeriodComparison({
     >
       <div className={styles.sectionHeading}>
         <div>
-          <h2 id="period-comparison-title">
-            Previous period comparison
-          </h2>
-          <p>
-            Two consecutive {days}-day windows · complete UTC days.
-          </p>
+          <div className="analysis-title"><h2 id="period-comparison-title">Previous period comparison</h2>
+          <HelpTip label="Period comparison" iconOnly>Consecutive {days}-day windows of complete UTC days. Weekday mix, season and weather may differ.</HelpTip></div>
         </div>
       </div>
       {!withinCoverage ? (
@@ -160,12 +157,12 @@ export function OverviewPeriodComparison({
                   </div>
                   <p>
                     {delta != null && prior.mwh !== 0
-                      ? `${signed((delta / prior.mwh!) * 100, "%")} from the previous period`
+                      ? `${signed((delta / prior.mwh!) * 100, "%")}`
                       : delta != null
-                        ? "Percentage change is undefined from a zero baseline."
+                        ? "Zero baseline"
                         : !sameSnapshot
-                          ? "Both periods must use the same source snapshot."
-                          : "Complete observations in both periods are required."}
+                          ? "Snapshot mismatch"
+                          : "Incomplete coverage"}
                   </p>
                   <dl>
                     <div>
@@ -191,13 +188,11 @@ export function OverviewPeriodComparison({
             })}
           </div>
           <div className={styles.comparisonFoot}>
-            <p>
+            {(!sameSnapshot || incomplete) && <p>
               {!sameSnapshot
-                ? "The snapshot changed between requests. Reload the overview before comparing totals."
-                : incomplete
-                  ? "* Partial totals include available observations only. Changes are withheld wherever either period is incomplete."
-                  : "Equal duration makes totals comparable; weekday mix, season and weather may still differ. A change alone does not identify its cause."}
-            </p>
+                ? "Snapshot changed. Reload to compare."
+                : "* Partial totals; change unavailable."}
+            </p>}
             <Button
               variant="outline"
               disabled={updating}

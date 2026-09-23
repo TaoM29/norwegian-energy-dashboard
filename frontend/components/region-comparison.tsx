@@ -55,7 +55,6 @@ export function RegionComparison({
           <h2 id="region-table-title">
             Regional consumption <span className="count-badge">5</span>
           </h2>
-          <p>Select a region for details.</p>
         </div>
         <label className="sort-pill">
           <ArrowDownWideNarrow size={15} />
@@ -147,7 +146,6 @@ export function RegionComparison({
         </table>
       </div>
       <div className="region-table-footer">
-        <span>5 regions · UTC intervals</span>
         <span>
           Available consumption: <strong>{number(total / 1000)} GWh</strong>
           {rows.some((row) => row.partial) &&
@@ -228,10 +226,6 @@ export function RegionComparison({
                     </dd>
                   </div>
                 </dl>
-                <p>
-                  Totals include available observations. Production minus
-                  consumption is an energy balance, not measured exports.
-                </p>
               </section>
               <section className="drawer-section">
                 <h3>Generation mix</h3>
@@ -253,8 +247,8 @@ export function RegionComparison({
                 <p>
                   {detail.headline.consumption.partial ||
                   detail.headline.production.partial
-                    ? "Partial observations: gaps are retained and totals may be incomplete."
-                    : "Complete observation coverage for this area and period."}
+                    ? "Partial coverage"
+                    : "Complete coverage"}
                 </p>
                 <p>
                   Snapshot retrieved:{" "}

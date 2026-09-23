@@ -37,11 +37,13 @@ test("daily profiles retain UTC filter state and show group, scale, exports and 
   await page.goto("/explore?view=profiles&area=NO2&start=2025-10-24&end=2025-10-27");
   await firstRequest;
   await expect(page.getByRole("heading", { name: "Daily demand profiles" })).toBeVisible();
-  await expect(page.getByText("Hourly household patterns in Oslo time", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "About Daily profile bands" }).click();
+  await expect(page.getByRole("dialog", { name: "Daily profile bands" })).toContainText("not a confidence interval");
+  await page.keyboard.press("Escape");
   await expect(page.getByRole("combobox", { name: "Price area", exact: true })).toHaveAttribute("data-value", "NO2");
   await expect(page.getByText("Synthetic fixture example")).toBeVisible();
   await expect(page.getByRole("img", { name: /NO2 weekday and weekend daily household demand profiles in kWh/ })).toBeVisible();
-  await expect(page.getByText("1 complete 24-hour days")).toBeVisible();
+  await expect(page.getByLabel("Displayed profile groups")).toContainText("1 days");
   await page.getByRole("combobox", { name: "Profile groups" }).click();
   await page.getByRole("option", { name: "Seasons" }).click();
   await expect(page.getByRole("img", { name: /NO2 seasonal daily household demand profiles/ })).toBeVisible();

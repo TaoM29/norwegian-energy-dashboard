@@ -630,10 +630,7 @@ export default function DiagnosticsWorkbench() {
     : `${area}-${start}-${end}-${view}`;
 
   return (
-    <AnalysisShell
-      title="Patterns & anomalies"
-      description="Relationships, seasonal patterns and changes in household demand."
-    >
+    <AnalysisShell title="Patterns & anomalies">
       <div className="analysis-picker">
         <label htmlFor="analysis-view">Analysis</label>
         <Select id="analysis-view" aria-label="Analysis" value={view} onChange={(event) => chooseView(event.target.value as View)}>

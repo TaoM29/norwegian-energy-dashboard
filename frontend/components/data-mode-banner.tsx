@@ -10,8 +10,7 @@ export function DataModeBanner() {
   }, []);
   return fixture ? (
     <div role="note" className="fixture-banner">
-      Synthetic fixture data — for interface demonstrations and tests, not
-      Norwegian energy observations.
+      Synthetic fixture data · demonstration only
     </div>
   ) : null;
 }

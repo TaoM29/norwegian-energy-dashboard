@@ -1119,10 +1119,7 @@ export default function ForecastsClient() {
 
   if (!view) {
     return (
-      <AnalysisShell
-        title="Forecasts & evaluation"
-        description="Loading forecast controls…"
-      >
+      <AnalysisShell title="Forecasts & evaluation">
         <p role="status">Loading…</p>
       </AnalysisShell>
     );
@@ -1210,7 +1207,6 @@ export default function ForecastsClient() {
   return (
     <AnalysisShell
       title="Forecasts & evaluation"
-      description="Compare saved forecasts with actual demand and inspect the evidence behind each model."
     >
       <section
         className={styles.selectorPanel}

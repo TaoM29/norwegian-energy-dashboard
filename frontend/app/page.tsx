@@ -24,7 +24,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { HelpPanel } from "@/components/help";
+import { HelpTip } from "@/components/help";
 import { ExportMenu } from "@/components/export-menu";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { writeDashboardUrl } from "@/lib/navigation-state";
@@ -228,33 +228,8 @@ export default function Page() {
           <div className="page-heading">
             <div>
               <h1>Energy overview</h1>
-              <p>
-                Production, consumption and the balance across Norway’s five
-                regions.
-              </p>
             </div>
             <div className="page-actions">
-              <div className="reading-guide">
-                <HelpPanel label="About this view">
-                  <div>
-                    <p>
-                      Choose a region and time period. <strong>Production</strong>{" "}
-                      is electricity generated; <strong>consumption</strong> is
-                      electricity used. The chart compares them day by day.
-                    </p>
-                    <p>
-                      NO1–NO5 are Norway’s five electricity price areas. GWh
-                      measures energy: 1 GWh is one million kWh. Production minus
-                      consumption is an energy balance, not a measurement of
-                      exports.
-                    </p>
-                    <a href="/methods">
-                      See the methods, sources and project findings{" "}
-                      <ArrowRight size={14} />
-                    </a>
-                  </div>
-                </HelpPanel>
-              </div>
               <ExportMenu>
                 <Button
                   variant="outline"
@@ -294,15 +269,7 @@ export default function Page() {
               />
             )}
           </section>
-          <div className="scope-line">
-            <span aria-live="polite">
-              {loading
-                ? "Loading observations…"
-                : overview && !error
-                  ? partial ? "Partial coverage" : "Complete daily coverage"
-                  : "Data unavailable"}
-            </span>
-          </div>
+          {overview && !error && partial && <div className="scope-line" role="status">Partial coverage</div>}
           {error ? (
             <Card className="state-panel" role="alert">
               <h2>We couldn’t load this view</h2>
@@ -336,12 +303,6 @@ export default function Page() {
               aria-busy={loading}
               className={loading ? "data-content updating" : "data-content"}
             >
-              {partial && (
-                <div className="notice">
-                  Some observations are missing. Totals include only available
-                  observations; incomplete days are left as gaps in the chart.
-                </div>
-              )}
               <section className="metrics" aria-label="Key metrics">
                 <Metric
                   title="Energy produced"
@@ -349,7 +310,6 @@ export default function Page() {
                   tone="production"
                   value={production?.mwh == null ? null : production.mwh / 1000}
                   unit="GWh"
-                  note="Across observed production groups"
                 />
                 <Metric
                   title="Energy consumed"
@@ -359,7 +319,6 @@ export default function Page() {
                     consumption?.mwh == null ? null : consumption.mwh / 1000
                   }
                   unit="GWh"
-                  note="Across observed consumption groups"
                 />
                 <Metric
                   title="Energy balance"
@@ -375,7 +334,6 @@ export default function Page() {
                   tone="hydro"
                   value={hydro?.share == null ? null : hydro.share * 100}
                   unit="%"
-                  note="Of observed energy production"
                 />
               </section>
               <div className="main-grid">
@@ -481,12 +439,6 @@ export default function Page() {
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="chart-foot">
-                    <span>
-                      Hourly observations summed into complete UTC days.
-                    </span>
-                    <span>{overview.daily.length} days</span>
-                  </div>
                 </Card>
               </div>
               <OverviewPeriodComparison
@@ -504,7 +456,6 @@ export default function Page() {
 
                       <h2>Production mix</h2>
                     </div>
-                    <span className="small-label">Share of production</span>
                   </div>
                   <div className="mix-bar" aria-hidden="true">
                     {overview.productionMix.map((row) => (
@@ -541,10 +492,9 @@ export default function Page() {
                 </Card>
                 <section className="recorded-studies" aria-labelledby="recorded-studies-title">
                   <h2 id="recorded-studies-title">Explore the analysis</h2>
-                  <p>Saved studies with fixed dates and documented methods.</p>
-                  <a href="/forecasts?result=phase4-household-24h"><span><strong>Forecast performance</strong><small>Models, errors and uncertainty</small></span><ArrowRight size={16} /></a>
-                  <a href="/diagnostics?view=sensitivity"><span><strong>Temperature & demand</strong><small>Calendar-adjusted associations</small></span><ArrowRight size={16} /></a>
-                  <a href="/methods#recorded-evidence"><span><strong>Project evidence</strong><small>Sources, validation and reproducibility</small></span><ArrowRight size={16} /></a>
+                  <a href="/forecasts?result=phase4-household-24h"><span><strong>Forecast performance</strong></span><ArrowRight size={16} /></a>
+                  <a href="/diagnostics?view=sensitivity"><span><strong>Temperature & demand</strong></span><ArrowRight size={16} /></a>
+                  <a href="/methods#recorded-evidence"><span><strong>Project evidence</strong></span><ArrowRight size={16} /></a>
                 </section>
               </div>
               <RegionComparison
@@ -555,7 +505,7 @@ export default function Page() {
                 <summary>
                   Daily values{" "}
                   <span>
-                    Accessible table · GWh <ChevronDown size={15} />
+                    GWh <ChevronDown size={15} />
                   </span>
                 </summary>
                 <div className="table-scroll">
@@ -613,7 +563,7 @@ export default function Page() {
                 >
                   Elhub
                 </a>{" "}
-                · Hourly observed energy · 1 GWh = 1,000 MWh
+                · Hourly observations
               </span>
             </div>
             <details>
@@ -622,7 +572,7 @@ export default function Page() {
               <p>
                 Production and consumption include base groups only. Unspecified
                 and overlapping aggregate groups are excluded. Missing
-                observations are never treated as zero. Dates and daily buckets
+                observations are never treated as zero. Totals use available observations; incomplete days appear as chart gaps. Dates and daily buckets
                 use UTC; these are observations, not forecasts.
               </p>
               <p>
@@ -658,7 +608,7 @@ function Metric({
   title: string;
   value: number | null;
   unit: string;
-  note: string;
+  note?: string;
   icon: LucideIcon;
   tone: "production" | "consumption" | "balance" | "hydro";
 }) {
@@ -670,13 +620,13 @@ function Metric({
             <Icon size={17} strokeWidth={1.7} aria-hidden="true" />
           </span>
           {title}
+          {note && <HelpTip label={title} iconOnly>{note}</HelpTip>}
         </span>
       </div>
       <div className="metric-value">
         {number(value)}
         <span>{unit}</span>
       </div>
-      <p>{note}</p>
     </div>
   );
 }

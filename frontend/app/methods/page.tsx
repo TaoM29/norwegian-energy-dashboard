@@ -44,7 +44,6 @@ export default function Methods() {
   return (
     <AnalysisShell
       title="Methods & data"
-      description="Where the observations come from, what the models can tell us, and where their evidence ends."
     >
       <div className={styles.content}>
         <section id="recorded-evidence" className="analysis-panel">
@@ -56,14 +55,11 @@ export default function Methods() {
                   {coverage.coverage.start} to {coverage.coverage.end}{" "}
                   (exclusive, UTC)
                 </strong>{" "}
-                — the common date envelope across required series in NO1–NO5.
-                Internal gaps are reported in each view.
+                · NO1–NO5
               </p>
               <p>
                 Source: {coverage.snapshot.source}. Snapshot retrieved:{" "}
-                {coverage.snapshot.retrievedAt ? `${shortDate(coverage.snapshot.retrievedAt)} ${coverage.snapshot.retrievedAt.slice(0, 4)} (UTC)` : "Unknown"}. This is a saved snapshot, not a
-                live feed; check the end date before interpreting recent
-                conditions.
+                {coverage.snapshot.retrievedAt ? `${shortDate(coverage.snapshot.retrievedAt)} ${coverage.snapshot.retrievedAt.slice(0, 4)} (UTC)` : "Unknown"}. Saved snapshot.
               </p>
             </>
           ) : (
@@ -73,7 +69,7 @@ export default function Methods() {
             <a href="https://api.elhub.no/">Elhub energy</a> · <a href="https://open-meteo.com/en/docs/historical-weather-api">Open-Meteo weather</a> · <a href="https://github.com/TaoM29/norwegian-energy-dashboard/blob/main/docs/PHASE4_VALIDATION.md">Forecast validation</a> · <a href="https://github.com/TaoM29/norwegian-energy-dashboard">Source code</a>
           </p>
           <details className={styles.sourceDetails}>
-            <summary>How to interpret these sources</summary>
+            <summary>Sources & units</summary>
           <p>
             Energy is hourly kWh from <a href="https://api.elhub.no/">Elhub</a>.
             Overview totals use MWh and chart axes may use GWh. Production and
@@ -92,38 +88,6 @@ export default function Methods() {
           </p>
           </details>
         </section>
-        <details className={styles.docDisclosure}>
-          <summary>Dashboard guide</summary>
-        <section className="analysis-panel">
-          <h2>A two-minute walkthrough</h2>
-          <ol>
-            <li>
-              <a href="/">Overview</a>: choose an area and dates; compare
-              production, consumption, mix and coverage.
-            </li>
-            <li>
-              <a href="/explore">Explore</a>: inspect individual energy groups
-              and weather, or compare <a href="/explore?view=profiles">daily
-              household profiles</a>. Daily energy and precipitation are summed;
-              direction uses circular means. Profile bands show between-day
-              variation, not uncertainty in the mean.
-            </li>
-            <li>
-              <a href="/diagnostics">Diagnostics</a>: examine rolling
-              correlation, STL/spectra and candidate anomalies. Flags invite
-              investigation; they do not verify faults. The saved <a href="/diagnostics?view=demand_changes">demand-change study</a> compares complete UTC-day residual means with a frozen calendar/weather baseline. Its exploratory threshold failed the nominal false-alarm target in synthetic controls; it is not a live alert or proof of a structural break.
-            </li>
-            <li>
-              <a href="/regional">Regional & snow</a>: compare areas, select a
-              coordinate and inspect seasonal transport assumptions.
-            </li>
-            <li>
-              <a href="/forecasts">Forecasts</a>: inspect saved predictions and
-              matched errors. Download values and metadata to reproduce a view.
-            </li>
-          </ol>
-        </section>
-        </details>
         <details className={styles.docDisclosure}>
           <summary>Forecast models and evaluation</summary>
         <section className={`analysis-panel ${styles.modelSection}`}>

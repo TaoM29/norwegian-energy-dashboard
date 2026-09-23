@@ -432,7 +432,7 @@ test("period comparison withholds changes for incomplete observations", async ({
   await expect(consumption).toContainText("Change unavailable");
   await expect(consumption).not.toContainText("% from the previous period");
   await expect(comparison).toContainText(
-    "Changes are withheld wherever either period is incomplete",
+    "Partial totals; change unavailable",
   );
 });
 
@@ -474,15 +474,15 @@ test("styled selectors support keyboard choice and help works by hover, focus an
   ).toBeVisible();
   await page.keyboard.press("Escape");
   const sources = page.getByRole("button", {
-    name: "About this view",
+    name: "Energy method and provenance",
     exact: true,
   });
   await sources.click();
   const panel = page.getByRole("dialog", {
-    name: "About this view",
+    name: "Energy method and provenance",
     exact: true,
   });
-  await expect(panel).toContainText("A gap means missing observations");
+  await expect(panel.locator("pre")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(panel).toBeHidden();
   await expect(sources).toBeFocused();

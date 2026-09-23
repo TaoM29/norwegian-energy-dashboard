@@ -6,12 +6,10 @@ export function OverviewCaseStudies() {
     <section className={styles.studies} aria-labelledby="case-studies-title">
       <div className={styles.sectionHeading}>
         <div>
-          <span className="eyebrow">THREE QUESTIONS TO EXPLORE</span>
-          <h2 id="case-studies-title">Findings worth a closer look</h2>
+          <h2 id="case-studies-title">Recorded findings</h2>
           <p>
             Recorded examples from the September 2026 validation snapshots,
-            independent of the filters above. Source revisions may change a
-            rerun; synthetic fixture data does not reproduce these findings.
+            independent of current filters and synthetic fixtures.
           </p>
         </div>
         <a href="/methods">
@@ -27,23 +25,16 @@ export function OverviewCaseStudies() {
           <div className={styles.finding}>
             19.72 vs 32.42 <small>TWh</small>
           </div>
-          <p>
-            Recorded production was 19,717,508.644 MWh; consumption was
-            32,421,589.593 MWh, both with complete hourly coverage.
-          </p>
           <p className={styles.limit}>
-            Production was lower than consumption. The difference does not
-            measure imports or exports.
+            Production / consumption · complete coverage.
           </p>
           <a href="/?area=NO1&start=2025-01-01&end=2025-12-31">
             Compare the year’s daily curves <ArrowRight size={15} />
           </a>
           <details>
-            <summary>How to follow the evidence</summary>
+            <summary>Evidence</summary>
             <p>
-              Open the full year, compare the two energy totals, then expand
-              Daily values or export the underlying observations. Totals sum
-              disjoint base groups over complete UTC days.
+              Totals sum disjoint base groups over complete UTC days. The balance does not measure imports or exports.
             </p>
             <a href="https://github.com/TaoM29/norwegian-energy-dashboard/blob/main/docs/PHASE2_VALIDATION.md">
               Read the recorded numerical check
@@ -70,12 +61,9 @@ export function OverviewCaseStudies() {
             Inspect errors and interval coverage <ArrowRight size={15} />
           </a>
           <details>
-            <summary>How to follow the evidence</summary>
+            <summary>Evidence</summary>
             <p>
-              Use the saved household benchmark to compare models on the same
-              successful origins. Inspect area and horizon breakdowns, failed
-              folds and the metadata. Ridge’s MAE was 1.71% worse than the
-              baseline.
+              Models share the same successful origins. Ridge’s MAE was 1.71% worse than the baseline.
             </p>
             <a href="https://github.com/TaoM29/norwegian-energy-dashboard/blob/main/docs/PHASE4_VALIDATION.md">
               Read the frozen evaluation protocol
@@ -103,12 +91,10 @@ export function OverviewCaseStudies() {
             Inspect the season and assumptions <ArrowRight size={15} />
           </a>
           <details>
-            <summary>How to follow the evidence</summary>
+            <summary>Evidence</summary>
             <p>
               The recorded run used 3,000 m transport distance, 30,000 m fetch
-              and a relocation coefficient of 0.5. Open the regional model,
-              inspect its parameters, then compare seasonal and directional
-              outputs.
+              and a relocation coefficient of 0.5.
             </p>
             <a href="https://github.com/TaoM29/norwegian-energy-dashboard/blob/main/docs/PHASE3_VALIDATION.md">
               Read the point-model validation

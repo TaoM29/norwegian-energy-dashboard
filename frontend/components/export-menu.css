@@ -23,12 +23,6 @@
   color: var(--text);
   box-shadow: 0 12px 36px #0003;
 }
-.export-caption {
-  display: block;
-  padding: 7px 9px;
-  color: var(--text-muted);
-  font-size: 11px;
-}
 .export-popover button {
   display: flex;
   align-items: center;

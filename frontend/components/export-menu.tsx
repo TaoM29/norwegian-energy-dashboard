@@ -32,7 +32,6 @@ export function ExportMenu({
           collisionPadding={12}
           aria-label="Export options"
         >
-          <span className="export-caption">Save this result</span>
           {children}
         </Popover.Content>
       </Popover.Portal>

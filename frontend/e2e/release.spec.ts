@@ -246,8 +246,8 @@ test("mobile pages keep navigation, guidance and theme controls usable", async (
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await page.getByRole("button", { name: "Dark", exact: true }).click();
-  await page.getByRole("button", { name: "About this view", exact: true }).click();
-  await expect(page.getByText(/one million kWh/)).toBeVisible();
+  await page.getByRole("button", { name: "About Energy balance", exact: true }).click();
+  await expect(page.getByText(/Production − consumption; not measured exports/)).toBeVisible();
   for (const path of [
     "/",
     "/explore",

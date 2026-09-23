@@ -501,7 +501,6 @@ export default function ExploreClient() {
   return (
     <AnalysisShell
       title="Explore"
-      description="Explore energy, weather and observed household demand patterns for one price area."
     >
       {coverage && draft ? (
         <form className="analysis-controls explore-controls" onSubmit={submit}>
@@ -786,9 +785,6 @@ function EnergyView({
         <div>
           <span>Time interval</span>
           <strong>{response.aggregationLabel}</strong>
-          <small>
-            {number(response.coverage.observations, 0)} finite source values
-          </small>
         </div>
       </div>
       <section className="analysis-panel">
@@ -800,10 +796,6 @@ function EnergyView({
                 : "Consumption"}{" "}
               through time
             </h2>
-            <p>
-              Electricity totals for each time interval, in kilowatt-hours
-              (kWh). Dates use UTC.
-            </p>
           </div>
         </div>
         <AnalysisChart
@@ -843,11 +835,11 @@ function EnergyView({
         <summary>Group totals and coverage</summary>
         <div className="analysis-grid">
         <div className="analysis-panel">
-          <h2>Group totals</h2>
-          <HelpTip label="How totals are calculated">
+          <div className="analysis-title"><h2>Group totals</h2>
+          <HelpTip label="How totals are calculated" iconOnly>
             Totals include every finite selected observation before chart
             sampling.
-          </HelpTip>
+          </HelpTip></div>
           <AnalysisChart
             option={totalsOption}
             label={`${response.query.kind} group totals`}
@@ -951,11 +943,7 @@ function WeatherView({
         <div>
           <span>Time interval</span>
           <strong>{response.aggregationLabel}</strong>
-          <small>
-            {response.query.rollingHours
-              ? `${response.query.rollingHours} h rolling window`
-              : "No rolling window"}
-          </small>
+          {response.query.rollingHours > 0 && <small>{response.query.rollingHours} h rolling window</small>}
         </div>
         <div>
           <span>Location model</span>
@@ -966,11 +954,10 @@ function WeatherView({
       <section className="analysis-panel">
         <div className="explore-panel-heading">
           <div>
-            <h2>Weather through time</h2>
-            <p>{response.valueLabel}.</p>
-            <HelpTip label="Wind averages">
-              Circular wind averages preserve the north boundary.
-            </HelpTip>
+            <div className="analysis-title"><h2>Weather through time</h2>
+            <HelpTip label="Weather values" iconOnly>
+              {response.valueLabel}. Wind direction uses circular averages.
+            </HelpTip></div>
           </div>
         </div>
         <AnalysisChart

@@ -249,11 +249,10 @@ export default function ChartTrial() {
         <div>
           <div className="trial-kicker">Phase 2 · isolated evaluation route</div>
           <h1>Chart library trial.</h1>
-          <p>Runnable comparison of the current Recharts foundation with Apache ECharts for the dashboard’s harder analytical views.</p>
         </div>
         <div className="trial-callout">
           <strong>Synthetic fixtures</strong>
-          <span>All chart values are illustrative and are not observations or forecasts. The price-area boundaries use the repository’s real GeoJSON.</span>
+          <span>Illustrative values · actual price-area boundaries</span>
         </div>
       </header>
 
@@ -265,7 +264,7 @@ export default function ChartTrial() {
         <section className="trial-card trial-card-wide">
           <div className="trial-label">ECharts · native dataZoom</div>
           <h2>Time series and uncertainty band</h2>
-          <p>Drag the lower slider or use the mouse wheel over the plot. The shaded 80% interval is illustrative model uncertainty; it does not include weather uncertainty.</p>
+          <p>Illustrative 80% model interval · excludes weather uncertainty.</p>
           <EChart option={timeOption} label="Illustrative daily demand from January to June 2026 with an 80 percent interval and time zoom" />
           <div className="trial-values" aria-label="Selected interval examples">
             <span>15 May: {dates[134].demand} GWh · {dates[134].lower}–{dates[134].upper}</span>
@@ -276,7 +275,6 @@ export default function ChartTrial() {
         <section className="trial-card trial-card-wide">
           <div className="trial-label">Recharts · current dependency</div>
           <h2>Equivalent baseline with Brush</h2>
-          <p>Recharts produces the same band with stacked areas and a draggable Brush. It is concise for the overview, but advanced chart types require more custom composition.</p>
           <div className="trial-chart trial-chart-short" aria-label="Recharts illustrative daily demand and uncertainty interval">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={dates} margin={{ top: 14, right: 20, bottom: 8, left: 6 }} accessibilityLayer>
@@ -299,14 +297,14 @@ export default function ChartTrial() {
         <section className="trial-card">
           <div className="trial-label">ECharts · heatmap</div>
           <h2>Weekly load shape</h2>
-          <p>Mean electricity use by weekday and UTC hour. Values remain printed in cells so color is never the only carrier.</p>
+          <p>Mean electricity use · weekday and UTC hour</p>
           <EChart option={heatOption} label="Illustrative heatmap of mean electricity use by weekday and UTC hour" />
         </section>
 
         <section className="trial-card">
           <div className="trial-label">ECharts · polar bar</div>
           <h2>Wind direction frequency</h2>
-          <p>Sixteen sectors show the share of observed hours. This is a frequency rose, with units distinct from wind speed.</p>
+          <p>Share of hours · %</p>
           <EChart option={windOption} label="Illustrative sixteen-sector wind direction frequency rose" />
           <div className="trial-values"><span>Highest: S 11%</span><span>SSW 10%</span><span>SSE 8%</span><span>SW 8%</span></div>
         </section>
@@ -314,7 +312,6 @@ export default function ChartTrial() {
         <section className="trial-card trial-card-wide">
           <div className="trial-label">ECharts · registered repository GeoJSON</div>
           <h2>Clickable price areas</h2>
-          <p>Click, pan or zoom the map. The buttons provide the same selection without relying on a canvas pointer target.</p>
           <div className="trial-map-layout">
             {mapReady ? <EChart option={mapOption} onChart={attachMap} label="Interactive map of Norway's five electricity price areas" /> : <div className={`trial-chart ${mapError ? "trial-map-error" : ""}`} role="status">{mapError || "Loading Norwegian price areas…"}</div>}
             <div>

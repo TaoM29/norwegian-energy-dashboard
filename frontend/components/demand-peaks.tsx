@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import type { EChartsCoreOption } from "echarts/core";
 import AnalysisChart from "@/components/analysis-chart";
-import { HelpPanel } from "@/components/help";
+import { HelpPanel, HelpTip } from "@/components/help";
 import { Select } from "@/components/ui/select";
 import { downloadCsv, downloadJson } from "@/lib/download";
 import { number } from "@/lib/api";
@@ -66,7 +66,6 @@ function ResultDetails({ data, children }: { data: Common; children?: React.Reac
   return <HelpPanel label="Coverage & method">
     {children}
     <p>Source: {data.dataMode === "fixture" ? "synthetic fixture" : "published Elhub household consumption"} · hourly kWh · {data.query.start} to {data.query.end} (end excluded, UTC). Peak means observed hourly energy, not instantaneous power or grid capacity. Ties select the earliest UTC hour. Times beside metrics use Europe/Oslo; chart dates use UTC. No seasonal adjustment is applied.</p>
-    <p>Download Data & method JSON from Export for full coverage, provenance and calculation definitions.</p>
   </HelpPanel>;
 }
 
@@ -142,7 +141,7 @@ export function RegionalPeaksView({ result }: { result: RegionalPeaks }) {
     {display === "relative" && unavailableMeans.length > 0 && coverage.matchedHours > 0 && <p className="peak-unavailable" role="status">Relative shape unavailable for {unavailableMeans.join(", ")} because its matched-hour mean is zero or missing. Select Energy · kWh for the observed values.</p>}
     <div className="peak-stats peak-stats-regional">
       <div><span>Combined highest hour</span><strong>{number(study.coincidentPeak?.valueKwh, 0)} kWh</strong><small>{oslo(study.coincidentPeak?.time)}</small></div>
-      <div><span>Peak alignment</span><strong>{study.coincidenceFactor == null ? "—" : `${number(study.coincidenceFactor * 100, 1)}%`}</strong><small>Combined peak / sum of area peaks</small></div>
+      <div><span>Peak alignment <HelpTip label="Peak alignment" iconOnly>Combined peak / sum of area peaks.</HelpTip></span><strong>{study.coincidenceFactor == null ? "—" : `${number(study.coincidenceFactor * 100, 1)}%`}</strong></div>
     </div>
     <div className="peak-footnote"><span>{number(coverage.matchedHours, 0)} / {number(coverage.expectedHours, 0)} hours matched across all areas</span>
       <ResultDetails data={result}>

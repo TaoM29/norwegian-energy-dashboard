@@ -709,7 +709,6 @@ export default function RegionalPage() {
     return (
       <AnalysisShell
         title="Regional analysis"
-        description="Loading analysis controls…"
       >
         <p role="status">Loading…</p>
       </AnalysisShell>
@@ -719,7 +718,6 @@ export default function RegionalPage() {
   return (
     <AnalysisShell
       title="Regional analysis"
-      description="Compare energy and household demand across price areas, or estimate wind-driven snow transport."
     >
       <div
         className={styles.modeSwitch}
@@ -761,13 +759,6 @@ export default function RegionalPage() {
 
       {filters.mode === "energy" ? (
         <>
-          <div className={styles.modeIntro}>
-            <strong>Compare NO1–NO5</strong>
-            <HelpTip label="Comparison scope">
-              Choose production or consumption groups and one inclusive UTC
-              date range. Every price area uses the same selection.
-            </HelpTip>
-          </div>
           <form
             id="regional-energy-panel"
             role="tabpanel"
@@ -869,13 +860,6 @@ export default function RegionalPage() {
         </>
       ) : (
         <>
-          <div className={styles.modeIntro}>
-            <strong>Estimate snow transport</strong>
-            <HelpTip label="Snow model scope">
-              Set the site, July–June seasons, transport assumptions, and fence
-              type. This model does not use the energy comparison dates.
-            </HelpTip>
-          </div>
           <form
             id="regional-snow-panel"
             role="tabpanel"
@@ -1047,17 +1031,12 @@ export default function RegionalPage() {
       {filters.mode === "energy" && (
       <div className={styles.regionalFlow}>
         <section className="analysis-panel">
-          <h2>Price-area comparison</h2>
-          <p className={styles.mapScope}>{summary?.aggregation || "Mean of valid hourly source records."}</p>
+          <div className="analysis-title"><h2>Price-area comparison</h2> <HelpTip label="Map values" iconOnly>{summary?.aggregation || "Mean of valid hourly source records."}</HelpTip></div>
           {summary?.areas.some((row) => row.partial) && (
             <p className={styles.partialCoverage} role="note">
-              Partial coverage in {summary.areas.filter((row) => row.partial).map((row) => row.area).join(", ")}. Open regional values and coverage for counts.
+              Partial coverage in {summary.areas.filter((row) => row.partial).map((row) => row.area).join(", ")}
             </p>
           )}
-          <HelpTip label="Using the map">
-            Select a region or map point, then open Snow model to use that
-            coordinate. The regional table compares all five price areas.
-          </HelpTip>
           {regionalError && (
             <p className={styles.error} role="alert">
               {regionalError}
@@ -1125,20 +1104,13 @@ export default function RegionalPage() {
           <summary>Regional values and coverage</summary>
         <section className="analysis-panel">
           <h2>Regional values</h2>
-          <p>
-            {filters.start} through {filters.end}, inclusive UTC dates ·{" "}
-            {summary?.unit || "kWh"}.
-          </p>
-          <HelpTip label="Regional coverage">
-            Partial rows have fewer valid group-hour records than requested.
-          </HelpTip>
           <div className={styles.tableWrap}>
             <table>
               <thead>
                 <tr>
                   <th>Area</th>
                   <th>Mean kWh</th>
-                  <th>Coverage</th>
+                  <th>Coverage <HelpTip label="Regional coverage" iconOnly>Observed / expected group-hours.</HelpTip></th>
                 </tr>
               </thead>
               <tbody>
@@ -1211,21 +1183,11 @@ export default function RegionalPage() {
 
       {filters.mode === "snow" && (
       <section className="analysis-panel">
-        <h2>
-          Tabler transport at {filters.latitude.toFixed(5)},{" "}
-          {filters.longitude.toFixed(5)}
-        </h2>
-        <p>ERA5-Seamless point weather · July–June seasons.</p>
-        <HelpTip label="Location and seasons">
-          The calculation uses weather at the selected coordinate instead of
-          the fixed city proxy used by area weather views. Partial seasons
-          remain visible and labeled.
-        </HelpTip>
-        <p className={styles.methodNote}>
-          Tabler transport is a statistical estimate. Fence height is an
-          indicative storage calculation and is not a site-specific engineering
-          design.
-        </p>
+        <div className="analysis-title"><h2>Estimated snow transport</h2>
+        <HelpTip label="Snow model" iconOnly>
+          Tabler estimate from ERA5-Seamless point weather over July–June seasons.
+          Fence height is indicative, not a site-specific engineering design.
+        </HelpTip></div>
         {snowError && (
           <p className={styles.error} role="alert">
             {snowError}
@@ -1250,11 +1212,6 @@ export default function RegionalPage() {
               <div>
                 <span>Weather coverage</span>
                 <strong>{number(snow.coverage.coveragePercent, 1)}%</strong>
-                <small>
-                  {snow.coverage.partial
-                    ? "Partial requested interval"
-                    : "Complete requested interval"}
-                </small>
               </div>
             </div>
             <div className={styles.regionalFlow}>

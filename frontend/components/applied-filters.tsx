@@ -11,14 +11,11 @@ export function AppliedFilters({
   onReset?: () => void;
   loading?: boolean;
 }) {
+  if (loading) return null;
   return (
-    <div className="applied-filters" data-pending={dirty && !loading}>
+    <div className="applied-filters" data-pending={dirty}>
       <span className="applied-filter-state" role="status">
-        {loading
-          ? "Updating results…"
-          : dirty
-            ? "Changes not applied"
-            : "Filters applied"}
+        {dirty ? "Changes not applied" : "Filters applied"}
       </span>
       {dirty && onReset && (
         <button type="button" onClick={onReset}>

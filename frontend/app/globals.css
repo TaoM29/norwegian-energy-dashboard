@@ -118,6 +118,7 @@ h1 > span {
   border-radius: var(--panel-radius);
   background: var(--surface);
   padding: 18px 20px;
+  margin-bottom: 24px;
 }
 .field-label {
   display: block;
@@ -991,3 +992,13 @@ button:active:not(:disabled) {
 .recorded-studies small { display: block; margin-top: 5px; color: var(--text-muted); font-size: 12px; }
 .recorded-studies a:hover strong { color: var(--accent); }
 .recorded-studies svg { flex-shrink: 0; color: var(--text-muted); }
+
+.analysis-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.analysis-title > h2 {
+  margin: 0;
+}
