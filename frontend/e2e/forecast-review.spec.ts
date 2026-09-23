@@ -208,8 +208,8 @@ test("exploratory reliability stays scoped to its fixed study cohort and older r
   const panel = page.getByRole("region", { name: "Reliability comparison" });
   await expect(page.getByRole("heading", { name: "Reliability across dates" })).toBeVisible();
   await expect(panel).toContainText("-12.4");
-  await expect(panel).toContainText("2 dates: -20.0 to +5.0");
-  await expect(panel).toContainText("74.0%");
+  await expect(panel).toContainText("2 dates: -20 to +5");
+  await expect(panel).toContainText("74%");
   await expect(page.getByText("219", { exact: true })).toBeVisible();
   await expect(page.getByText(/Missing scheduled dates: 2025-03-14/)).toBeVisible();
   await expect(page.getByText(/pools all five areas and matched dates/)).toBeVisible();

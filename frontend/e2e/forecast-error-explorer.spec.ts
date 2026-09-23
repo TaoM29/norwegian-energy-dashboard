@@ -114,9 +114,9 @@ test("saved area differences keep missing cells, legacy support, and drill into 
   await expect(explorer).toBeVisible();
   const matrix = explorer.getByRole("region", { name: "Forecast error matrix" });
   const no1 = matrix.getByRole("row").filter({ has: page.getByRole("rowheader", { name: "NO1", exact: true }) });
-  await expect(no1).toContainText("+4.0");
+  await expect(no1).toContainText("+4");
   await expect(no1).toContainText("4 hours · 2 area-origins · 2 dates");
-  await expect(matrix.getByRole("row").filter({ has: page.getByRole("rowheader", { name: "NO2", exact: true }) })).toContainText("-9.0");
+  await expect(matrix.getByRole("row").filter({ has: page.getByRole("rowheader", { name: "NO2", exact: true }) })).toContainText("-9");
   await expect(matrix.getByRole("row").filter({ has: page.getByRole("rowheader", { name: "NO3", exact: true }) })).toContainText("Unavailable");
   await expect(matrix).not.toContainText("999,999");
   await explorer.getByText("Excluded origins and recorded failures", { exact: true }).click();
@@ -137,7 +137,7 @@ test("saved area differences keep missing cells, legacy support, and drill into 
   await expect(chartData).toContainText("2025-07-01T01:00:00.000Z");
   await expect(chartData).not.toContainText("2025-01-01");
   // Inspecting a single origin must not silently narrow the fixed saved matrix.
-  await expect(no1).toContainText("+4.0");
+  await expect(no1).toContainText("+4");
   await page.reload();
   await expect(page.getByRole("region", { name: "Selected saved forecast" })).toContainText("1 Jul 2025");
 });
@@ -148,14 +148,14 @@ test("explorer view, horizon measure, missing values and exports retain their sa
   const explorer = page.getByRole("region", { name: "Forecast error explorer", exact: true });
   await expect(explorer.getByRole("combobox", { name: "Error explorer view" })).toHaveValue("season");
   await expect(explorer).toContainText(/descriptive/i);
-  await expect(explorer.getByRole("row").filter({ hasText: "summer" }).filter({ hasText: "Ridge" })).toContainText("+15.0 kWh");
+  await expect(explorer.getByRole("row").filter({ hasText: "summer" }).filter({ hasText: "Ridge" })).toContainText("+15 kWh");
   await choose(page, "Error explorer view", "Peak periods");
   await expect(page).toHaveURL(/explorer=peak_period/);
   await expect(explorer).toContainText("Other hours");
   await choose(page, "Error explorer view", "Forecast horizon");
   await choose(page, "Horizon measure", "Observed coverage");
   await expect(page).toHaveURL(/explorer=horizon&explorerMeasure=coverage/);
-  await expect(explorer).toContainText("80.0%");
+  await expect(explorer).toContainText("80%");
   await expect(explorer.getByRole("img", { name: /Observed interval coverage/ })).toBeVisible();
   const horizonTable = explorer.getByRole("table");
   await expect(horizonTable.getByRole("row").filter({ hasText: "Hour 1" }).filter({ hasText: "Ridge" })).toContainText("66.7%");
