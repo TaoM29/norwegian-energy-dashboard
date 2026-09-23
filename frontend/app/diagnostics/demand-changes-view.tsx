@@ -8,6 +8,7 @@ import AnalysisChart from "@/components/analysis-chart";
 import { ExportMenu } from "@/components/export-menu";
 import { ApiError, getJson, number } from "@/lib/api";
 import { downloadCsv } from "@/lib/download";
+import { displayJson, formatDisplayValue } from "@/lib/number-format";
 import "./demand-changes.css";
 
 type Values = Record<string, unknown>;
@@ -239,7 +240,7 @@ export default function DemandChangesView() {
             : candidate && detected
               ? "This split crosses the exploratory bootstrap reference. It does not confirm a structural break or its cause."
               : "The strongest eligible split did not exceed the saved bootstrap threshold. It is shown for context, not as a detected change. This does not establish that demand was unchanged."}</p>
-          {(finite(worstFalseAlarm?.falseAlarmRate ?? worstFalseAlarm?.detectionRate) ?? 0) > .05 && <p className="demand-changes-control-warning">Calibration limit: {metric(worstFalseAlarm?.detections, 0)} of {metric(worstFalseAlarm?.replications, 0)} runs were flagged ({number((finite(worstFalseAlarm?.falseAlarmRate ?? worstFalseAlarm?.detectionRate) ?? 0) * 100, 1)}%) under strong serial dependence with no actual change. This exceeds the nominal 5% target.</p>}
+          {(finite(worstFalseAlarm?.falseAlarmRate ?? worstFalseAlarm?.detectionRate) ?? 0) > .05 && <p className="demand-changes-control-warning">Calibration limit: {metric(worstFalseAlarm?.detections, 0)} of {metric(worstFalseAlarm?.replications, 0)} runs were flagged ({formatDisplayValue((finite(worstFalseAlarm?.falseAlarmRate ?? worstFalseAlarm?.detectionRate) ?? 0) * 100, 1)}%) under strong serial dependence with no actual change. This exceeds the nominal 5% target.</p>}
           {sensitive && <p>Sensitivity checks change the date or remove the threshold crossing. The finding depends on the resampling, coverage and baseline assumptions.</p>}
         </div>
         {candidate && !inconclusive && <div className="demand-changes-effect">
@@ -289,25 +290,25 @@ export default function DemandChangesView() {
         <p>One retrospective split, with at least 28 complete days on each side. Review the assumptions and sensitivity checks before interpreting it.</p>
         <details><summary>Detection policy and validation</summary>
           <div className="demand-changes-detail-copy">
-            <p>Selected split score: <strong>{metric(study.primary.score, 2)}</strong>. 95th percentile of bootstrap maxima: <strong>{metric(study.primary.thresholdApprox95, 2)}</strong>. Bootstrap exceedance estimate: <strong>{metric(study.primary.pValue, 3)}</strong>. Eligible splits: <strong>{metric(study.primary.eligibleSplits, 0)}</strong>.</p>
+            <p>Selected split score: <strong>{metric(study.primary.score, 2)}</strong>. 95th percentile of bootstrap maxima: <strong>{metric(study.primary.thresholdApprox95, 2)}</strong>. Bootstrap exceedance estimate: <strong>{formatDisplayValue(study.primary.pValue, 3)}</strong>. Eligible splits: <strong>{metric(study.primary.eligibleSplits, 0)}</strong>.</p>
             <p>The threshold comes from block resampling of {calibrationPeriod} calibration residuals. Repeating the maximum over every eligible split in each bootstrap draw accounts for searching across dates. Synthetic controls evaluate its false-alarm behavior; they do not set the threshold. The split date is the first day after the selected boundary. A location or magnitude selected after looking at the data does not carry a separate confidence interval.</p>
             {noChangeControls.length > 0 && <p>Independent synthetic no-change controls measure false-alarm behavior under the saved assumptions. Their observed rates do not guarantee the same rate for Norwegian demand.</p>}
             {noChangeControls.length > 0 && <div className="demand-changes-table-wrap" role="region" aria-label="No-change control false alarms" tabIndex={0}>
               <table><thead><tr><th scope="col">Serial correlation</th><th scope="col">Flagged runs</th><th scope="col">False-alarm rate</th></tr></thead>
-                <tbody>{noChangeControls.map((row, index) => <tr key={`${value(row.scenario)}-${index}`}><th scope="row">ρ = {metric(row.rho, 2)}</th><td>{metric(row.detections, 0)} / {metric(row.replications, 0)}</td><td>{finite(row.falseAlarmRate ?? row.detectionRate) == null ? "Unavailable" : `${number((finite(row.falseAlarmRate ?? row.detectionRate) ?? 0) * 100, 1)}%`}</td></tr>)}</tbody>
+                <tbody>{noChangeControls.map((row, index) => <tr key={`${value(row.scenario)}-${index}`}><th scope="row">ρ = {metric(row.rho, 2)}</th><td>{metric(row.detections, 0)} / {metric(row.replications, 0)}</td><td>{finite(row.falseAlarmRate ?? row.detectionRate) == null ? "Unavailable" : `${formatDisplayValue((finite(row.falseAlarmRate ?? row.detectionRate) ?? 0) * 100, 1)}%`}</td></tr>)}</tbody>
               </table>
             </div>}
             {controlRows.length > noChangeControls.length && <p>Known-shift and gradual-drift control results are in the complete artifact. A gradual trend or a changed baseline can also trigger this scan; a candidate does not prove an abrupt structural break.</p>}
             <p>Changes in input coverage and source revisions can change the result. External events may offer context but cannot establish the cause. Forecast-error drift and online alerts are outside this saved demand study.</p>
-            <h3>Study protocol</h3><pre>{JSON.stringify(study.protocol, null, 2)}</pre>
-            <h3>Provenance</h3><pre>{JSON.stringify(study.metadata, null, 2)}</pre>
+            <h3>Study protocol</h3><pre>{displayJson(study.protocol)}</pre>
+            <h3>Provenance</h3><pre>{displayJson(study.metadata)}</pre>
           </div>
         </details>
         <details><summary>Sensitivity and coverage checks</summary>
           <div className="demand-changes-detail-copy"><p>Gap rules, baseline revisions, and alternate settings may shift or remove a candidate. These saved checks are supporting diagnostics, not independent confirmations.</p></div>
           <div className="demand-changes-table-wrap" role="region" aria-label="Demand-change sensitivity checks" tabIndex={0}>
             <table><thead><tr><th scope="col">Check</th><th scope="col">Selected date</th><th scope="col">Split score</th><th scope="col">Bootstrap exceedance</th><th scope="col">After − before kWh</th></tr></thead>
-              <tbody>{study.sensitivities.map((item, index) => <tr key={`${value(item.id)}-${index}`}><th scope="row">{value(item.label) || value(item.id) || `Check ${index + 1}`}</th><td>{value(item.candidateDate) ? `${value(item.candidateDate)}${item.detected ? "" : " · unconfirmed"}` : "None"}</td><td>{metric(item.score, 2)}</td><td>{metric(item.pValue, 3)}</td><td>{signed(item.deltaResidualKwh)}</td></tr>)}</tbody>
+              <tbody>{study.sensitivities.map((item, index) => <tr key={`${value(item.id)}-${index}`}><th scope="row">{value(item.label) || value(item.id) || `Check ${index + 1}`}</th><td>{value(item.candidateDate) ? `${value(item.candidateDate)}${item.detected ? "" : " · unconfirmed"}` : "None"}</td><td>{metric(item.score, 2)}</td><td>{formatDisplayValue(item.pValue, 3)}</td><td>{signed(item.deltaResidualKwh)}</td></tr>)}</tbody>
             </table>
           </div>
           {coverage && <p className="demand-changes-detail-copy">Test coverage: {metric(coverage.okHours, 0)} of {metric(coverage.expectedHours, 0)} hourly pairs; {metric(coverage.incompleteDays, 0)} incomplete UTC days. Missing or unsupported hours are never filled with zero.</p>}

@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { downloadJson } from "@/lib/download";
+import { chartNumber } from "@/lib/number-format";
 import {
   areas,
   Coverage,
@@ -439,6 +440,7 @@ export default function Page() {
                           dy={10}
                         />
                         <YAxis
+                          tickFormatter={chartNumber}
                           tickLine={false}
                           axisLine={false}
                           tick={{ fill: "var(--chart-text)", fontSize: 12 }}

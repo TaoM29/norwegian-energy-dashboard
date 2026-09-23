@@ -20,6 +20,7 @@ import { areas, getJson, number, shiftDay, type Coverage } from "@/lib/api";
 import { ExportMenu } from "@/components/export-menu";
 import { downloadCsv, downloadJson } from "@/lib/download";
 import { writeDashboardUrl } from "@/lib/navigation-state";
+import { displayJson, formatDisplayValue } from "@/lib/number-format";
 import SensitivityView from "./sensitivity-view";
 import DemandAnomaliesView from "./demand-anomalies-view";
 import DemandChangesView from "./demand-changes-view";
@@ -302,7 +303,7 @@ function FlagTable({
                 {columns.map((column) => (
                   <td key={column}>
                     {typeof row[column] === "number"
-                      ? number(row[column] as number, 3)
+                      ? formatDisplayValue(row[column], 3)
                       : String(row[column])}
                   </td>
                 ))}
@@ -1057,11 +1058,11 @@ function CorrelationView({
         />
         <Metric
           label="Mean rolling r"
-          value={number(data.summary.meanCorrelation, 3)}
+          value={formatDisplayValue(data.summary.meanCorrelation, 3)}
         />
         <Metric
           label="Latest rolling r"
-          value={number(data.summary.latestCorrelation, 3)}
+          value={formatDisplayValue(data.summary.latestCorrelation, 3)}
         />
       </div>
       <section className="analysis-panel">
@@ -1096,7 +1097,7 @@ function CorrelationView({
         />
       </section>
       <HelpPanel label="Correlation method and provenance">
-        <pre>{JSON.stringify(data.metadata, null, 2)}</pre>
+        <pre>{displayJson(data.metadata)}</pre>
       </HelpPanel>
     </>
   );
@@ -1256,14 +1257,10 @@ function DecompositionView({
       </section>
       <HelpPanel label="Decomposition parameters and provenance">
         <pre>
-          {JSON.stringify(
-            {
-              effectiveParameters: data.effectiveParameters,
-              metadata: data.metadata,
-            },
-            null,
-            2,
-          )}
+          {displayJson({
+            effectiveParameters: data.effectiveParameters,
+            metadata: data.metadata,
+          })}
         </pre>
       </HelpPanel>
     </>
@@ -1377,15 +1374,15 @@ function QualityView({ data, fileStem }: { data: Quality; fileStem: string }) {
             <Metric
               label="SPC flags"
               value={data.spc.summary.flags.toLocaleString("en-GB")}
-              detail={`${number(data.spc.summary.flagPercent, 2)}% of points`}
+              detail={`${formatDisplayValue(data.spc.summary.flagPercent, 2)}% of points`}
             />
             <Metric
               label="Robust σ"
-              value={number(data.spc.summary.robustSigma, 3)}
+              value={formatDisplayValue(data.spc.summary.robustSigma, 3)}
             />
             <Metric
               label="Max |SATV|"
-              value={number(data.spc.summary.maxAbsSatv, 2)}
+              value={formatDisplayValue(data.spc.summary.maxAbsSatv, 2)}
             />
           </div>
           <AnalysisChart
@@ -1426,7 +1423,7 @@ function QualityView({ data, fileStem }: { data: Quality; fileStem: string }) {
             <Metric
               label="LOF flags"
               value={data.lof.summary.flags.toLocaleString("en-GB")}
-              detail={`${number(data.lof.summary.flagPercent, 2)}% of points`}
+              detail={`${formatDisplayValue(data.lof.summary.flagPercent, 2)}% of points`}
             />
             <Metric
               label="Neighbors used"
@@ -1470,7 +1467,7 @@ function QualityView({ data, fileStem }: { data: Quality; fileStem: string }) {
         </section>
       </div>
       <HelpPanel label="Anomaly methods and provenance">
-        <pre>{JSON.stringify(data.metadata, null, 2)}</pre>
+        <pre>{displayJson(data.metadata)}</pre>
       </HelpPanel>
     </>
   );

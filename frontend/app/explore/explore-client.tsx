@@ -6,6 +6,7 @@ import { Download, RefreshCw } from "lucide-react";
 import AnalysisChart from "@/components/analysis-chart";
 import { AnalysisShell } from "@/components/analysis-shell";
 import { AppliedFilters } from "@/components/applied-filters";
+import { displayJson } from "@/lib/number-format";
 import { DateRangePicker, parseDate } from "@/components/date-range-picker";
 import { HelpPanel, HelpTip } from "@/components/help";
 import { Select } from "@/components/ui/select";
@@ -884,7 +885,7 @@ function EnergyView({
         </div>
       </details>
       <HelpPanel label="Energy method and provenance">
-        <pre>{JSON.stringify(response.metadata, null, 2)}</pre>
+        <pre>{displayJson(response.metadata)}</pre>
       </HelpPanel>
     </>
   );
@@ -1100,7 +1101,7 @@ function WeatherView({
       </section>
       </details>
       <HelpPanel label="Weather method and provenance">
-        <pre>{JSON.stringify(response.metadata, null, 2)}</pre>
+        <pre>{displayJson(response.metadata)}</pre>
       </HelpPanel>
     </>
   );

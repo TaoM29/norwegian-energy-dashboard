@@ -9,6 +9,7 @@ import { ExportMenu } from "@/components/export-menu";
 import { Select } from "@/components/ui/select";
 import { ApiError, areas, getJson, number } from "@/lib/api";
 import { downloadCsv } from "@/lib/download";
+import { displayJson, formatDisplayValue } from "@/lib/number-format";
 import "./demand-anomalies.css";
 
 type RecordValue = Record<string, unknown>;
@@ -281,7 +282,7 @@ export default function DemandAnomaliesView({
         <div className="demand-anomalies-summary">
           <div><span>Scored hours</span><strong>{count(summary.scoredHours)}</strong><small>of {count(summary.expectedHours)} expected in the evaluation period</small></div>
           <div><span>Flagged hours</span><strong>{count(summary.flaggedHours)}</strong><small>Unlabeled observational flags</small></div>
-          <div><span>Flag rate</span><strong>{numeric(summary.flagRate) == null ? "Unavailable" : `${(numeric(summary.flagRate)! * 100).toFixed(2)}%`}</strong><small>Of scored hours, not a false-alarm rate</small></div>
+          <div><span>Flag rate</span><strong>{numeric(summary.flagRate) == null ? "Unavailable" : `${formatDisplayValue(numeric(summary.flagRate)! * 100, 2)}%`}</strong><small>Of scored hours, not a false-alarm rate</small></div>
           <div><span>Candidate episodes</span><strong>{count(summary.episodes)}</strong><small>Consecutive flagged hours</small></div>
         </div>
 
@@ -318,7 +319,7 @@ export default function DemandAnomaliesView({
             <div><span>Unsupported temperature</span><strong>{count(testStatus.unsupported_temperature)}</strong></div>
           </div>
           <p>{count(testCoverage.scoredHours)} of {count(testCoverage.expectedHours)} expected evaluation hours were scored; {count(testCoverage.missingHours)} had missing input and {count(testCoverage.unsupportedHours)} lay outside supported temperature context. Missing and unsupported hours are coverage issues, not ordinary anomaly scores.</p>
-          <p>The expected value adds a {signedMetric(calibration.medianCorrection)} kWh median correction to the raw model fit. The calibration screening band extends {numeric(calibration.lowerWidth) == null ? "Unavailable" : `-${metric(calibration.lowerWidth)}`} kWh below and {numeric(calibration.upperWidth) == null ? "Unavailable" : `+${metric(calibration.upperWidth)}`} kWh above that corrected expectation. It uses {count(calibration.observations)} hourly calibration observations over {count(calibration.distinctDates)} dates; the target tail fraction is {numeric(calibration.tailFraction) == null ? "unavailable" : `${(numeric(calibration.tailFraction)! * 100).toFixed(1)}%`}.</p>
+          <p>The expected value adds a {signedMetric(calibration.medianCorrection)} kWh median correction to the raw model fit. The calibration screening band extends {numeric(calibration.lowerWidth) == null ? "Unavailable" : `-${metric(calibration.lowerWidth)}`} kWh below and {numeric(calibration.upperWidth) == null ? "Unavailable" : `+${metric(calibration.upperWidth)}`} kWh above that corrected expectation. It uses {count(calibration.observations)} hourly calibration observations over {count(calibration.distinctDates)} dates; the target tail fraction is {numeric(calibration.tailFraction) == null ? "unavailable" : `${formatDisplayValue(numeric(calibration.tailFraction)! * 100, 1)}%`}.</p>
           <details><summary>Model selection, calendar thresholds and study periods</summary>
             <div className="demand-anomalies-method">
               <p>Selected expected-demand model: <strong>{selected.selectedModel || "Unavailable"}</strong>. Model choice precedes threshold calibration and the later evaluation period.</p>
@@ -341,7 +342,7 @@ export default function DemandAnomaliesView({
                   <thead><tr><th scope="col">Group</th><th scope="col">Hours</th><th scope="col">Scored</th><th scope="col">Flags</th><th scope="col">Flag rate</th></tr></thead>
                   <tbody>{rows(groupSupport[group]).map((item, index) => <tr key={`${text(item[group])}-${index}`}>
                     <th scope="row">{text(item[group])}</th><td>{count(item.hours)}</td><td>{count(item.scoredHours)}</td><td>{count(item.flaggedHours)}</td>
-                    <td>{numeric(item.flagRate) == null ? "Unavailable" : `${(numeric(item.flagRate)! * 100).toFixed(2)}%`}</td>
+                    <td>{numeric(item.flagRate) == null ? "Unavailable" : `${formatDisplayValue(numeric(item.flagRate)! * 100, 2)}%`}</td>
                   </tr>)}</tbody>
                 </table>
               </div>)}
@@ -357,7 +358,7 @@ export default function DemandAnomaliesView({
               <p>Selected predictors: {Array.isArray(selected.metadata?.featureColumns)
                 ? selected.metadata.featureColumns.filter((item): item is string => typeof item === "string").join(", ")
                 : "Unavailable"}.</p>
-              <h3>Protocol</h3><pre>{JSON.stringify(study.protocol, null, 2)}</pre>
+              <h3>Protocol</h3><pre>{displayJson(study.protocol)}</pre>
             </div>
           </details>
         </section>

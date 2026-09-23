@@ -14,6 +14,7 @@ import AnalysisChart from "@/components/analysis-chart";
 import { AnalysisShell } from "@/components/analysis-shell";
 import { ExportMenu } from "@/components/export-menu";
 import { downloadCsv, downloadJson } from "@/lib/download";
+import { displayJson, formatDisplayValue } from "@/lib/number-format";
 import { areas, getJson, number, shiftDay, type Coverage } from "@/lib/api";
 import { DateRangePicker, parseDate } from "@/components/date-range-picker";
 import { AppliedFilters } from "@/components/applied-filters";
@@ -678,7 +679,7 @@ export default function RegionalPage() {
   );
   const roseOption = useMemo<EChartsCoreOption>(
     () => ({
-      tooltip: { trigger: "item", formatter: "{b}: {c} tonnes/m" },
+      tooltip: { trigger: "item", valueFormatter: (value: unknown) => `${formatDisplayValue(value, 2)} tonnes/m` },
       polar: { radius: [18, "70%"] },
       angleAxis: {
         type: "category",
@@ -1184,15 +1185,13 @@ export default function RegionalPage() {
           {summary && (
             <HelpPanel label="Source and aggregation metadata">
               <pre>
-                {JSON.stringify(
+                {displayJson(
                   {
                     query: summary.query,
                     aggregation: summary.aggregation,
                     unit: summary.unit,
                     provenance: summary.provenance,
                   },
-                  null,
-                  2,
                 )}
               </pre>
             </HelpPanel>
@@ -1395,7 +1394,7 @@ export default function RegionalPage() {
             </details>
             <HelpPanel label="Method, units, and engineering limitation">
               <pre>
-                {JSON.stringify(
+                {displayJson(
                   {
                     query: snow.query,
                     units: snow.units,
@@ -1403,8 +1402,6 @@ export default function RegionalPage() {
                     coverage: snow.coverage,
                     provenance: snow.provenance,
                   },
-                  null,
-                  2,
                 )}
               </pre>
             </HelpPanel>
@@ -1424,7 +1421,7 @@ export default function RegionalPage() {
                     {snow.sourcePreview.map((row, index) => (
                       <tr key={index}>
                         {Object.values(row).map((value, cell) => (
-                          <td key={cell}>{String(value ?? "")}</td>
+                          <td key={cell}>{formatDisplayValue(value, 2)}</td>
                         ))}
                       </tr>
                     ))}
