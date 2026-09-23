@@ -6,7 +6,7 @@ import type { EChartsCoreOption } from "echarts/core";
 import { StudyError } from "@/components/study-error";
 import AnalysisChart from "@/components/analysis-chart";
 import { ExportMenu } from "@/components/export-menu";
-import { HelpPanel } from "@/components/help";
+import { HelpPanel, HelpTip } from "@/components/help";
 import { Select } from "@/components/ui/select";
 import { ApiError, getJson, areas, number } from "@/lib/api";
 import { downloadCsv } from "@/lib/download";
@@ -206,9 +206,7 @@ export default function SensitivityView({ area, onAreaChange }: { area: string; 
   return <div className="sensitivity-view">
     <div className="sensitivity-intro">
       <div>
-
         <h2>Temperature & demand</h2>
-        <p>Household demand adjusted for calendar patterns. A saved study with fixed dates.</p>
       </div>
       <label>Price area
         <Select aria-label="Sensitivity price area" value={area} onChange={(event) => onAreaChange(event.target.value)}>
@@ -230,30 +228,28 @@ export default function SensitivityView({ area, onAreaChange }: { area: string; 
       </div>
       {data ? <>
         <section className="analysis-panel sensitivity-primary">
-          <div className="sensitivity-section-heading"><div><h2>Adjusted temperature response</h2><p>Difference from {metric(data.referenceTemperature)} °C under the same calendar conditions. An adjusted association, not a causal effect.</p></div></div>
+          <div className="sensitivity-section-heading"><h2>Adjusted temperature response <HelpTip label="Response and uncertainty" iconOnly>Values are differences from {metric(data.referenceTemperature)} °C under the same calendar conditions. Shading is an approximate 95% pointwise uncertainty band for the mean adjusted contrast, using a 168-hour dependence adjustment. It is not a prediction interval; values outside observed support are withheld.</HelpTip></h2></div>
           {data.selectedModel === "calendar" && <div className="sensitivity-callout">Temperature did not improve validation enough to select a temperature model. The calendar-only response is zero.</div>}
           {curve && <AnalysisChart option={curve} height={390} label={`${area} adjusted household-demand response to temperature with 95 percent pointwise uncertainty band`} exports={<button type="button" onClick={() => downloadCsv(`${stem}-curve.csv`, data.curve)}>Curve values CSV</button>} />}
-          <p className="sensitivity-caption">Shading is an approximate 95% pointwise uncertainty band for the mean adjusted contrast, using a 168-hour dependence adjustment. It is not a prediction interval for an individual hour. Values outside observed support are withheld.</p>
           <details><summary>Curve values and 336-hour uncertainty check</summary><div className="sensitivity-table-wrap"><table><thead><tr><th>°C</th><th>Difference (kWh)</th><th>95% band, 168 h (kWh)</th><th>95% band, 336 h (kWh)</th><th>Nearby hours</th></tr></thead><tbody>{data.curve.map((point) => <tr key={point.temperature}><th>{metric(point.temperature)}</th><td>{metric(point.effect)}</td><td>{metric(point.lower)} to {metric(point.upper)}</td><td>{metric(point.lower336)} to {metric(point.upper336)}</td><td>{number(point.count, 0)}</td></tr>)}</tbody></table></div></details>
         </section>
         <div className="sensitivity-summary">
-          <div><span>Selected response</span><strong>{modelName(data.selectedModel)}</strong><small>Chosen on validation dates</small></div>
+          <div><span>Selected response</span><strong>{modelName(data.selectedModel)}</strong></div>
           <div><span>Held-out test MAE</span><strong>{metric(selectedModel?.test.mae)} <em>kWh</em></strong><small>{number(selectedModel?.test.count, 0)} test hours</small></div>
-          <div><span>Training coverage</span><strong>{number(data.splits.train.observedHours, 0)} / {number(data.splits.train.expectedHours, 0)}</strong><small>complete paired hours</small></div>
-          <div><span>Supported temperature</span><strong>{metric(data.support.min)} to {metric(data.support.max)} <em>°C</em></strong><small>City weather proxy</small></div>
+          <div><span>Training coverage</span><strong>{number(data.splits.train.observedHours, 0)} / {number(data.splits.train.expectedHours, 0)}</strong></div>
+          <div><span>Supported temperature</span><strong>{metric(data.support.min)} to {metric(data.support.max)} <em>°C</em></strong></div>
         </div>
         <details className="study-details"><summary>Model comparison, coverage & residual checks</summary>
         <div className="sensitivity-two-col">
-          <section className="analysis-panel"><h2>Temperature support</h2><p>Training and validation hours by temperature bin. Sparse extremes are less reliable even inside the supported range.</p>{support && <AnalysisChart option={support} height={260} label={`${area} development temperature support histogram`} />}
+          <section className="analysis-panel"><h2>Temperature support <HelpTip label="Temperature support" iconOnly>Training and validation use one city weather proxy per area. Sparse extremes are less reliable, including within the supported range.</HelpTip></h2>{support && <AnalysisChart option={support} height={260} label={`${area} development temperature support histogram`} />}
             <details><summary>Monthly temperature support</summary><div className="sensitivity-table-wrap"><table><thead><tr><th>Month</th><th>Hours</th><th>Min °C</th><th>Max °C</th></tr></thead><tbody>{data.support.byMonth.map((row) => <tr key={row.month}><td>{new Intl.DateTimeFormat("en-GB", { month: "long", timeZone: "UTC" }).format(new Date(Date.UTC(2024, row.month - 1, 1)))}</td><td>{number(row.count, 0)}</td><td>{metric(row.min)}</td><td>{metric(row.max)}</td></tr>)}</tbody></table></div></details>
           </section>
-          <section className="analysis-panel"><h2>Recorded study periods</h2><p>Chronological splits are fixed in the saved artifact. Each UTC start is inclusive and each end is exclusive. The final period is a retrospective, exploratory evaluation.</p><div className="sensitivity-splits">{(["train", "validation", "test"] as const).map((name) => <div key={name}><span>{name === "test" ? "Held-out evaluation" : name}</span><strong>{splitLabel(data.splits[name])}</strong><small>{number(data.splits[name].observedHours, 0)} / {number(data.splits[name].expectedHours, 0)} paired hours</small></div>)}</div></section>
+          <section className="analysis-panel"><h2>Recorded study periods</h2><div className="sensitivity-splits">{(["train", "validation", "test"] as const).map((name) => <div key={name}><span>{name === "test" ? "Held-out evaluation" : name}</span><strong>{splitLabel(data.splits[name])}</strong><small>{number(data.splits[name].observedHours, 0)} / {number(data.splits[name].expectedHours, 0)} paired hours</small></div>)}</div></section>
         </div>
-        <section className="analysis-panel"><h2>Model comparison for {area}</h2><p>Validation selected the response; the later test period checks how it held up. Lower MAE is better within this area.</p><div className="sensitivity-table-wrap"><table><thead><tr><th>Model</th><th>Validation MAE (kWh)</th><th>Test MAE (kWh)</th><th>Test RMSE (kWh)</th><th>Test bias (kWh)</th><th>Test hours</th></tr></thead><tbody>{data.models.map((item) => <tr key={item.model} className={item.model === data.selectedModel ? "is-selected" : undefined}><th>{item.label || modelName(item.model)}{item.model === data.selectedModel && <span className="sensitivity-badge">Selected</span>}</th><td>{metric(item.validation.mae)}</td><td>{metric(item.test.mae)}</td><td>{metric(item.test.rmse)}</td><td>{metric(item.test.bias)}</td><td>{number(item.test.count, 0)}</td></tr>)}</tbody></table></div><p className="sensitivity-caption">Scores compare individual hourly household energy observations. Bias is mean observation minus prediction.</p></section>
-        <section className="analysis-panel"><h2>Across the five price areas</h2><p>Each area has a different demand scale. These raw MAEs describe within-area performance and should not be read as a league table.</p><div className="sensitivity-table-wrap"><table><thead><tr><th>Area</th><th>Selected model</th><th>Test MAE (kWh)</th><th>Training coverage</th></tr></thead><tbody>{study.areas.map((item) => <tr key={item.area} className={item.area === area ? "is-selected" : undefined}><th><button type="button" className="sensitivity-area-link" onClick={() => onAreaChange(item.area)}>{item.area}</button></th>{item.status === "ok" ? <><td>{modelName(item.selectedModel)}</td><td>{metric(item.models.find((model) => model.model === item.selectedModel)?.test.mae)}</td><td>{number(item.splits.train.observedHours, 0)} / {number(item.splits.train.expectedHours, 0)} h</td></> : <td colSpan={3}>Unavailable: {item.reason}</td>}</tr>)}</tbody></table></div></section>
+        <section className="analysis-panel"><h2>Model comparison for {area} <HelpTip label="Model metrics" iconOnly>Lower MAE is better within this area. Bias is observation minus prediction.</HelpTip></h2><div className="sensitivity-table-wrap"><table><thead><tr><th>Model</th><th>Validation MAE (kWh)</th><th>Test MAE (kWh)</th><th>Test RMSE (kWh)</th><th>Test bias (kWh)</th><th>Test hours</th></tr></thead><tbody>{data.models.map((item) => <tr key={item.model} className={item.model === data.selectedModel ? "is-selected" : undefined}><th>{item.label || modelName(item.model)}{item.model === data.selectedModel && <span className="sensitivity-badge">Selected</span>}</th><td>{metric(item.validation.mae)}</td><td>{metric(item.test.mae)}</td><td>{metric(item.test.rmse)}</td><td>{metric(item.test.bias)}</td><td>{number(item.test.count, 0)}</td></tr>)}</tbody></table></div></section>
+        <section className="analysis-panel"><h2>Across the five price areas <HelpTip label="Comparing price areas" iconOnly>Demand scales differ by area, so raw MAEs describe performance within each area.</HelpTip></h2><div className="sensitivity-table-wrap"><table><thead><tr><th>Area</th><th>Selected model</th><th>Test MAE (kWh)</th><th>Training coverage</th></tr></thead><tbody>{study.areas.map((item) => <tr key={item.area} className={item.area === area ? "is-selected" : undefined}><th><button type="button" className="sensitivity-area-link" onClick={() => onAreaChange(item.area)}>{item.area}</button></th>{item.status === "ok" ? <><td>{modelName(item.selectedModel)}</td><td>{metric(item.models.find((model) => model.model === item.selectedModel)?.test.mae)}</td><td>{number(item.splits.train.observedHours, 0)} / {number(item.splits.train.expectedHours, 0)} h</td></> : <td colSpan={3}>Unavailable: {item.reason}</td>}</tr>)}</tbody></table></div></section>
         <section className="analysis-panel">
           <h2>Residual checks</h2>
-          <p>Patterns left in the selected model’s errors show where its calendar and temperature terms do not explain demand. Mean error is observation minus prediction.</p>
           <div className="sensitivity-two-col"><div><h3>Autocorrelation by lag</h3>{acf && <AnalysisChart option={acf} height={245} label={`${area} selected-model residual autocorrelation by lag`} />}</div><div><h3>Mean error by local hour</h3>{byHour && <AnalysisChart option={byHour} height={245} label={`${area} selected-model mean residual by Europe Oslo hour`} />}</div></div>
           <details><summary>Residual values and sample counts</summary>
             <div className="sensitivity-two-col">

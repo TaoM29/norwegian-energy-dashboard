@@ -262,12 +262,12 @@ function CoverageNote({ metadata, view }: { metadata: Metadata; view: View }) {
         : "STL and the spectrogram require a complete hourly energy series.";
   return (
     <div className="diagnostics-coverage" role="status">
-      <strong>Partial observed coverage</strong>
-      <span>
+      <strong>Partial coverage</strong>
+      <HelpTip label="Coverage details" iconOnly>
         {observed.toLocaleString("en-GB")} of{" "}
-        {coverage.expectedHours.toLocaleString("en-GB")} expected hours entered
-        this analysis. {policy}
-      </span>
+        {coverage.expectedHours.toLocaleString("en-GB")} expected hours were
+        available. {policy}
+      </HelpTip>
     </div>
   );
 }
@@ -578,7 +578,7 @@ export default function DiagnosticsWorkbench() {
         api.set("neighbors", String(filters.neighbors));
       }
       const sequence = ++request.current;
-      setStatus("Analyzing the complete hourly series…");
+      setStatus("Analyzing…");
       setError("");
       try {
         const data = await getJson<Correlation | Decomposition | Quality>(
@@ -937,12 +937,11 @@ export default function DiagnosticsWorkbench() {
         </div>
       )}
       {result && (
-        <>
-          <CoverageNote
-            metadata={result.metadata}
-            view={applied?.view ?? view}
-          />
           <div className="analysis-actions">
+            <CoverageNote
+              metadata={result.metadata}
+              view={applied?.view ?? view}
+            />
             <ExportMenu label="Export metadata">
               <button
                 onClick={() =>
@@ -962,16 +961,12 @@ export default function DiagnosticsWorkbench() {
                 Download metadata JSON
               </button>
             </ExportMenu>
-            <span>
-              {result.metadata.analyzedPoints.toLocaleString("en-GB")} hourly
-              points analyzed
-              {result.metadata.chartPayloadLimited
-                ? `; chart payload reduced to ${result.metadata.returnedChartPoints.toLocaleString("en-GB")}`
-                : ""}
-              .
-            </span>
+            {result.metadata.chartPayloadLimited && (
+              <HelpTip label="Chart data reduced">
+                The chart shows {result.metadata.returnedChartPoints.toLocaleString("en-GB")} returned points. Exports retain the full result.
+              </HelpTip>
+            )}
           </div>
-        </>
       )}
       {applied?.view === "correlation" && result && (
         <CorrelationView data={result as Correlation} fileStem={fileStem} />
@@ -1063,12 +1058,14 @@ function CorrelationView({
         />
       </div>
       <section className="analysis-panel">
-        <h2>Aligned hourly series</h2>
-        <HelpTip label="Alignment and scaling">
-          Positive lag moves weather forward in time. “Compare shapes” puts both
-          series on a standard-deviation scale, without physical units. It
-          changes this chart only, not the correlation calculation.
-        </HelpTip>
+        <div className="analysis-title">
+          <h2>Aligned hourly series</h2>
+          <HelpTip label="Alignment and scaling" iconOnly>
+            Positive lag moves weather forward in time. “Compare shapes” puts both
+            series on a standard-deviation scale, without physical units. It
+            changes this chart only, not the correlation calculation.
+          </HelpTip>
+        </div>
         <AnalysisChart
           option={comparison}
           label="Aligned weather and energy series"
@@ -1083,11 +1080,13 @@ function CorrelationView({
         />
       </section>
       <section className="analysis-panel">
-        <h2>Centered rolling correlation</h2>
-        <p>Correlation shows association, not causation.</p>
-        <HelpTip label="Rolling window">
-          Each value uses a complete centered window.
-        </HelpTip>
+        <div className="analysis-title">
+          <h2>Centered rolling correlation</h2>
+          <HelpTip label="Rolling window" iconOnly>
+            Each value uses a complete centered window. Correlation measures
+            association, not causation.
+          </HelpTip>
+        </div>
         <AnalysisChart
           option={correlation}
           label="Sliding Pearson correlation"
@@ -1231,11 +1230,13 @@ function DecompositionView({
         />
       </section>
       <section className="analysis-panel">
-        <h2>Frequency through time</h2>
-        <HelpTip label="Reading the spectrum">
-          Brighter regions show stronger repeating behavior. Frequencies are
-          shown from 0 to 12 cycles per day.
-        </HelpTip>
+        <div className="analysis-title">
+          <h2>Frequency through time</h2>
+          <HelpTip label="Reading the spectrum" iconOnly>
+            Brighter regions show stronger repeating behavior. Frequencies are
+            shown from 0 to 12 cycles per day.
+          </HelpTip>
+        </div>
         <AnalysisChart
           option={heatmap}
           label="Energy spectrogram"
@@ -1357,12 +1358,11 @@ function QualityView({ data, fileStem }: { data: Quality; fileStem: string }) {
   );
   return (
     <>
-      <div className="diagnostics-notice">
-        <strong>Inspection candidates</strong>
-        <span>
-          These flags are statistical signals. Cold snaps, storms, and heavy
-          rain can be real observations; a flag is not a verified data fault.
-        </span>
+      <div className="analysis-actions">
+        <HelpTip label="Flag meaning" iconOnly>
+          Flags are statistical signals, not verified data faults. Extreme
+          weather can be a valid observation.
+        </HelpTip>
       </div>
       <div className="analysis-grid">
         <section className="analysis-panel">

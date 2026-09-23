@@ -6,6 +6,7 @@ import type { EChartsCoreOption } from "echarts/core";
 import { StudyError } from "@/components/study-error";
 import AnalysisChart from "@/components/analysis-chart";
 import { ExportMenu } from "@/components/export-menu";
+import { HelpTip } from "@/components/help";
 import { Select } from "@/components/ui/select";
 import { ApiError, areas, getJson, number } from "@/lib/api";
 import { downloadCsv } from "@/lib/download";
@@ -149,7 +150,7 @@ function PeerDays({ peers }: { peers: unknown }) {
     {numeric(data.excludedDstDays) != null && ` ${count(data.excludedDstDays)} daylight-saving dates were excluded.`}
   </p>;
   return <>
-    <p>{count(data.targetHours)} target hours on {text(data.targetDate) || "the selected local date"}; {count(data.excludedDstDays)} daylight-saving dates excluded from matching.</p>
+    <HelpTip label="Matching details" iconOnly>{count(data.targetHours)} target hours on {text(data.targetDate) || "the selected local date"}; {count(data.excludedDstDays)} daylight-saving dates excluded.</HelpTip>
     <div className="demand-anomalies-table-wrap" role="region" aria-label="Comparable peer days" tabIndex={0}>
       <table>
         <caption>Pre-evaluation observed peer days · context only, not confirmed normal controls</caption>
@@ -236,9 +237,8 @@ export default function DemandAnomaliesView({
   return <div className="demand-anomalies-view">
     <div className="demand-anomalies-intro">
       <div>
-
         <h2>Unusual household demand</h2>
-        <p>Compared with expected demand for the hour, season and temperature. Flags are candidates for investigation, not confirmed events.</p>
+        <HelpTip label="Flag meaning" iconOnly>Expected demand accounts for hour, season and temperature. Flags are candidates for review, not confirmed events.</HelpTip>
       </div>
       <label>Price area
         <Select aria-label="Demand anomalies price area" value={area} onChange={(event) => onAreaChange(event.target.value)}>
@@ -266,12 +266,11 @@ export default function DemandAnomaliesView({
       </div> : <>
         <section className="analysis-panel demand-anomalies-primary" aria-labelledby="anomaly-chart-title">
           <div className="demand-anomalies-heading">
-            <div><h2 id="anomaly-chart-title">Observed and expected demand</h2>
+            <div><h2 id="anomaly-chart-title">Observed and expected demand <HelpTip label="Chart interpretation" iconOnly>The shaded .5th–99.5th percentile calibration band is a screening reference, not a prediction or confidence interval. Gaps remain missing; times are UTC.</HelpTip></h2>
               <p>{chosen ? `Window around ${localTime(chosen.peakTime)} Oslo time` : "First week of the saved evaluation period"}</p></div>
           </div>
           {windowRows.length ? <AnalysisChart option={option} height={360} label={`${area} observed and expected household demand around ${chosen ? `candidate ${chosen.id}` : "the first evaluation week"}`} />
             : <div className="diagnostics-state" role="status">No hourly context is available for this selection.</div>}
-          <p className="demand-anomalies-caption">The shaded calibration residual band is a screening reference (.5th–99.5th percentiles), not a prediction or confidence interval. Gaps remain missing or unsupported. Times in the chart and CSV are UTC.</p>
           <details><summary>Hourly context and coverage status</summary>
             <div className="demand-anomalies-table-wrap" role="region" aria-label="Selected anomaly hourly context" tabIndex={0}><table>
               <thead><tr><th scope="col">UTC hour</th><th scope="col">Observed kWh</th><th scope="col">Expected kWh</th><th scope="col">Temperature °C</th><th scope="col">Score</th><th scope="col">Status</th></tr></thead>
@@ -281,15 +280,14 @@ export default function DemandAnomaliesView({
         </section>
         <div className="demand-anomalies-summary">
           <div><span>Scored hours</span><strong>{count(summary.scoredHours)}</strong><small>of {count(summary.expectedHours)} expected in the evaluation period</small></div>
-          <div><span>Flagged hours</span><strong>{count(summary.flaggedHours)}</strong><small>Unlabeled observational flags</small></div>
-          <div><span>Flag rate</span><strong>{numeric(summary.flagRate) == null ? "Unavailable" : `${formatDisplayValue(numeric(summary.flagRate)! * 100, 2)}%`}</strong><small>Of scored hours, not a false-alarm rate</small></div>
-          <div><span>Candidate episodes</span><strong>{count(summary.episodes)}</strong><small>Consecutive flagged hours</small></div>
+          <div><span>Flagged hours</span><strong>{count(summary.flaggedHours)}</strong></div>
+          <div><span>Flag rate · scored hours</span><strong>{numeric(summary.flagRate) == null ? "Unavailable" : `${formatDisplayValue(numeric(summary.flagRate)! * 100, 2)}%`}</strong></div>
+          <div><span>Candidate episodes</span><strong>{count(summary.episodes)}</strong></div>
         </div>
 
         <div className="demand-anomalies-two-col">
           <section className="analysis-panel" aria-labelledby="candidate-list-title">
-            <h2 id="candidate-list-title">Ranked candidate episodes</h2>
-            <p>Top {candidates.length} of {count(totalCandidates)} saved episodes by peak score. A score above 1 crosses the calibrated side-specific threshold. Duration counts consecutive flagged hours; selecting a row changes the chart and peer context.</p>
+            <h2 id="candidate-list-title">Ranked candidates · {candidates.length} of {count(totalCandidates)} <HelpTip label="Ranking details" iconOnly>Ranked by peak score. Scores above 1 cross the calibrated side-specific threshold; duration counts consecutive flagged hours.</HelpTip></h2>
             {candidates.length ? <div className="demand-anomalies-table-wrap" role="region" aria-label="Ranked demand anomaly candidates" tabIndex={0}>
               <table><thead><tr><th scope="col">Rank / peak (Oslo)</th><th scope="col">Direction</th><th scope="col">Peak score</th><th scope="col">Duration</th><th scope="col">Actual / expected</th><th scope="col">Temperature</th></tr></thead>
                 <tbody>{candidates.map((item, index) => <tr key={item.id} className={chosen?.id === item.id ? "is-selected" : undefined}>
@@ -304,24 +302,21 @@ export default function DemandAnomaliesView({
           </section>
           <details className="study-details">
             <summary>Comparable observed days</summary>
-            <p>Pre-evaluation peers offer hour, season and temperature context. They are historical observations, not verified normal controls.</p>
             <PeerDays peers={study.selection.peers} />
-            {chosen && <p className="demand-anomalies-caption">Selected peak: {metric(chosen.peakActual)} kWh observed, {metric(chosen.peakExpected)} kWh expected at {metric(chosen.peakTemperature)} °C.</p>}
           </details>
         </div>
         <section className="analysis-panel demand-anomalies-details" aria-labelledby="anomaly-method-title">
-          <h2 id="anomaly-method-title">Coverage and method</h2>
-          <p>Evaluation-period scoring is retrospective and uses contemporaneous temperature from one city proxy per area. It is not an operational alarm or evidence of a causal weather effect.</p>
+          <h2 id="anomaly-method-title">Coverage and method <HelpTip label="Study scope" iconOnly>Retrospective scoring uses contemporaneous temperature from one city proxy per area. It is not an operational alarm or a causal estimate.</HelpTip></h2>
           <div className="demand-anomalies-coverage">
             <div><span>Missing demand only</span><strong>{count(testStatus.missing_demand)}</strong></div>
             <div><span>Missing temperature only</span><strong>{count(testStatus.missing_temperature)}</strong></div>
             <div><span>Both inputs missing</span><strong>{count(testStatus.missing_both)}</strong></div>
             <div><span>Unsupported temperature</span><strong>{count(testStatus.unsupported_temperature)}</strong></div>
           </div>
-          <p>{count(testCoverage.scoredHours)} of {count(testCoverage.expectedHours)} expected evaluation hours were scored; {count(testCoverage.missingHours)} had missing input and {count(testCoverage.unsupportedHours)} lay outside supported temperature context. Missing and unsupported hours are coverage issues, not ordinary anomaly scores.</p>
-          <p>The expected value adds a {signedMetric(calibration.medianCorrection)} kWh median correction to the raw model fit. The calibration screening band extends {numeric(calibration.lowerWidth) == null ? "Unavailable" : `-${metric(calibration.lowerWidth)}`} kWh below and {numeric(calibration.upperWidth) == null ? "Unavailable" : `+${metric(calibration.upperWidth)}`} kWh above that corrected expectation. It uses {count(calibration.observations)} hourly calibration observations over {count(calibration.distinctDates)} dates; the target tail fraction is {numeric(calibration.tailFraction) == null ? "unavailable" : `${formatDisplayValue(numeric(calibration.tailFraction)! * 100, 1)}%`}.</p>
+          <HelpTip label="Coverage interpretation" iconOnly>Missing and unsupported hours are coverage gaps, not anomaly scores.</HelpTip>
           <details><summary>Model selection, calendar thresholds and study periods</summary>
             <div className="demand-anomalies-method">
+              <p>The expected value adds a {signedMetric(calibration.medianCorrection)} kWh median correction to the raw model fit. The calibration screening band extends {numeric(calibration.lowerWidth) == null ? "Unavailable" : `-${metric(calibration.lowerWidth)}`} kWh below and {numeric(calibration.upperWidth) == null ? "Unavailable" : `+${metric(calibration.upperWidth)}`} kWh above that corrected expectation. It uses {count(calibration.observations)} hourly calibration observations over {count(calibration.distinctDates)} dates; the target tail fraction is {numeric(calibration.tailFraction) == null ? "unavailable" : `${formatDisplayValue(numeric(calibration.tailFraction)! * 100, 1)}%`}.</p>
               <p>Selected expected-demand model: <strong>{selected.selectedModel || "Unavailable"}</strong>. Model choice precedes threshold calibration and the later evaluation period.</p>
               <h3>Validation model comparison</h3>
               <p>{text(modelSelection.rule)} {numeric(modelSelection.selectedSplineKnots) != null ? `Selected spline knots: ${count(modelSelection.selectedSplineKnots)}.` : ""}</p>

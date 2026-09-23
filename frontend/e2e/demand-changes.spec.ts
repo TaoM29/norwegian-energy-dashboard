@@ -62,12 +62,15 @@ test("saved change view shows one retrospective split and keeps detail optional"
   await expect(page.getByText("89 of 90 complete UTC days")).toBeVisible();
   await expect(page.getByText("Strongest exploratory split near 15 Feb 2025")).toBeVisible();
   await expect(page.getByText("+8 kWh", { exact: true })).toBeVisible();
-  await expect(page.getByText(/41 of 200 runs were flagged \(20.5%\)/)).toBeVisible();
+  await expect(page.getByText(/41 of 200 no-change runs flagged \(20.5%\)/)).toBeVisible();
   await expect(page.getByRole("img", { name: /NO1 2025 daily mean household-demand residuals/ })).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Price area" })).toHaveCount(0);
   await page.getByRole("button", { name: "Before & after" }).click();
   await expect(page.getByRole("img", { name: /before and after distributions/ })).toBeVisible();
-  await expect(page.getByText(/Percentages account for unequal period lengths/)).toBeVisible();
+  const chartHelp = page.getByRole("button", { name: "About Chart interpretation" });
+  await chartHelp.click();
+  await expect(page.getByRole("dialog", { name: "Chart interpretation", exact: true })).toContainText("Percentages account for unequal period lengths");
+  await chartHelp.click();
   await expect(page.getByText(/The dashed split line is/)).toHaveCount(0);
   await page.getByText("Before and after estimates").click();
   await expect(page.getByRole("region", { name: "Demand-change before and after estimates" })).toContainText("2025-02-15");
@@ -84,7 +87,7 @@ test("below-threshold split is labeled unconfirmed and mobile view stays within 
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto("/diagnostics?view=demand_changes");
   await expect(page.getByText("Best split near 15 Feb 2025 remains unconfirmed")).toBeVisible();
-  await expect(page.getByText(/did not exceed the saved bootstrap threshold/)).toBeVisible();
+  await expect(page.getByText(/Below the saved bootstrap threshold/)).toBeVisible();
   await page.getByRole("button", { name: "Before & after" }).click();
   await expect(page.getByRole("img", { name: /before and after distributions/ })).toBeVisible();
   const details = page.locator("summary").filter({ hasText: "Daily values and coverage" });
@@ -135,7 +138,7 @@ test("loading resolves to an inconclusive saved scan when no split is eligible",
   await expect(page.getByRole("status").filter({ hasText: "Loading saved demand-change study" })).toBeVisible();
   release();
   await expect(page.getByText("This study is inconclusive")).toBeVisible();
-  await expect(page.getByText(/No split line or before\/after estimate is shown/)).toBeVisible();
+  await expect(page.getByText(/Coverage or detection requirements were not met/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Before & after" })).toHaveCount(0);
 });
 

@@ -39,32 +39,17 @@
   font-size: 22px;
   font-weight: 550;
 }
-.diagnostics-notice {
-  display: flex;
-  gap: 12px;
-  padding: 17px 20px;
-  margin-bottom: 24px;
-  border-left: 4px solid var(--warning);
-  border-radius: var(--control-radius, 10px);
-  background: var(--warning-soft);
-  line-height: 1.55;
-}
-.diagnostics-notice span {
-  color: var(--warning);
-}
 .diagnostics-coverage {
-  display: flex;
-  gap: 9px;
-  align-items: baseline;
-  padding: 14px 17px;
-  margin-bottom: 16px;
-  border-radius: var(--control-radius, 10px);
-  background: var(--surface-muted);
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 0 4px;
   color: var(--text-muted);
-  line-height: 1.55;
+  font-size: 12px;
 }
 .diagnostics-coverage strong {
-  color: var(--text);
+  color: var(--warning);
+  font-size: 12px;
   white-space: nowrap;
 }
 .diagnostics-table-wrap {
@@ -90,11 +75,6 @@
   .diagnostics-tabs button {
     padding-inline: 8px;
     white-space: normal;
-  }
-  .diagnostics-notice,
-  .diagnostics-coverage {
-    align-items: flex-start;
-    flex-direction: column;
   }
 }
 .method-settings-fields {

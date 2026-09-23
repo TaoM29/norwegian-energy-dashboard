@@ -96,8 +96,9 @@ test("saved demand anomalies keep area and candidate URL state and distinguish c
   await expect(page.getByRole("heading", { name: "Unusual household demand" })).toBeVisible();
   await expect(page.getByText("Fixture demonstration")).toBeVisible();
   await expect(page.locator(".demand-anomalies-summary").getByText("8,500", { exact: true })).toBeVisible();
-  await expect(page.getByText("Unlabeled observational flags")).toBeVisible();
-  await expect(page.getByText(/Top 20 of 24 saved episodes/)).toBeVisible();
+  const flaggedHours = page.locator(".demand-anomalies-summary > div").filter({ hasText: "Flagged hours" });
+  await expect(flaggedHours.getByText("75", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ranked candidates · 20 of 24" })).toBeVisible();
   const ranking = page.getByRole("region", { name: "Ranked demand anomaly candidates" });
   await expect(ranking.getByRole("row")).toHaveCount(21);
   await ranking.getByRole("button", { name: /^2\. 8 Jan 2025/ }).click();
@@ -112,7 +113,10 @@ test("saved demand anomalies keep area and candidate URL state and distinguish c
   await expect(page.getByRole("region", { name: "Comparable peer days" })).toContainText("2024-01-08");
   await page.getByText("Hourly peer and selected-day observations").click();
   await expect(page.getByRole("region", { name: "2024-01-08 hourly observations" }).getByRole("cell", { name: "110", exact: true })).toBeVisible();
-  await expect(page.getByText(/not a prediction or confidence interval/)).toBeVisible();
+  const chartHelp = page.getByRole("button", { name: "About Chart interpretation" });
+  await chartHelp.click();
+  await expect(page.getByRole("dialog", { name: "Chart interpretation", exact: true })).toContainText("not a prediction or confidence interval");
+  await chartHelp.click();
   await expect(page.getByRole("button", { name: "Show reference window" })).toHaveCount(0);
   await page.getByText("Hourly context and coverage status").click();
   await expect(page.getByRole("region", { name: "Selected anomaly hourly context" })).toContainText("missing demand");

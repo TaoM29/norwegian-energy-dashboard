@@ -6,6 +6,7 @@ import type { EChartsCoreOption } from "echarts/core";
 import { StudyError } from "@/components/study-error";
 import AnalysisChart from "@/components/analysis-chart";
 import { ExportMenu } from "@/components/export-menu";
+import { HelpTip } from "@/components/help";
 import { ApiError, getJson, number } from "@/lib/api";
 import { downloadCsv } from "@/lib/download";
 import { displayJson, formatDisplayValue } from "@/lib/number-format";
@@ -211,9 +212,7 @@ export default function DemandChangesView() {
 
   return <div className="demand-changes-view">
     <div className="demand-changes-intro">
-
       <h2>Persistent demand changes</h2>
-      <p>NO1 household demand after calendar and temperature adjustment. A saved retrospective study.</p>
     </div>
     {loading && <div className="diagnostics-state" role="status">Loading saved demand-change study…</div>}
     {error && <>
@@ -236,23 +235,22 @@ export default function DemandChangesView() {
           <span className="demand-changes-label">2025 finding · {metric(coverage?.completeDays, 0)} of {metric(coverage?.expectedDays, 0)} complete UTC days</span>
           <strong>{inconclusive ? "This study is inconclusive" : candidate && detected ? `Strongest exploratory split near ${dayLabel(candidate.date)}` : candidate ? `Best split near ${dayLabel(candidate.date)} remains unconfirmed` : "No eligible change split"}</strong>
           <p>{inconclusive
-            ? "The saved evaluation did not meet its coverage or detection requirements. Inspect coverage and method below before interpreting the timeline."
+            ? "Coverage or detection requirements were not met."
             : candidate && detected
-              ? "This split crosses the exploratory bootstrap reference. It does not confirm a structural break or its cause."
-              : "The strongest eligible split did not exceed the saved bootstrap threshold. It is shown for context, not as a detected change. This does not establish that demand was unchanged."}</p>
-          {(finite(worstFalseAlarm?.falseAlarmRate ?? worstFalseAlarm?.detectionRate) ?? 0) > .05 && <p className="demand-changes-control-warning">Calibration limit: {metric(worstFalseAlarm?.detections, 0)} of {metric(worstFalseAlarm?.replications, 0)} runs were flagged ({formatDisplayValue((finite(worstFalseAlarm?.falseAlarmRate ?? worstFalseAlarm?.detectionRate) ?? 0) * 100, 1)}%) under strong serial dependence with no actual change. This exceeds the nominal 5% target.</p>}
-          {sensitive && <p>Sensitivity checks change the date or remove the threshold crossing. The finding depends on the resampling, coverage and baseline assumptions.</p>}
+              ? "Crosses the exploratory bootstrap reference; not a confirmed structural break."
+              : "Below the saved bootstrap threshold; no change is confirmed."}</p>
+          {(finite(worstFalseAlarm?.falseAlarmRate ?? worstFalseAlarm?.detectionRate) ?? 0) > .05 && <p className="demand-changes-control-warning">Calibration limit: {metric(worstFalseAlarm?.detections, 0)} of {metric(worstFalseAlarm?.replications, 0)} no-change runs flagged ({formatDisplayValue((finite(worstFalseAlarm?.falseAlarmRate ?? worstFalseAlarm?.detectionRate) ?? 0) * 100, 1)}%).</p>}
+          {sensitive && <p>Sensitivity checks change or remove this finding.</p>}
         </div>
         {candidate && !inconclusive && <div className="demand-changes-effect">
           <span className="demand-changes-label">After − before</span>
           <strong>{signed(candidate.deltaResidualKwh)} kWh</strong>
-          <small>Mean hourly residual · descriptive {detected ? "after selection" : "unconfirmed split"}</small>
+          <small>Mean hourly residual</small>
         </div>}
       </section>
       <section className="analysis-panel demand-changes-primary" aria-labelledby="demand-changes-chart-title">
         <div className="demand-changes-heading">
-          <div><h2 id="demand-changes-chart-title">{chart === "timeline" ? "Daily demand difference" : "Before and after distributions"}</h2>
-            <p>{chart === "timeline" ? "Observed minus expected · daily mean of complete UTC days · kWh" : "Share of days in each residual range · common bins · unequal period lengths"}</p></div>
+          <div><h2 id="demand-changes-chart-title">{chart === "timeline" ? "Daily demand difference" : "Before and after distributions"} <HelpTip label="Chart interpretation" iconOnly>{chart === "distribution" ? "Percentages account for unequal period lengths. The distributions describe the selected split without establishing cause or certainty." : <>Values are daily mean observed minus expected demand for complete UTC days. Gaps are incomplete days, not zero residuals. {candidate ? `The split line is ${detected ? "an exploratory candidate" : "unconfirmed"}; before/after differences are descriptive.` : "No split is shown without an eligible candidate."}</>}</HelpTip></h2></div>
           {candidate && !inconclusive && <div className="demand-changes-chart-choices" aria-label="Change chart view">
             <button type="button" aria-pressed={chart === "timeline"} onClick={() => setChart("timeline")}>Timeline</button>
             <button type="button" aria-pressed={chart === "distribution"} onClick={() => setChart("distribution")}>Before & after</button>
@@ -263,10 +261,7 @@ export default function DemandChangesView() {
           height={350}
           label={chart === "distribution" && candidate ? "NO1 before and after distributions of 2025 daily mean residuals" : "NO1 2025 daily mean household-demand residuals with zero baseline and possible change"}
         /> : <div className="diagnostics-state" role="status">No saved daily observations are available for the 2025 evaluation.</div>}
-        <p className="demand-changes-caption">{chart === "distribution"
-          ? "Percentages account for unequal period lengths. These distributions describe the selected split; they do not establish its cause or certainty."
-          : <>Gaps are incomplete days, not zero residuals. {candidate ? `The dashed split line is ${detected ? "a threshold-crossing exploratory candidate" : "unconfirmed"}. Before/after differences are descriptive; no confidence interval or causal claim is supplied.` : "No split line or before/after estimate is shown without an eligible candidate."}</>}</p>
-        {incompleteDates.length > 0 && <p className="demand-changes-caption">Incomplete UTC days: {incompleteDates.length <= 6 ? incompleteDates.join(", ") : `${incompleteDates.slice(0, 6).join(", ")} and ${incompleteDates.length - 6} more`}. Their missing or unsupported hours are shown in the daily table.</p>}
+        {incompleteDates.length > 0 && <p className="demand-changes-caption">{incompleteDates.length} incomplete UTC {incompleteDates.length === 1 ? "day" : "days"} · see daily values</p>}
         {candidate && !inconclusive && <details><summary>Before and after estimates</summary>
           <div className="demand-changes-table-wrap" role="region" aria-label="Demand-change before and after estimates" tabIndex={0}>
             <table><thead><tr><th scope="col">Period (UTC)</th><th scope="col">Complete days</th><th scope="col">Mean hourly actual kWh</th><th scope="col">Mean hourly expected kWh</th><th scope="col">Mean hourly residual kWh</th><th scope="col">Median daily residual kWh</th><th scope="col">Middle 50% kWh</th></tr></thead>
@@ -285,9 +280,7 @@ export default function DemandChangesView() {
           </div>
         </details>
       </section>
-      <section className="analysis-panel" aria-labelledby="demand-changes-method-title">
-        <h2 id="demand-changes-method-title">How to read this study</h2>
-        <p>One retrospective split, with at least 28 complete days on each side. Review the assumptions and sensitivity checks before interpreting it.</p>
+      <section className="analysis-panel" aria-label="Demand-change method">
         <details><summary>Detection policy and validation</summary>
           <div className="demand-changes-detail-copy">
             <p>Selected split score: <strong>{metric(study.primary.score, 2)}</strong>. 95th percentile of bootstrap maxima: <strong>{metric(study.primary.thresholdApprox95, 2)}</strong>. Bootstrap exceedance estimate: <strong>{formatDisplayValue(study.primary.pValue, 3)}</strong>. Eligible splits: <strong>{metric(study.primary.eligibleSplits, 0)}</strong>.</p>
@@ -305,7 +298,6 @@ export default function DemandChangesView() {
           </div>
         </details>
         <details><summary>Sensitivity and coverage checks</summary>
-          <div className="demand-changes-detail-copy"><p>Gap rules, baseline revisions, and alternate settings may shift or remove a candidate. These saved checks are supporting diagnostics, not independent confirmations.</p></div>
           <div className="demand-changes-table-wrap" role="region" aria-label="Demand-change sensitivity checks" tabIndex={0}>
             <table><thead><tr><th scope="col">Check</th><th scope="col">Selected date</th><th scope="col">Split score</th><th scope="col">Bootstrap exceedance</th><th scope="col">After − before kWh</th></tr></thead>
               <tbody>{study.sensitivities.map((item, index) => <tr key={`${value(item.id)}-${index}`}><th scope="row">{value(item.label) || value(item.id) || `Check ${index + 1}`}</th><td>{value(item.candidateDate) ? `${value(item.candidateDate)}${item.detected ? "" : " · unconfirmed"}` : "None"}</td><td>{metric(item.score, 2)}</td><td>{formatDisplayValue(item.pValue, 3)}</td><td>{signed(item.deltaResidualKwh)}</td></tr>)}</tbody>
