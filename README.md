@@ -1,6 +1,6 @@
-# Norwegian Energy Dashboard
+# Norway Energy Atlas
 
-Norwegian energy and weather analytics, delivered as a Next.js dashboard with a FastAPI backend.
+Production, demand & weather analytics, delivered as a Next.js dashboard with a FastAPI backend.
 
 The current application covers energy exploration, weather, regional maps, snow drift, diagnostics, and forecast evaluation. The former Streamlit app is retired.
 

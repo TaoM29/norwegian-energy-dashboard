@@ -5,9 +5,9 @@ import { DataModeBanner } from "@/components/data-mode-banner";
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
-  title: "Norwegian Energy Dashboard",
+  title: "Norway Energy Atlas",
   description:
-    "Explore Norwegian energy, weather, regional patterns and analytical diagnostics.",
+    "Explore energy production, demand and weather across Norway.",
 };
 
 const themeScript = `

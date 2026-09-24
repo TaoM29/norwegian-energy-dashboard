@@ -99,14 +99,14 @@ export function AppNavigation() {
               event.currentTarget.href = dashboardDestination("/");
             }}
             className="site-brand"
-            aria-label="Norwegian energy home"
+            aria-label="Norway Energy Atlas home"
           >
             <span className="site-mark">
               <Waves size={20} strokeWidth={1.5} aria-hidden="true" />
             </span>
             <span>
-              norwegian energy
-              <span className="site-subtitle">Energy & weather</span>
+              Norway Energy Atlas
+              <span className="site-subtitle">Production, demand &amp; weather</span>
             </span>
           </a>
 

@@ -24,7 +24,7 @@ from backend.demand_changes import router as demand_changes_router
 DEFAULT_DATABASE = Path(__file__).resolve().parents[1] / "data" / "energy.sqlite"
 DATABASE_ENV = "ENERGY_DATABASE"
 
-app = FastAPI(title="Norwegian Energy Dashboard API", version="0.1.0")
+app = FastAPI(title="Norway Energy Atlas API", version="0.1.0")
 app.include_router(sensitivity_router)
 app.include_router(demand_anomalies_router)
 app.include_router(demand_peaks_router)
