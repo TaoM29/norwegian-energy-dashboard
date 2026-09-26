@@ -678,6 +678,7 @@ export default function DiagnosticsWorkbench() {
         <label>
           Price area
           <Select
+            priceArea
             aria-label="Price area"
             value={area}
             onChange={(event) => setArea(event.target.value)}

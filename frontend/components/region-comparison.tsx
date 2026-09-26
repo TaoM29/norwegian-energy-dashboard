@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowDownWideNarrow, ArrowRight, MapPin, X } from "lucide-react";
 import { areas, getJson, number, shiftDay, type Overview } from "@/lib/api";
 import "./region-comparison.css";
+import "./price-area.css";
 
 export function RegionComparison({
   overview,

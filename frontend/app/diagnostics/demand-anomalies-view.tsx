@@ -242,7 +242,7 @@ export default function DemandAnomaliesView({
         <HelpTip label="Flag meaning">Expected demand accounts for hour, season and temperature. Flags are candidates for review, not confirmed events.</HelpTip>
       </div>
       <label>Price area
-        <Select aria-label="Demand anomalies price area" value={area} onChange={(event) => onAreaChange(event.target.value)}>
+        <Select priceArea aria-label="Demand anomalies price area" value={area} onChange={(event) => onAreaChange(event.target.value)}>
           {Object.entries(areas).map(([code, name]) => <option key={code} value={code}>{code} · {name}</option>)}
         </Select>
       </label>

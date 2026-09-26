@@ -520,6 +520,7 @@ export default function ExploreClient() {
           <label>
             Price area
             <Select
+              priceArea
               aria-label="Price area"
               value={draft.area}
               onChange={(event) => update({ area: event.target.value })}

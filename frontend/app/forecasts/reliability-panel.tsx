@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatDisplayValue } from "@/lib/number-format";
+import { Select } from "@/components/ui/select";
 import styles from "./reliability-panel.module.css";
 
 type RecordValue = Record<string, unknown>;
@@ -227,9 +228,9 @@ export function ReliabilityPanel({
           )}
           {selectedArea && <label className={styles.areaSelect}>
             Residual area
-            <select value={selectedArea} onChange={(event) => setRequestedArea(event.target.value)}>
+            <Select priceArea aria-label="Residual area" value={selectedArea} onChange={(event) => setRequestedArea(event.target.value)}>
               {residualAreas.map((area) => <option key={area} value={area}>{area}</option>)}
-            </select>
+            </Select>
           </label>}
           <p>Sampling only some forecast dates can leave daily or weekly residual lags without enough pairs to estimate a correlation.</p>
           <div className={styles.tableWrap} role="region" aria-label="Residual dependence diagnostics" tabIndex={0}>

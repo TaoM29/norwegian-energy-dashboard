@@ -210,7 +210,7 @@ export default function SensitivityView({ area, onAreaChange }: { area: string; 
         <p>Compare adjusted household demand across the observed temperature range.</p>
       </div>
       <label>Price area
-        <Select aria-label="Sensitivity price area" value={area} onChange={(event) => onAreaChange(event.target.value)}>
+        <Select priceArea aria-label="Sensitivity price area" value={area} onChange={(event) => onAreaChange(event.target.value)}>
           {Object.entries(areas).map(([code, name]) => <option key={code} value={code}>{code} · {name}</option>)}
         </Select>
       </label>

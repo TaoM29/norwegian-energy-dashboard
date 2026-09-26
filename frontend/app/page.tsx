@@ -254,7 +254,7 @@ export default function Page() {
           <section className="filterbar" aria-label="Overview filters">
             <div className="area-filter">
               <label className="field-label" htmlFor="overview-area">Price area</label>
-              <Select id="overview-area" aria-label="Price area" value={filters?.area || "NO1"} onChange={(event) => draft && apply({ ...draft, area: event.target.value })} disabled={!draft}>
+              <Select priceArea id="overview-area" aria-label="Price area" value={filters?.area || "NO1"} onChange={(event) => draft && apply({ ...draft, area: event.target.value })} disabled={!draft}>
                 {Object.entries(areas).map(([area, label]) => <option key={area} value={area}>{area} · {label}</option>)}
               </Select>
             </div>

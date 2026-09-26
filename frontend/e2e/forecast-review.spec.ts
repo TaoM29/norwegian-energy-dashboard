@@ -216,7 +216,8 @@ test("exploratory reliability stays scoped to its fixed study cohort and older r
   await expect(page.getByText(/pools all areas and matched dates/)).toBeVisible();
   const diagnostics = page.getByRole("region", { name: "Residual dependence diagnostics" });
   await expect(diagnostics).toContainText("0.25");
-  await page.getByRole("combobox", { name: "Residual area" }).selectOption("NO2");
+  await page.getByRole("combobox", { name: "Residual area" }).click();
+  await page.getByRole("option", { name: "NO2", exact: true }).click();
   await expect(diagnostics).toContainText("0.45");
   await expect(diagnostics).not.toContainText("0.25");
   await page.getByRole("combobox", { name: "Prepared forecast result" }).click();

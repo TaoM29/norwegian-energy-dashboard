@@ -1399,6 +1399,7 @@ export default function ForecastsClient() {
               <label>
                 Area
                 <Select
+                  priceArea
                   aria-label="Forecast price area"
                   value={view.area}
                   onChange={(event) => updateView({ area: event.target.value })}
@@ -2501,6 +2502,7 @@ function SarimaxForm({
         <label>
           Area
           <Select
+            priceArea
             aria-label="SARIMAX price area"
             value={value.area}
             onChange={(event) =>
