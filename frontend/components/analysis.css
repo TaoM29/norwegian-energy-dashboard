@@ -7,8 +7,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: end;
-  gap: 14px;
-  padding: 18px 20px;
+  gap: 20px;
+  padding: 22px 24px;
   border: 1px solid var(--border);
   border-radius: var(--panel-radius, 16px);
   background: var(--surface);
@@ -38,15 +38,15 @@
 .analysis-controls input[type="checkbox"] {
   accent-color: var(--accent);
 }
-.analysis-controls button,
-.analysis-panel > button,
-.analysis-actions button {
+.analysis-controls button:where(:not(.help-trigger, .modern-select, .date-range-trigger)),
+.analysis-panel > button:where(:not(.help-trigger)),
+.analysis-actions button:where(:not(.help-trigger)) {
   min-height: 40px;
   padding: 7px 13px;
   border: 1px solid var(--border);
   border-radius: var(--control-radius, 10px);
-  background: var(--surface-muted);
-  color: var(--accent);
+  background: var(--surface);
+  color: var(--text);
   box-shadow: var(--control-shadow);
 }
 .analysis-controls button[type="submit"] {
@@ -61,12 +61,12 @@
 }
 .analysis-panel {
   min-width: 0;
-  padding: 22px 24px;
+  padding: 26px 28px;
   border: 1px solid var(--border);
   border-radius: var(--panel-radius, 16px);
   background: var(--surface);
   box-shadow: var(--panel-shadow, none);
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 .analysis-panel h2 {
   margin-bottom: 12px;
@@ -98,8 +98,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  margin: 11px 0;
+  gap: 12px;
+  margin: 20px 0;
 }
 .analysis-chart {
   min-width: 0;
@@ -146,7 +146,7 @@
   padding: 7px 12px;
   border: 1px solid var(--border);
   border-radius: var(--control-radius, 10px);
-  background: var(--surface-muted);
+  background: var(--surface);
   color: var(--text);
   box-shadow: var(--control-shadow);
   font-size: 13px;
@@ -182,7 +182,8 @@
 }
 @media (max-width: 680px) {
   .analysis-main .filter-disclosure > summary,
-  .analysis-controls > button {
+  .analysis-controls > button,
+  .analysis-actions > button {
     min-height: 44px;
   }
 }
@@ -206,14 +207,39 @@
     grid-template-columns: 1fr;
   }
   .analysis-panel {
-    padding: 18px;
+    padding: 20px;
   }
   .analysis-controls {
     padding: 16px;
-    gap: 12px;
+    gap: 16px;
   }
   .analysis-controls label {
     max-width: 100%;
+  }
+}
+
+@media (max-width: 540px) {
+  .analysis-metrics > * {
+    flex-basis: 100%;
+    min-width: 0;
+  }
+  .analysis-controls > label,
+  .analysis-controls > .date-range-field {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .analysis-controls > button[type="submit"] {
+    width: 100%;
+    margin-top: 4px;
+  }
+  .analysis-controls input:not([type="checkbox"]):not([type="range"]),
+  .analysis-controls select {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .analysis-actions button {
+    white-space: normal;
+    text-align: start;
   }
 }
 

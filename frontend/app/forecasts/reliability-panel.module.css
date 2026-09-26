@@ -1,6 +1,6 @@
 .panel {
   margin-bottom: 20px;
-  padding: 20px 22px;
+  padding: 24px;
   border: 1px solid var(--border);
   border-radius: var(--panel-radius, 16px);
   background: var(--surface);
@@ -12,6 +12,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+  margin-bottom: 18px;
 }
 
 .heading h2 {
@@ -29,7 +30,7 @@
 }
 
 .protocol {
-  padding: 7px 9px;
+  padding: 8px 10px;
   border-radius: 8px;
   background: var(--surface-muted);
   color: var(--text-muted);
@@ -63,8 +64,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 12px 14px;
-  background: var(--surface-muted);
+  padding: 14px 16px;
+  background: color-mix(in srgb, var(--surface-muted) 84%, var(--surface));
 }
 
 .support span {
@@ -80,7 +81,9 @@
 .tableWrap {
   max-width: 100%;
   overflow-x: auto;
-  margin-top: 16px;
+  margin-top: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
 }
 
 .tableWrap:focus-visible,
@@ -99,7 +102,7 @@
 .details .supportTable td:nth-child(2) { text-align: right; }
 
 .tableWrap caption {
-  padding: 0 0 9px;
+  padding: 12px 14px;
   color: var(--text-muted);
   font-size: 12px;
   text-align: left;
@@ -107,7 +110,7 @@
 
 .tableWrap th,
 .tableWrap td {
-  padding: 10px 12px;
+  padding: 11px 13px;
   border-bottom: 1px solid var(--surface-muted);
   font-size: 13px;
   text-align: right;
@@ -122,6 +125,7 @@
 }
 
 .tableWrap thead th {
+  background: color-mix(in srgb, var(--accent) 3%, var(--surface));
   color: var(--text-muted);
   font-size: 12px;
   line-height: 1.4;
@@ -136,18 +140,23 @@
 }
 
 .details {
-  border-top: 1px solid var(--border);
-  padding-top: 12px;
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--control-radius, 10px);
 }
 
 .details > summary {
+  display: list-item;
+  list-style-position: inside;
+  min-height: 44px;
   width: fit-content;
+  padding: 10px 14px;
   cursor: pointer;
   font-size: 12px;
   font-weight: 650;
 }
 
-.detailsBody { padding-top: 4px; }
+.detailsBody { padding: 2px 14px 14px; border-top: 1px solid var(--border); }
 
 .areaSelect {
   display: flex;
@@ -161,8 +170,8 @@
 
 .areaSelect select {
   min-width: 110px;
-  min-height: 36px;
-  padding: 6px 10px;
+  min-height: 44px;
+  padding: 8px 32px 8px 11px;
   border: 1px solid var(--border);
   border-radius: var(--control-radius, 10px);
   background: var(--surface);
@@ -175,7 +184,8 @@
 }
 
 @media (max-width: 620px) {
-  .panel { padding: 16px; }
+  .panel { padding: 18px 16px; }
   .heading { flex-direction: column; gap: 8px; }
   .support { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .areaSelect select { font-size: 16px; }
 }

@@ -40,7 +40,7 @@ export function HelpTip({
         <button
           ref={trigger}
           type="button"
-          className="help-trigger"
+          className={`help-trigger${iconOnly ? " help-trigger--icon" : ""}`}
           aria-label={`About ${label}`}
           onPointerEnter={(event) => {
             if (event.pointerType === "mouse") show();

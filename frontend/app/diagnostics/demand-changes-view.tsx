@@ -213,6 +213,7 @@ export default function DemandChangesView() {
   return <div className="demand-changes-view">
     <div className="demand-changes-intro">
       <h2>Persistent demand changes</h2>
+      <p>Review the saved retrospective scan for sustained shifts in NO1 household demand.</p>
     </div>
     {loading && <div className="diagnostics-state" role="status">Loading saved demand-change study…</div>}
     {error && <>

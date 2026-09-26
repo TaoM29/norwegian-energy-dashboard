@@ -263,7 +263,7 @@ function baseChart(yName: string): EChartsCoreOption {
   return {
     animation: false,
     color: colours,
-    grid: { left: 72, right: 22, top: 62, bottom: 66 },
+    grid: { left: 72, right: 22, top: 62, bottom: 82 },
     legend: { top: 5, type: "scroll" },
     tooltip: { trigger: "axis" },
     dataZoom: [{ type: "inside" }, { type: "slider", height: 20, bottom: 10 }],

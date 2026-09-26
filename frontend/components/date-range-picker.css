@@ -21,12 +21,12 @@ button.date-range-trigger {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: var(--control-radius);
-  background: var(--surface-muted);
+  background: var(--surface);
   color: var(--text);
   padding: 7px 12px;
   font-size: 12px;
   box-shadow: var(--control-shadow);
-  white-space: nowrap;
+  text-align: start;
 }
 .date-range-trigger svg {
   flex-shrink: 0;
@@ -67,7 +67,7 @@ button.date-range-trigger {
 .date-range-presets {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 10px;
   margin-bottom: 16px;
 }
 .date-range-popover button {

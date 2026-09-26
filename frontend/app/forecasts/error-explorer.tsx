@@ -284,10 +284,12 @@ export function ErrorExplorer({ metrics, predictions, failures, coverage, config
       </div>
     </details>}
     <div className={styles.controls}>
-      <label htmlFor="error-explorer-view">Error explorer view</label>
-      <select id="error-explorer-view" value={view} onChange={(event) => onViewChange(event.target.value as ErrorExplorerView)}>
-        {(Object.keys(viewLabels) as ErrorExplorerView[]).map((item) => <option key={item} value={item}>{viewLabels[item]}</option>)}
-      </select>
+      <label htmlFor="error-explorer-view">
+        Error explorer view
+        <select id="error-explorer-view" value={view} onChange={(event) => onViewChange(event.target.value as ErrorExplorerView)}>
+          {(Object.keys(viewLabels) as ErrorExplorerView[]).map((item) => <option key={item} value={item}>{viewLabels[item]}</option>)}
+        </select>
+      </label>
     </div>
     {view === "area" ? <>
       <div className={styles.tableWrap} role="region" aria-label="Forecast error matrix" tabIndex={0}>
@@ -311,10 +313,12 @@ export function ErrorExplorer({ metrics, predictions, failures, coverage, config
     </> : <>
       {view === "horizon" && <>
         <div className={styles.controls}>
-          <label htmlFor="error-explorer-measure">Horizon measure</label>
-          <select id="error-explorer-measure" value={measure} onChange={(event) => onMeasureChange(event.target.value as ErrorExplorerMeasure)}>
-            <option value="error">Error (MAE)</option><option value="coverage">Observed coverage</option>
-          </select>
+          <label htmlFor="error-explorer-measure">
+            Horizon measure
+            <select id="error-explorer-measure" value={measure} onChange={(event) => onMeasureChange(event.target.value as ErrorExplorerMeasure)}>
+              <option value="error">Error (MAE)</option><option value="coverage">Observed coverage</option>
+            </select>
+          </label>
         </div>
         {measure === "coverage" && <p className={styles.note}>Dotted line: nominal {coverageText(nominal)} target. Gaps: unavailable metrics.</p>}
         {rows.length > 0 && <AnalysisChart option={horizonChart} imageOption={{ title: { left: 20, top: 12, text: `${measure === "coverage" ? "Observed coverage" : "MAE"} by forecast hour`, subtext: `Saved matched cohort · ${resultId}` }, legend: { type: "plain", left: 20, right: 20, top: 62, textStyle: { fontSize: 11 } }, grid: { left: 58, right: 22, top: 110, bottom: 48, containLabel: true } }} label={`${measure === "coverage" ? "Observed interval coverage" : "Forecast MAE"} by hours ahead for saved matched cohort ${resultId}`} height={360} />}

@@ -11,7 +11,17 @@
   text-underline-offset: 3px;
 }
 .sourceLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 20px;
   line-height: 1.65;
+}
+.sourceLinks a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  font-size: 13px;
 }
 .docDisclosure,
 .sourceDetails {
@@ -28,7 +38,7 @@
   font-weight: 650;
 }
 .docDisclosure > summary {
-  padding: 17px 0;
+  padding: 22px 0;
 }
 .sourceDetails > summary {
   width: fit-content;
@@ -74,6 +84,7 @@
   padding: 24px;
   border: 1px solid var(--border);
   border-radius: var(--control-radius);
+  background: color-mix(in srgb, var(--accent-soft) 35%, var(--surface));
 }
 .content .modelCard h3,
 .content .modelNotes h3 {

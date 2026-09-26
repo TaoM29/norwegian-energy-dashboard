@@ -563,6 +563,21 @@ export default function RegionalPage() {
         inRange: { color: ["#e3efe9", "#7fb5a1", "#176b59"] },
         textStyle: { color: "#607069", fontSize: 10 },
       },
+      media: [
+        {
+          query: { maxWidth: 540 },
+          option: {
+            visualMap: { orient: "horizontal", left: "center", bottom: 0, itemWidth: 10, itemHeight: 80 },
+            series: [{ left: 8, right: 8, top: 10, bottom: 60 }],
+          },
+        },
+        {
+          option: {
+            visualMap: { orient: "vertical", left: 5, bottom: 5, itemWidth: 20, itemHeight: 140 },
+            series: [{ left: "center", right: null, top: "center", bottom: null }],
+          },
+        },
+      ],
       series: [
         {
           type: "map",
@@ -1049,7 +1064,7 @@ export default function RegionalPage() {
             <AnalysisChart
               option={mapOption}
               label={`NO1 to NO5 ${filters.kind} mean map with selected point at ${filters.latitude}, ${filters.longitude}`}
-              height={500}
+              height="clamp(300px, 38vw, 500px)"
               onReady={attachMap}
               exports={
                 summary ? (

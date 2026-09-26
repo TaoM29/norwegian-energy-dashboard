@@ -65,9 +65,12 @@ export default function Methods() {
           ) : (
             <p role="status">{error || "Checking the published snapshot…"}</p>
           )}
-          <p className={styles.sourceLinks}>
-            <a href="https://api.elhub.no/">Elhub energy</a> · <a href="https://open-meteo.com/en/docs/historical-weather-api">Open-Meteo weather</a> · <a href="https://github.com/TaoM29/norwegian-energy-dashboard/blob/main/docs/PHASE4_VALIDATION.md">Forecast validation</a> · <a href="https://github.com/TaoM29/norwegian-energy-dashboard">Source code</a>
-          </p>
+          <nav className={styles.sourceLinks} aria-label="Data sources and evidence">
+            <a href="https://api.elhub.no/">Elhub energy</a>
+            <a href="https://open-meteo.com/en/docs/historical-weather-api">Open-Meteo weather</a>
+            <a href="https://github.com/TaoM29/norwegian-energy-dashboard/blob/main/docs/PHASE4_VALIDATION.md">Forecast validation</a>
+            <a href="https://github.com/TaoM29/norwegian-energy-dashboard">Source code</a>
+          </nav>
           <details className={styles.sourceDetails}>
             <summary>Sources & units</summary>
           <p>

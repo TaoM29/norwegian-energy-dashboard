@@ -1,5 +1,5 @@
 .region-comparison {
-  margin: 0 0 24px;
+  margin: 24px 0;
   border: 1px solid var(--border);
   border-radius: var(--panel-radius);
   overflow: hidden;

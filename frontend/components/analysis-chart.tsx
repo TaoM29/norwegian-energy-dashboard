@@ -324,7 +324,7 @@ export default function AnalysisChart({
   option: EChartsCoreOption;
   imageOption?: EChartsCoreOption;
   label: string;
-  height?: number;
+  height?: number | string;
   onReady?: (chart: EChartsType) => void;
   exports?: ReactNode;
 }) {

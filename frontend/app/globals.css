@@ -16,6 +16,8 @@
 }
 :root {
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   color: var(--text);
   background: var(--page);
 }
@@ -117,7 +119,7 @@ h1 > span {
   border: 1px solid var(--border);
   border-radius: var(--panel-radius);
   background: var(--surface);
-  padding: 18px 20px;
+  padding: 22px 24px;
   margin-bottom: 24px;
 }
 .field-label {
@@ -177,10 +179,11 @@ h1 > span {
 .metric-icon {
   display: grid;
   place-items: center;
-  width: 18px;
-  height: 18px;
+  width: 30px;
+  height: 30px;
   flex-shrink: 0;
   color: var(--metric-colour);
+  background: color-mix(in srgb, var(--metric-colour) 10%, var(--surface));
   border-radius: 10px;
 }
 .metric-value {
@@ -219,7 +222,7 @@ h1 > span {
 .panel-heading {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
+  gap: 20px;
   align-items: center;
 }
 h2 {
@@ -997,8 +1000,39 @@ button:active:not(:disabled) {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  margin-bottom: 12px;
 }
 
 .analysis-title > h2 {
   margin: 0;
+}
+
+.analysis-title > .help-trigger {
+  align-self: center;
+}
+
+.analysis-title > h2,
+.page-heading h1,
+.analysis-heading h1 {
+  text-wrap: balance;
+}
+
+.page-heading > *,
+.analysis-heading > * {
+  min-width: 0;
+}
+
+@media (max-width: 540px) {
+  .filterbar {
+    padding: 18px;
+  }
+  .filterbar > * {
+    width: 100%;
+    min-width: 0;
+  }
+  .metric-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }

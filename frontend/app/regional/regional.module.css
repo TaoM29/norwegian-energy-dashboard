@@ -1,13 +1,15 @@
 .modeSwitch {
   display: inline-flex;
-  gap: 4px;
-  margin-bottom: 14px;
-  padding: 5px;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 24px;
+  padding: 6px;
   border: 1px solid var(--border);
   border-radius: var(--control-radius, 10px);
   background: var(--surface-muted);
 }
 .modeSwitch button {
+  min-height: 44px;
   padding: 10px 16px;
   border: 0;
   border-radius: 7px;
@@ -138,12 +140,12 @@
 .areaButtons {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
-  margin-top: 8px;
+  gap: 12px;
+  margin-top: 20px;
 }
 .areaButtons button {
-  min-height: 36px;
-  padding: 8px 13px;
+  min-height: 44px;
+  padding: 10px 16px;
   border: 1px solid var(--border);
   border-radius: var(--control-radius, 10px);
   background: var(--surface);
@@ -205,19 +207,47 @@
 .groupChoices > div {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 12px;
   max-width: 320px;
 }
 .groupChoices label {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 5px;
-  padding: 8px 11px;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 13px;
   border: 1px solid var(--border);
   border-radius: var(--control-radius, 10px);
   color: var(--text);
   text-transform: capitalize;
+}
+
+.groupChoices label:has(input:checked) {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+@media (max-width: 540px) {
+  .modeSwitch {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .modeSwitch button {
+    min-width: 0;
+    min-height: 56px;
+    padding: 8px 6px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .areaButtons {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .areaButtons button {
+    padding-inline: 4px;
+  }
 }
 .groupChoices input {
   width: 14px;

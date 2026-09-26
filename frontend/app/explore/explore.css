@@ -18,8 +18,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: end;
-  gap: 12px;
-  padding: 16px 0 4px;
+  gap: 20px;
+  padding: 24px 0 4px;
 }
 .explore-breakdown {
   margin-top: 10px;
@@ -35,9 +35,9 @@
 .explore-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 16px;
+  gap: 12px 20px;
   min-width: min(100%, 350px);
-  padding: 10px 14px 12px;
+  padding: 14px 16px 16px;
   border: 1px solid var(--border);
   border-radius: var(--control-radius, 10px);
 }
@@ -50,7 +50,8 @@
 .analysis-controls .explore-check {
   flex-direction: row;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  min-height: 32px;
   color: var(--text);
 }
 .explore-coverage {
@@ -89,7 +90,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  white-space: nowrap;
+  text-align: start;
 }
 .analysis-metrics strong,
 .analysis-metrics small,
@@ -107,7 +108,7 @@
   line-height: 1.45;
 }
 .explore-note {
-  margin: 4px 0 0;
+  margin: 16px 0 0;
   font-size: 11px;
 }
 .explore-table-wrap {

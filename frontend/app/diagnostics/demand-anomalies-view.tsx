@@ -238,7 +238,8 @@ export default function DemandAnomaliesView({
     <div className="demand-anomalies-intro">
       <div>
         <h2>Unusual household demand</h2>
-        <HelpTip label="Flag meaning" iconOnly>Expected demand accounts for hour, season and temperature. Flags are candidates for review, not confirmed events.</HelpTip>
+        <p>Review saved hourly departures from expected household demand.</p>
+        <HelpTip label="Flag meaning">Expected demand accounts for hour, season and temperature. Flags are candidates for review, not confirmed events.</HelpTip>
       </div>
       <label>Price area
         <Select aria-label="Demand anomalies price area" value={area} onChange={(event) => onAreaChange(event.target.value)}>
@@ -249,7 +250,7 @@ export default function DemandAnomaliesView({
     {loading && <div className="diagnostics-state" role="status">Loading saved demand-anomaly study…</div>}
     {error && <>
       <StudyError message={error} missing={missing} onRetry={() => setRetry((value) => value + 1)} />
-      {candidate && !missing && <button type="button" onClick={() => onCandidateChange("")}>Clear selected candidate</button>}
+      {candidate && !missing && <button className="demand-anomalies-clear" type="button" onClick={() => onCandidateChange("")}>Clear selected candidate</button>}
     </>}
     {study && !loading && <>
       <div className="demand-anomalies-study-strip">
@@ -313,7 +314,9 @@ export default function DemandAnomaliesView({
             <div><span>Both inputs missing</span><strong>{count(testStatus.missing_both)}</strong></div>
             <div><span>Unsupported temperature</span><strong>{count(testStatus.unsupported_temperature)}</strong></div>
           </div>
-          <HelpTip label="Coverage interpretation" iconOnly>Missing and unsupported hours are coverage gaps, not anomaly scores.</HelpTip>
+          <div className="demand-anomalies-coverage-note">
+            <HelpTip label="Coverage gaps">Missing and unsupported hours are coverage gaps, not anomaly scores.</HelpTip>
+          </div>
           <details><summary>Model selection, calendar thresholds and study periods</summary>
             <div className="demand-anomalies-method">
               <p>The expected value adds a {signedMetric(calibration.medianCorrection)} kWh median correction to the raw model fit. The calibration screening band extends {numeric(calibration.lowerWidth) == null ? "Unavailable" : `-${metric(calibration.lowerWidth)}`} kWh below and {numeric(calibration.upperWidth) == null ? "Unavailable" : `+${metric(calibration.upperWidth)}`} kWh above that corrected expectation. It uses {count(calibration.observations)} hourly calibration observations over {count(calibration.distinctDates)} dates; the target tail fraction is {numeric(calibration.tailFraction) == null ? "unavailable" : `${formatDisplayValue(numeric(calibration.tailFraction)! * 100, 1)}%`}.</p>

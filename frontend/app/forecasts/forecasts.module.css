@@ -1,5 +1,11 @@
 .selectorPanel {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--panel-radius, 16px);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 5%, var(--surface)), var(--surface) 48%);
+  box-shadow: 0px 2px 3px -1px rgba(0, 0, 0, 0.1), 0px 1px 0px 0px rgba(25, 28, 33, 0.02), 0px 0px 0px 1px rgba(25, 28, 33, 0.08);
 }
 
 .jobForm p {
@@ -37,7 +43,7 @@
 
 .jobForm input:not([type="checkbox"]):not([type="range"]) {
   width: 100%;
-  min-height: 40px;
+  min-height: 44px;
   border: 1px solid var(--border);
   border-radius: var(--control-radius, 10px);
   background: var(--surface);
@@ -55,11 +61,14 @@
 .resultToolbar {
   display: grid;
   grid-template-columns: minmax(260px, 1fr) auto;
-  gap: 14px;
+  gap: 16px;
   align-items: end;
 }
 .methodLink {
-  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  align-self: end;
+  min-height: 44px;
   color: var(--accent);
   font-size: 12px;
   text-decoration: underline;
@@ -82,18 +91,20 @@
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-height: 40px;
-  padding: 8px 14px;
+  min-height: 44px;
+  padding: 9px 16px;
   border: 1px solid var(--action);
   border-radius: var(--control-radius, 10px);
   background: var(--action);
   color: var(--on-action);
   font-weight: 650;
   white-space: nowrap;
+  box-shadow: 0px 2px 3px -1px rgba(0, 0, 0, 0.1), 0px 1px 0px 0px rgba(25, 28, 33, 0.02), 0px 0px 0px 1px rgba(25, 28, 33, 0.08);
+  transition: transform 120ms ease-out, filter 120ms ease-out;
 }
 
 .resultSummary {
-  padding: 20px 22px;
+  padding: 24px;
   border: 1px solid var(--border);
   border-radius: var(--panel-radius, 16px);
   background: var(--surface);
@@ -112,6 +123,7 @@
   margin: 0;
   font-size: 21px;
   letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
 .resultSummaryHeading > div {
@@ -135,7 +147,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1px;
-  margin-top: 16px;
+  margin-top: 20px;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--control-radius, 10px);
@@ -147,8 +159,8 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  padding: 14px 16px;
-  background: var(--surface-muted);
+  padding: 16px 18px;
+  background: color-mix(in srgb, var(--surface-muted) 82%, var(--surface));
 }
 
 .evidenceSummaryGrid span,
@@ -183,20 +195,32 @@
 }
 
 .primaryChart .resultFilters {
-  gap: 16px;
-  margin: 16px 0 12px;
-  padding: 0 0 16px;
+  gap: 16px 18px;
+  margin: 18px 0 14px;
+  padding: 0 0 18px;
   border: 0;
   border-bottom: 1px solid var(--border);
   border-radius: 0;
   box-shadow: none;
 }
+
+.primaryChart .resultFilters > label {
+  min-width: min(180px, 100%);
+}
+
+.primaryChart .resultFilters > details {
+  flex: 1 1 100%;
+}
 .chartOptionsBody {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
-  gap: 12px;
-  padding-top: 14px;
+  gap: 16px;
+  padding-top: 16px;
+}
+
+.chartOptionsBody > label {
+  flex: 1 1 220px;
 }
 
 .detailDisclosure {
@@ -213,8 +237,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 56px;
-  padding: 14px 46px 14px 20px;
+  min-height: 60px;
+  padding: 16px 48px 16px 22px;
   cursor: pointer;
   list-style: none;
 }
@@ -253,7 +277,7 @@
 }
 
 .disclosureBody {
-  padding: 4px 20px 20px;
+  padding: 6px 22px 22px;
   border-top: 1px solid var(--border);
 }
 
@@ -321,8 +345,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 1px solid var(--border);
   border-radius: var(--control-radius, 10px);
@@ -332,7 +356,7 @@
 
 .drawerBody {
   height: calc(100dvh - 79px);
-  padding: 22px 24px 30px;
+  padding: 24px 24px 36px;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -355,7 +379,8 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 14px;
+  min-height: 44px;
+  padding: 13px 14px;
   cursor: pointer;
   color: var(--text);
   font-size: 12px;
@@ -429,7 +454,7 @@
   grid-template-columns: auto 1fr auto;
   gap: 10px 12px;
   align-items: center;
-  padding: 16px;
+  padding: 18px;
   border-radius: var(--control-radius, 10px);
   background: var(--surface-muted);
   color: var(--accent);
@@ -475,6 +500,18 @@
   background: var(--danger-soft);
   color: var(--danger) !important;
   line-height: 1.6;
+}
+
+.error + button {
+  min-height: 40px;
+  margin-top: 12px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--control-radius, 10px);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 650;
 }
 
 .loading,
@@ -550,7 +587,7 @@
 .inlineChecks {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 14px;
+  gap: 10px 18px;
   padding: 0;
   border: 0;
   min-width: 240px;
@@ -567,7 +604,7 @@
   flex-direction: row;
   align-items: center;
   gap: 6px;
-  min-height: 28px;
+  min-height: 36px;
 }
 
 .panelHeading,
@@ -647,7 +684,7 @@
 .jobForm {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
   min-width: 0;
   padding: 22px 24px;
   border: 1px solid var(--border);
@@ -657,10 +694,10 @@
 }
 
 .forecastSetup {
-  padding: 18px;
+  padding: 20px;
   border: 1px solid var(--border-strong);
   border-radius: var(--control-radius, 10px);
-  background: var(--surface-muted);
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface-muted));
 }
 
 .setupHeading h4 {
@@ -671,19 +708,19 @@
 .setupControls {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 16px;
 }
 
 .horizonPresets {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .horizonPresets button {
-  min-height: 32px;
-  padding: 5px 9px;
+  min-height: 36px;
+  padding: 7px 12px;
   border: 1px solid var(--border);
   border-radius: 99px;
   background: var(--surface);
@@ -747,7 +784,8 @@
 }
 
 .formDisclosure > summary {
-  padding: 11px 13px;
+  min-height: 44px;
+  padding: 13px 15px;
   cursor: pointer;
   color: var(--text);
   font-size: 12px;
@@ -756,8 +794,8 @@
 
 .formDisclosure > div {
   display: grid;
-  gap: 12px;
-  padding: 0 12px 12px;
+  gap: 16px;
+  padding: 4px 14px 14px;
   border-top: 1px solid var(--border);
 }
 
@@ -772,7 +810,7 @@
 
 .jobForm fieldset {
   min-width: 0;
-  padding: 15px;
+  padding: 17px;
   border: 1px solid var(--border);
   border-radius: var(--control-radius, 10px);
 }
@@ -787,7 +825,7 @@
 .checkGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px 16px;
 }
 
 .checkGrid label,
@@ -798,7 +836,8 @@
 }
 
 .comparisonToggle {
-  padding: 12px 15px;
+  min-height: 44px;
+  padding: 13px 16px;
   border: 1px solid var(--border);
   border-radius: var(--control-radius, 10px);
   background: var(--surface);
@@ -818,12 +857,15 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 42px;
+  min-height: 46px;
+  padding: 10px 18px;
   border: 1px solid var(--action);
   border-radius: var(--control-radius, 10px);
   background: var(--action);
   color: var(--on-action);
   font-weight: 600;
+  box-shadow: 0px 2px 3px -1px rgba(0, 0, 0, 0.1), 0px 1px 0px 0px rgba(25, 28, 33, 0.02), 0px 0px 0px 1px rgba(25, 28, 33, 0.08);
+  transition: transform 120ms ease-out, filter 120ms ease-out;
 }
 
 .runButton:disabled {
@@ -869,11 +911,15 @@
     gap: 5px;
   }
   .jobForm {
-    padding: 16px;
+    padding: 18px 16px;
+  }
+
+  .jobForm input:not([type="checkbox"]):not([type="range"]) {
+    font-size: 16px;
   }
 
   .selectorPanel {
-    padding: 10px;
+    padding: 14px;
   }
 
   .resultSummaryHeading,
@@ -897,6 +943,36 @@
   .drawerBody {
     padding-right: 16px;
     padding-left: 16px;
+  }
+}
+
+@media (hover: hover) {
+  .experimentButton:hover,
+  .runButton:hover {
+    filter: brightness(1.05);
+  }
+
+  .drawerClose:hover,
+  .horizonPresets button:hover,
+  .error + button:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-muted);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .experimentButton:active,
+  .runButton:active,
+  .drawerClose:active,
+  .horizonPresets button:active {
+    transform: scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .experimentButton,
+  .runButton {
+    transition: none;
   }
 }
 

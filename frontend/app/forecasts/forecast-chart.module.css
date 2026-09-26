@@ -7,8 +7,8 @@
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 14px 20px;
-  margin: 14px 0 12px;
+  gap: 18px 24px;
+  margin: 18px 0 14px;
 }
 
 .chartExplanation {
@@ -23,7 +23,7 @@
 .intervalControl {
   display: grid;
   gap: 7px;
-  min-width: min(220px, 100%);
+  min-width: min(240px, 100%);
   color: var(--text-muted);
   font-size: 12px;
 }
@@ -31,7 +31,7 @@
 .legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 16px;
+  gap: 10px 18px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -43,7 +43,8 @@
 .legend li {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
+  min-height: 24px;
   white-space: nowrap;
 }
 
@@ -91,7 +92,10 @@
 }
 
 .valuesDisclosure summary {
-  padding: 12px 14px;
+  display: list-item;
+  list-style-position: inside;
+  min-height: 44px;
+  padding: 12px 15px;
   color: var(--accent);
   cursor: pointer;
   font-size: 12px;
@@ -118,14 +122,14 @@
 }
 
 .tableWrap caption {
-  padding: 10px 14px;
+  padding: 12px 14px;
   color: var(--text-muted);
   text-align: left;
 }
 
 .tableWrap th,
 .tableWrap td {
-  padding: 9px 12px;
+  padding: 10px 13px;
   border-bottom: 1px solid var(--border);
   text-align: right;
 }
