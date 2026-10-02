@@ -37,11 +37,11 @@ jobs:
           CACHE_MATCH: ${{ steps.snapshot.outputs.cache-matched-key }}
         run: |
           if [ -n "$CACHE_MATCH" ]; then
-            python scripts/refresh_data.py refresh
+            python scripts/refresh_data.py refresh --weather-grace-days 7
           else
             python scripts/refresh_data.py backfill
           fi
-      - name: Retain successful snapshot for the next refresh
+      - name: Retain validated snapshot for the next refresh
         uses: actions/cache/save@v6.1.0
         with:
           path: |
@@ -55,4 +55,13 @@ jobs:
           path: |
             data/energy.sqlite
             data/weather
+            data/refresh-report.json
           retention-days: 3
+      - name: Publish refresh health report
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: refresh-health
+          path: data/refresh-report.json
+          if-no-files-found: ignore
+          retention-days: 14
