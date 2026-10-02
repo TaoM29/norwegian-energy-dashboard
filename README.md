@@ -16,6 +16,23 @@ Source code: <https://github.com/TaoM29/norwegian-energy-dashboard>
 - Forecast benchmarks, uncertainty metrics, and bounded custom jobs
 - Transparent methods, data freshness, and provenance
 
+## Tech stack
+
+The project combines an interactive **TypeScript frontend** with a **Python analytics backend**. Next.js and React handle the dashboard you see in the browser, while FastAPI connects it to energy data, weather observations, and statistical analyses.
+
+| Layer | Technologies | What they do here |
+| --- | --- | --- |
+| Frontend | Next.js, React, TypeScript | Build the dashboard pages, interactive filters, and shared application state with typed components. |
+| Interface | Tailwind CSS, shadcn/ui, Radix UI, Lucide | Provide styling, reusable controls, accessible interaction primitives, and icons. |
+| Charts | Apache ECharts, Recharts | ECharts powers the advanced analytical views; Recharts renders the energy overview. |
+| API | Python, FastAPI, Uvicorn | Serve data and analysis results to the frontend and run the API locally. |
+| Analytics | pandas, NumPy, SciPy, statsmodels, scikit-learn | Prepare time-series data, explore patterns and anomalies, and build and evaluate forecasting models. |
+| Data | SQLite, saved weather snapshots, prepared analysis and forecast files | Keep observations and computed results available without a live connection to a private database. |
+| Deployment | Vercel, Docker Compose | Vercel hosts the public frontend and API; Docker Compose provides an alternative container-based deployment. |
+| Quality checks | pytest, Playwright, TypeScript, GitHub Actions | Check Python behavior, browser workflows, type safety, and builds. |
+
+**How it fits together:** energy observations from Elhub and weather observations from Open-Meteo are collected into local snapshots. The Python backend reads those snapshots and prepared analytical results, exposes them through FastAPI, and the Next.js frontend turns them into interactive charts and regional views. The public deployment serves saved forecast results; local development can also run bounded custom forecast jobs.
+
 ## Local development (optional)
 
 Requirements: Python 3.11 or 3.12 and Node.js 22.
