@@ -14,18 +14,18 @@ concurrency:
 
 jobs:
   refresh:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.0.0
         with:
           python-version: '3.11'
           cache: pip
       - run: python -m pip install -r requirements.txt
       - name: Restore last successful snapshot
         id: snapshot
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6.1.0
         with:
           path: |
             data/energy.sqlite
@@ -42,14 +42,14 @@ jobs:
             python scripts/refresh_data.py backfill
           fi
       - name: Retain successful snapshot for the next refresh
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6.1.0
         with:
           path: |
             data/energy.sqlite
             data/weather
           key: public-data-v1-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Publish downloadable validated data
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: validated-public-data
           path: |

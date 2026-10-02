@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import tempfile
 import time
@@ -213,7 +214,11 @@ def _frame_from_response(
             raise ValueError(f"Open-Meteo returned no available values for {source_name}")
         last_position = int(valid_positions[-1])
         if not finite.iloc[: last_position + 1].all():
-            raise ValueError(f"Open-Meteo returned an internal missing or non-finite value for {source_name}")
+            first_missing = frame.loc[~finite, "time"].iloc[0]
+            raise ValueError(
+                f"Open-Meteo returned an internal missing or non-finite value for {source_name} "
+                f"at {first_missing.isoformat()}"
+            )
         last_timestamp = frame.loc[last_position, "time"]
         variable_last_timestamp[source_name] = last_timestamp.isoformat()
         variable_ends.append(last_timestamp + pd.Timedelta(hours=1))
@@ -235,16 +240,9 @@ def _is_transient_request_error(error: requests.RequestException) -> bool:
 
 
 def _request_payload(params: dict[str, Any]) -> dict[str, Any]:
-    for attempt in range(1, WEATHER_MAX_ATTEMPTS + 1):
-        try:
-            response = requests.get(ARCHIVE_URL, params=params, timeout=60)
-            response.raise_for_status()
-            return response.json()
-        except requests.RequestException as error:
-            if attempt >= WEATHER_MAX_ATTEMPTS or not _is_transient_request_error(error):
-                raise
-            time.sleep(WEATHER_RETRY_BACKOFF_SECONDS * (2 ** (attempt - 1)))
-    raise RuntimeError("weather request retry loop ended unexpectedly")
+    response = requests.get(ARCHIVE_URL, params=params, timeout=60)
+    response.raise_for_status()
+    return response.json()
 
 
 def _load_location_year(
@@ -302,46 +300,61 @@ def _load_location_year(
         "precipitation_unit": "mm",
         "timezone": "UTC",
     }
-    try:
-        frame, variable_last_timestamp, response_common_end = _frame_from_response(_request_payload(params))
-        actual_end = min(effective_end, response_common_end)
-        if requested_end <= source_end and actual_end < effective_end:
-            raise ValueError("Open-Meteo returned incomplete coverage for a fully published year")
-        frame = frame[(frame["time"] >= effective_start) & (frame["time"] < actual_end)].reset_index(drop=True)
-        frame = _validate_frame(frame)
-        if frame["time"].iloc[0] != effective_start or frame["time"].iloc[-1] + pd.Timedelta(hours=1) != actual_end:
-            raise ValueError("Open-Meteo returned incomplete requested coverage")
-        if snapshot:
-            cached_frame, cached_metadata = snapshot
-            cached_end = _utc_timestamp(cached_metadata["available_end"])
-            if cached_end > actual_end:
-                cached_metadata = {
-                    **cached_metadata,
-                    "cache_status": "stale_snapshot",
-                    "refresh_error": "source response ended before the existing validated snapshot",
-                }
-                _attach_metadata(cached_frame, cached_metadata)
-                return cached_frame
-        metadata = {
-            **base_metadata,
-            "available_start": frame["time"].iloc[0].isoformat(),
-            "available_end": (frame["time"].iloc[-1] + pd.Timedelta(hours=1)).isoformat(),
-            "retrieved_at": datetime.now(timezone.utc).isoformat(),
-            "cache_status": "network",
-            "coverage_complete": actual_end >= requested_end,
-            "source_coverage_complete": actual_end >= effective_end,
-            "variable_last_timestamp": variable_last_timestamp,
-        }
-        _write_snapshot(snapshot_path, identity, metadata, frame)
-        _attach_metadata(frame, metadata)
-        return frame
-    except (requests.RequestException, RuntimeError, ValueError, TypeError, KeyError) as error:
-        if snapshot:
-            cached_frame, cached_metadata = snapshot
-            cached_metadata = {**cached_metadata, "cache_status": "stale_snapshot", "refresh_error": str(error)}
-            _attach_metadata(cached_frame, cached_metadata)
-            return cached_frame
-        return _empty_weather({**base_metadata, "cache_status": "unavailable", "error": str(error)})
+    # Re-fetch inconsistent source responses as well as transient HTTP failures.
+    # Only a fully validated, non-regressive response may replace a snapshot.
+    for attempt in range(1, WEATHER_MAX_ATTEMPTS + 1):
+        try:
+            frame, variable_last_timestamp, response_common_end = _frame_from_response(_request_payload(params))
+            actual_end = min(effective_end, response_common_end)
+            if requested_end <= source_end and actual_end < effective_end:
+                raise ValueError("Open-Meteo returned incomplete coverage for a fully published year")
+            frame = frame[(frame["time"] >= effective_start) & (frame["time"] < actual_end)].reset_index(drop=True)
+            frame = _validate_frame(frame)
+            if frame["time"].iloc[0] != effective_start or frame["time"].iloc[-1] + pd.Timedelta(hours=1) != actual_end:
+                raise ValueError("Open-Meteo returned incomplete requested coverage")
+            if snapshot:
+                cached_frame, cached_metadata = snapshot
+                cached_end = _utc_timestamp(cached_metadata["available_end"])
+                if cached_end > actual_end:
+                    raise ValueError(
+                        "source response ended before the existing validated snapshot "
+                        f"({actual_end.isoformat()} < {cached_end.isoformat()})"
+                    )
+            metadata = {
+                **base_metadata,
+                "available_start": frame["time"].iloc[0].isoformat(),
+                "available_end": (frame["time"].iloc[-1] + pd.Timedelta(hours=1)).isoformat(),
+                "retrieved_at": datetime.now(timezone.utc).isoformat(),
+                "cache_status": "network",
+                "coverage_complete": actual_end >= requested_end,
+                "source_coverage_complete": actual_end >= effective_end,
+                "variable_last_timestamp": variable_last_timestamp,
+            }
+            _write_snapshot(snapshot_path, identity, metadata, frame)
+            _attach_metadata(frame, metadata)
+            return frame
+        except (requests.RequestException, RuntimeError, ValueError, TypeError, KeyError) as error:
+            last_error = str(error)
+            retryable = (
+                _is_transient_request_error(error)
+                if isinstance(error, requests.RequestException)
+                else isinstance(error, ValueError)
+            )
+            if attempt >= WEATHER_MAX_ATTEMPTS or not retryable:
+                break
+            delay = WEATHER_RETRY_BACKOFF_SECONDS * (2 ** (attempt - 1))
+            logging.warning(
+                "Weather %s/%s attempt %d/%d failed: %s; retrying in %.1fs",
+                location, year, attempt, WEATHER_MAX_ATTEMPTS, error, delay,
+            )
+            time.sleep(delay)
+
+    if snapshot:
+        cached_frame, cached_metadata = snapshot
+        cached_metadata = {**cached_metadata, "cache_status": "stale_snapshot", "refresh_error": last_error}
+        _attach_metadata(cached_frame, cached_metadata)
+        return cached_frame
+    return _empty_weather({**base_metadata, "cache_status": "unavailable", "error": last_error})
 
 
 def load_openmeteo_point(

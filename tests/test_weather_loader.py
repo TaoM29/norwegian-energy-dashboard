@@ -44,6 +44,7 @@ def _payload(start: str, periods: int, *, unit_overrides=None, omit_at: int | No
 @pytest.fixture
 def isolated_snapshots(monkeypatch, tmp_path):
     monkeypatch.setattr(weather, "WEATHER_SNAPSHOT_DIR", tmp_path / "weather")
+    monkeypatch.setattr(weather.time, "sleep", lambda _delay: None)
 
 
 def test_annual_loader_uses_explicit_model_units_and_utc(monkeypatch, isolated_snapshots):
@@ -224,6 +225,165 @@ def test_shorter_valid_prefix_does_not_replace_better_snapshot(monkeypatch, isol
     assert snapshot_path.read_bytes() == snapshot_before
 
 
+def test_internal_gap_is_retried_and_a_valid_response_is_published(monkeypatch, isolated_snapshots):
+    monkeypatch.setattr(
+        weather,
+        "era5_available_end",
+        lambda now=None: pd.Timestamp("2026-01-04T00:00:00Z"),
+    )
+    inconsistent = _payload("2026-01-01", 3 * 24)
+    inconsistent["hourly"]["precipitation"][36] = None
+    responses = [inconsistent, _payload("2026-01-01", 3 * 24)]
+    calls = 0
+
+    def fake_get(*args, **kwargs):
+        nonlocal calls
+        response = responses[calls]
+        calls += 1
+        return _FakeResponse(response)
+
+    monkeypatch.setattr(weather.requests, "get", fake_get)
+
+    frame = weather.load_openmeteo_era5("NO1", 2026, force_refresh=True)
+
+    assert calls == 2
+    assert len(frame) == 3 * 24
+    assert frame.attrs["cache_status"] == "network"
+    assert frame.attrs["available_end"] == "2026-01-04T00:00:00+00:00"
+
+
+def test_transport_and_content_failures_share_one_retry_budget(monkeypatch, isolated_snapshots):
+    monkeypatch.setattr(
+        weather,
+        "era5_available_end",
+        lambda now=None: pd.Timestamp("2026-01-04T00:00:00Z"),
+    )
+    inconsistent = _payload("2026-01-01", 3 * 24)
+    inconsistent["hourly"]["precipitation"][36] = None
+    outcomes = [
+        weather.requests.ConnectionError("temporary outage"),
+        _FakeResponse(inconsistent),
+        _FakeResponse(_payload("2026-01-01", 3 * 24)),
+    ]
+    calls = 0
+    delays = []
+
+    def fake_get(*args, **kwargs):
+        nonlocal calls
+        outcome = outcomes[calls]
+        calls += 1
+        if isinstance(outcome, Exception):
+            raise outcome
+        return outcome
+
+    monkeypatch.setattr(weather.requests, "get", fake_get)
+    monkeypatch.setattr(weather.time, "sleep", delays.append)
+
+    frame = weather.load_openmeteo_era5("NO1", 2026, force_refresh=True)
+
+    assert calls == weather.WEATHER_MAX_ATTEMPTS
+    assert delays == [0.5, 1.0]
+    assert len(frame) == 3 * 24
+    assert frame.attrs["cache_status"] == "network"
+
+
+def test_repeated_internal_gap_retains_snapshot_with_detailed_error(monkeypatch, isolated_snapshots):
+    monkeypatch.setattr(
+        weather,
+        "era5_available_end",
+        lambda now=None: pd.Timestamp("2026-01-03T00:00:00Z"),
+    )
+    monkeypatch.setattr(
+        weather.requests,
+        "get",
+        lambda *args, **kwargs: _FakeResponse(_payload("2026-01-01", 2 * 24)),
+    )
+    original = weather.load_openmeteo_era5("NO1", 2026, force_refresh=True)
+    snapshot_path = next(weather.WEATHER_SNAPSHOT_DIR.glob("*.json"))
+    snapshot_before = snapshot_path.read_bytes()
+
+    inconsistent = _payload("2026-01-01", 2 * 24)
+    inconsistent["hourly"]["precipitation"][12] = None
+    calls = 0
+
+    def fake_get(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return _FakeResponse(inconsistent)
+
+    monkeypatch.setattr(weather.requests, "get", fake_get)
+
+    fallback = weather.load_openmeteo_era5("NO1", 2026, force_refresh=True)
+
+    assert calls == weather.WEATHER_MAX_ATTEMPTS
+    pd.testing.assert_frame_equal(original, fallback)
+    assert fallback.attrs["cache_status"] == "stale_snapshot"
+    assert "internal missing or non-finite value for precipitation" in fallback.attrs["provenance"]["refresh_error"]
+    assert snapshot_path.read_bytes() == snapshot_before
+
+
+def test_repeated_internal_gap_without_snapshot_remains_unavailable(monkeypatch, isolated_snapshots):
+    monkeypatch.setattr(
+        weather,
+        "era5_available_end",
+        lambda now=None: pd.Timestamp("2026-01-03T00:00:00Z"),
+    )
+    inconsistent = _payload("2026-01-01", 2 * 24)
+    inconsistent["hourly"]["precipitation"][12] = None
+    calls = 0
+
+    def fake_get(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return _FakeResponse(inconsistent)
+
+    monkeypatch.setattr(weather.requests, "get", fake_get)
+
+    frame = weather.load_openmeteo_era5("NO1", 2026, force_refresh=True)
+
+    assert calls == weather.WEATHER_MAX_ATTEMPTS
+    assert frame.empty
+    assert frame.attrs["cache_status"] == "unavailable"
+    assert "precipitation at 2026-01-01T12:00:00+00:00" in frame.attrs["provenance"]["error"]
+    assert list(weather.WEATHER_SNAPSHOT_DIR.glob("*.json")) == []
+
+
+def test_shorter_prefix_is_retried_before_falling_back_to_snapshot(monkeypatch, isolated_snapshots):
+    monkeypatch.setattr(
+        weather,
+        "era5_available_end",
+        lambda now=None: pd.Timestamp("2026-01-03T00:00:00Z"),
+    )
+    monkeypatch.setattr(
+        weather.requests,
+        "get",
+        lambda *args, **kwargs: _FakeResponse(_payload("2026-01-01", 2 * 24)),
+    )
+    weather.load_openmeteo_era5("NO1", 2026, force_refresh=True)
+
+    monkeypatch.setattr(
+        weather,
+        "era5_available_end",
+        lambda now=None: pd.Timestamp("2026-01-04T00:00:00Z"),
+    )
+    responses = [_payload("2026-01-01", 24), _payload("2026-01-01", 3 * 24)]
+    calls = 0
+
+    def fake_get(*args, **kwargs):
+        nonlocal calls
+        response = responses[calls]
+        calls += 1
+        return _FakeResponse(response)
+
+    monkeypatch.setattr(weather.requests, "get", fake_get)
+
+    frame = weather.load_openmeteo_era5("NO1", 2026, force_refresh=True)
+
+    assert calls == 2
+    assert frame.attrs["cache_status"] == "network"
+    assert frame.attrs["available_end"] == "2026-01-04T00:00:00+00:00"
+
+
 def test_last_known_good_survives_outage_and_bad_refresh(monkeypatch, isolated_snapshots):
     monkeypatch.setattr(
         weather,
@@ -323,6 +483,30 @@ def test_transient_request_failures_are_retried(monkeypatch, isolated_snapshots)
     assert len(frame) == 365 * 24
     assert calls == 3
     assert delays == [0.5, 1.0]
+
+
+def test_nontransient_http_error_is_not_retried(monkeypatch, isolated_snapshots):
+    calls = 0
+    delays = []
+    response = weather.requests.Response()
+    response.status_code = 400
+    error = weather.requests.HTTPError("bad request", response=response)
+
+    def fake_get(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        raise error
+
+    monkeypatch.setattr(weather.requests, "get", fake_get)
+    monkeypatch.setattr(weather.time, "sleep", delays.append)
+
+    frame = weather.load_openmeteo_era5("NO1", 2023, force_refresh=True)
+
+    assert calls == 1
+    assert delays == []
+    assert frame.empty
+    assert frame.attrs["cache_status"] == "unavailable"
+    assert "bad request" in frame.attrs["provenance"]["error"]
 
 
 def test_missing_annual_segment_makes_multiyear_request_unavailable(monkeypatch):

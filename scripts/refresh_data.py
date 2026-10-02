@@ -45,11 +45,18 @@ def main(argv: list[str] | None = None) -> int:
         years = range(2021, current_year + 1) if args.mode == "backfill" else [current_year - 1, current_year]
         for year in years:
             for area in AREA_COORDS:
-                frame = load_openmeteo_era5(area, year, force_refresh=True)
+                frame = load_openmeteo_era5(area, year, force_refresh=year == current_year)
                 status = frame.attrs.get("cache_status")
                 logging.info("Weather %s %s: %d hours (%s)", area, year, len(frame), status)
                 if frame.empty or status == "stale_snapshot":
-                    raise RuntimeError(f"Weather refresh failed for {area}/{year}; previous snapshot retained")
+                    provenance = frame.attrs.get("provenance", {})
+                    reason = provenance.get("refresh_error") or provenance.get("error") or "no valid weather data"
+                    retained = (
+                        f"; previous snapshot retained (exclusive end: {provenance.get('available_end')}, "
+                        f"retrieved: {provenance.get('retrieved_at')})"
+                        if status == "stale_snapshot" else ""
+                    )
+                    raise RuntimeError(f"Weather refresh failed for {area}/{year}: {reason}{retained}")
     logging.info("Refresh complete: %d energy rows fetched", count)
     return 0
 
