@@ -268,7 +268,9 @@ class DroppedSeriesClient:
 @pytest.mark.parametrize("mode", ["refresh", "backfill"])
 @pytest.mark.parametrize("instant, expected_end", [
     (datetime(2026, 9, 14, 19, 37, tzinfo=timezone.utc), date(2026, 9, 13)),
-    (datetime(2026, 9, 14, 22, 42, tzinfo=timezone.utc), date(2026, 9, 14)),
+    (datetime(2026, 9, 14, 22, 42, tzinfo=timezone.utc), date(2026, 9, 13)),
+    (datetime(2026, 10, 11, 23, 6, tzinfo=timezone.utc), date(2026, 10, 10)),
+    (datetime(2026, 12, 31, 23, 30, tzinfo=timezone.utc), date(2026, 12, 30)),
     (datetime(2026, 1, 1, 0, 10, tzinfo=timezone.utc), date(2025, 12, 31)),
 ])
 def test_default_refresh_cutoff_respects_publication_delay(tmp_path, monkeypatch, mode, instant, expected_end):
@@ -282,6 +284,38 @@ def test_default_refresh_cutoff_respects_publication_delay(tmp_path, monkeypatch
     # Explicit historical cutoffs retain their end-exclusive meaning.
     getattr(service, mode)(end=date(2025, 6, 1))
     assert calls[1][2] == date(2025, 6, 1)
+
+
+@pytest.mark.parametrize("mode", ["refresh", "backfill"])
+def test_delayed_refresh_does_not_request_unpublished_source_day(tmp_path, monkeypatch, mode):
+    start, end = date(2026, 10, 3), date(2026, 10, 10)
+
+    class PublishedSession:
+        def get(self, url, *, params, timeout):
+            kind = "production" if params["dataset"].startswith("PRODUCTION") else "consumption"
+            # Elhub has only published through October 9, even though Oslo's
+            # calendar has rolled over to October 12 during the delayed run.
+            requested_start = date.fromisoformat(params["startDate"])
+            requested_end = date.fromisoformat(params["endDate"])
+            return FakeResponse(payload_for(kind, requested_start, min(requested_end, end)))
+
+    client = ElhubClient(session=PublishedSession())
+    # The former Oslo-date cutoff requested October 10 too and failed validation.
+    with pytest.raises(ElhubError, match="complete requested interval"):
+        client.fetch("production", start, end + timedelta(days=1))
+
+    store = EnergyStore(tmp_path / "energy.sqlite")
+    service = RefreshService(
+        store, client=client,
+        now=lambda: datetime(2026, 10, 11, 23, 6, tzinfo=timezone.utc),
+    )
+    # Limit backfill to the same recent window without changing its cutoff.
+    monkeypatch.setattr("app_core.ingestion.refresh.BACKFILL_START_LOCAL", start)
+    fetched = getattr(service, mode)()
+
+    assert fetched == 7 * 24 * len(AREAS) * sum(map(len, BASE_GROUPS.values()))
+    assert len(store.query()) == fetched
+    assert store.latest_observation() == datetime(2026, 10, 9, 21, tzinfo=timezone.utc)
 
 
 def test_repeated_refresh_does_not_create_duplicates(tmp_path):

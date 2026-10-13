@@ -49,9 +49,10 @@ class RefreshService:
         return self._run("refresh", start, published_end)
 
     def _published_end(self) -> date:
-        # Elhub publishes after measurement. Exclude yesterday as well as today,
-        # including when a delayed scheduled run crosses Oslo midnight.
-        return self.now().astimezone(OSLO).date() - timedelta(days=1)
+        # Anchor the publication day to UTC, like the daily schedule. Oslo
+        # midnight must not advance the cutoff before Elhub's next publication.
+        # The returned date still denotes an exclusive Oslo-local midnight.
+        return self.now().astimezone(timezone.utc).date() - timedelta(days=1)
 
     def _run(
         self,
