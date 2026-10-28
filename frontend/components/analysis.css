@@ -9,10 +9,10 @@
   align-items: end;
   gap: 20px;
   padding: 22px 24px;
-  border: 1px solid var(--border);
-  border-radius: var(--panel-radius, 16px);
+  border: 0;
+  border-radius: 0;
   background: var(--surface);
-  box-shadow: var(--panel-shadow, none);
+  box-shadow: none;
   margin-bottom: 22px;
 }
 .analysis-controls label {
@@ -62,17 +62,17 @@
 .analysis-panel {
   min-width: 0;
   padding: 26px 28px;
-  border: 1px solid var(--border);
-  border-radius: var(--panel-radius, 16px);
+  border: 0;
+  border-radius: 0;
   background: var(--surface);
-  box-shadow: var(--panel-shadow, none);
+  box-shadow: none;
   margin-bottom: 24px;
 }
 .analysis-panel h2 {
   margin-bottom: 12px;
   font-size: 19px;
   line-height: 1.3;
-  letter-spacing: -0.02em;
+  letter-spacing: normal;
 }
 .analysis-panel p {
   color: var(--text-muted);
@@ -81,12 +81,12 @@
 .analysis-metrics {
   display: flex;
   flex-wrap: wrap;
-  gap: 1px;
+  gap: 24px;
   margin-bottom: 20px;
   overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: var(--panel-radius, 16px);
-  background: var(--border);
+  border: 0;
+  border-radius: 0;
+  background: var(--surface);
 }
 .analysis-metrics > * {
   flex: 1;
@@ -195,7 +195,7 @@
 }
 .analysis-footer {
   display: block;
-  border-top: 1px solid var(--border);
+  border: 0;
   padding-top: 22px;
   margin-top: 32px;
   font-size: 12px;
@@ -245,11 +245,14 @@
 
 .analysis-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; color: var(--text-muted); font-size: 12px; }
 .analysis-footer a { color: var(--text-muted); text-decoration: underline; text-underline-offset: 3px; }
-.study-error { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; padding: 24px; margin-bottom: 24px; border: 1px solid var(--border); border-radius: var(--panel-radius); background: var(--surface); }
+.study-error { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; padding: 24px; margin-bottom: 24px; border: 0; border-radius: 0; background: var(--surface); }
 .study-error h3 { margin: 0 0 8px; font-size: 17px; font-weight: 600; }
 .study-error p { margin: 0; max-width: 65ch; color: var(--text-muted); font-size: 14px; line-height: 1.6; }
 .study-error a { color: var(--accent); font-size: 14px; padding: 8px 0; }
 .study-error button { border: 1px solid var(--border); border-radius: var(--control-radius); padding: 9px 16px; background: var(--surface); color: var(--text); }
-.study-details { margin: 0 0 16px; border-top: 1px solid var(--border); }
+.study-details { margin: 0 0 16px; border: 0; }
 .study-details > summary { padding: 16px 0; font-size: 14px; color: var(--text); cursor: pointer; }
 .study-details[open] > summary { margin-bottom: 12px; }
+
+.analysis-panel, .analysis-controls { padding-inline: 0; }
+.analysis-metrics > * { padding-inline: 0; }

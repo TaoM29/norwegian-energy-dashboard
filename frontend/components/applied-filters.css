@@ -13,9 +13,9 @@
 }
 .applied-filters[data-pending="true"] .applied-filter-state {
   color: var(--warning);
-  background: var(--warning-soft);
+  background: none;
   border-radius: 5px;
-  padding: 2px 7px;
+  padding: 0;
 }
 .applied-filters button {
   border: 0;

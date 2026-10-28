@@ -5,15 +5,15 @@
   --sidebar-width: 260px;
   --panel-radius: 12px;
   --control-radius: 8px;
-  --panel-shadow: 0 2px 8px #17203304, 0 1px 2px #17203303;
-  --control-shadow: 0 1px 2px #17203308;
+  --panel-shadow: none;
+  --control-shadow: none;
   --action: #245d9a;
   --on-action: #ffffff;
-  --page: #f5f6f8;
+  --page: #ffffff;
   --surface: #ffffff;
   --surface-muted: #eef0f4;
   --surface-raised: #ffffff;
-  --sidebar: #f9fafb;
+  --sidebar: #f3f4f6;
   --text: #232630;
   --text-muted: #626977;
   --border: #e2e5eb;
@@ -22,7 +22,7 @@
   --accent-hover: #194a80;
   --accent-contrast: #ffffff;
   --on-accent: #ffffff;
-  --accent-soft: #e9f0f7;
+  --accent-soft: #eef0f4;
   --success: #23755a;
   --success-soft: #e6f3ec;
   --warning: #896019;
@@ -43,14 +43,14 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --panel-shadow: 0 1px 0 #ffffff03, 0 4px 16px #0000000a;
-  --control-shadow: inset 0 1px 0 #ffffff05, 0 1px 2px #00000012;
+  --panel-shadow: none;
+  --control-shadow: none;
   --action: #245d9a;
   --page: #111318;
-  --surface: #191c23;
+  --surface: #111318;
   --surface-muted: #252933;
-  --surface-raised: #21252e;
-  --sidebar: #15181e;
+  --surface-raised: #252933;
+  --sidebar: #1a1d24;
   --text: #f0f1f5;
   --text-muted: #a4abb9;
   --border: #2c303b;
@@ -59,7 +59,7 @@
   --accent-hover: #c0dcfa;
   --accent-contrast: #111c2b;
   --on-accent: #111c2b;
-  --accent-soft: #203146;
+  --accent-soft: #252933;
   --success: #70c9a5;
   --success-soft: #1c352d;
   --warning: #e6bb72;
@@ -83,7 +83,7 @@
   align-items: center;
   gap: 2px;
   padding: 3px;
-  border: 1px solid var(--border);
+  border: 0;
   border-radius: var(--control-radius);
   background: var(--surface-muted);
   color: var(--text-muted);
@@ -103,13 +103,13 @@
 
 .theme-toggle__option:hover {
   color: var(--text);
-  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  background: var(--surface);
 }
 
 .theme-toggle__option[aria-pressed="true"] {
   background: var(--surface);
   color: var(--accent);
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--text) 14%, transparent);
+  box-shadow: none;
   font-weight: 650;
 }
 

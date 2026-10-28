@@ -74,10 +74,6 @@ export function AppNavigation() {
 
   const activeDestination =
     destinations.find(({ href }) => href === path) ?? destinations[0];
-  const activeGroup =
-    navigationGroups.find((group) =>
-      group.destinations.some(({ href }) => href === path),
-    )?.label ?? "Workspace";
 
   return (
     <>
@@ -162,8 +158,6 @@ export function AppNavigation() {
 
       <header className="site-header">
         <div className="site-header-context" aria-label="Current workspace">
-          <span>{activeGroup}</span>
-          <span aria-hidden="true">/</span>
           <strong>{activeDestination.title ?? activeDestination.label}</strong>
         </div>
         <ThemeToggle />

@@ -3,16 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
-  ArrowLeftRight,
-  Droplets,
-  PlugZap,
-  Zap,
   Check,
   ChevronDown,
   Download,
   RefreshCw,
   Waves,
-  type LucideIcon,
 } from "lucide-react";
 import {
   Area,
@@ -306,15 +301,11 @@ export default function Page() {
               <section className="metrics" aria-label="Key metrics">
                 <Metric
                   title="Energy produced"
-                  icon={Zap}
-                  tone="production"
                   value={production?.mwh == null ? null : production.mwh / 1000}
                   unit="GWh"
                 />
                 <Metric
                   title="Energy consumed"
-                  icon={PlugZap}
-                  tone="consumption"
                   value={
                     consumption?.mwh == null ? null : consumption.mwh / 1000
                   }
@@ -322,16 +313,12 @@ export default function Page() {
                 />
                 <Metric
                   title="Energy balance"
-                  icon={ArrowLeftRight}
-                  tone="balance"
                   value={balance}
                   unit="GWh"
                   note="Production − consumption; not measured exports"
                 />
                 <Metric
                   title="Hydropower share"
-                  icon={Droplets}
-                  tone="hydro"
                   value={hydro?.share == null ? null : hydro.share * 100}
                   unit="%"
                 />
@@ -577,11 +564,11 @@ export default function Page() {
               </p>
               <p>
                 Snapshot:{" "}
-                <code>
+                <span>
                   {overview?.snapshot.version ||
                     coverage?.snapshot.version ||
                     "Unavailable"}
-                </code>
+                </span>
                 . Retrieved{" "}
                 {overview?.snapshot.retrievedAt ||
                   coverage?.snapshot.retrievedAt ||
@@ -602,23 +589,16 @@ function Metric({
   value,
   unit,
   note,
-  icon: Icon,
-  tone,
 }: {
   title: string;
   value: number | null;
   unit: string;
   note?: string;
-  icon: LucideIcon;
-  tone: "production" | "consumption" | "balance" | "hydro";
 }) {
   return (
-    <div className={`metric metric-${tone}`}>
+    <div className="metric">
       <div className="metric-label">
         <span className="metric-title">
-          <span className="metric-icon">
-            <Icon size={17} strokeWidth={1.7} aria-hidden="true" />
-          </span>
           {title}
           {note && <HelpTip label={title} iconOnly>{note}</HelpTip>}
         </span>
