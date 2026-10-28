@@ -1,6 +1,6 @@
 .peak-workspace { padding: clamp(18px, 3vw, 34px); }
 .peak-heading { display: flex; justify-content: space-between; align-items: end; gap: 20px; }
-.peak-heading h2 { margin: 0; font-size: clamp(22px, 3vw, 30px); letter-spacing: -.035em; }
+.peak-heading h2 { margin: 0; font-size: clamp(22px, 3vw, 30px); letter-spacing: normal; }
 .peak-heading label { display: grid; gap: 4px; color: var(--text-muted); font-size: 11px; white-space: nowrap; }
 .peak-heading select { min-height: 36px; }
 .peak-fixture { margin: 9px 0 0; color: var(--warning) !important; font-size: 12px; }
@@ -10,7 +10,7 @@
 .peak-stats-regional { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .peak-stats > div { display: grid; gap: 4px; padding-top: 13px; border-top: 1px solid var(--border); }
 .peak-stats span { color: var(--text-muted); font-size: 11px; }
-.peak-stats strong { color: var(--text); font-size: clamp(17px, 2.2vw, 23px); font-variant-numeric: tabular-nums; letter-spacing: -.025em; }
+.peak-stats strong { color: var(--text); font-size: clamp(17px, 2.2vw, 23px); font-variant-numeric: tabular-nums; letter-spacing: normal; }
 .peak-stats small { color: var(--text-muted); font-size: 11px; }
 .peak-footnote { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 18px; color: var(--text-muted); font-size: 11px; }
 .peak-footnote .help-trigger { font-size: 11px; }

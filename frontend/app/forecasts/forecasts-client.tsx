@@ -2471,14 +2471,14 @@ function SarimaxForm({
         </div>
         <ol className={styles.forecastFlow}>
           <li>
-            <span>1 · Train</span>
+            <span>Training period</span>
             <strong>
               {value.start} – {trainingEnd}
             </strong>
             <small>Inclusive observed period</small>
           </li>
           <li>
-            <span>2 · Forecast issue / start</span>
+            <span>Forecast start</span>
             <strong>{formatDateTime(issueTime.toISOString())}</strong>
             <small>
               Energy data becomes usable {value.energyLagHours} h after the
@@ -2486,7 +2486,7 @@ function SarimaxForm({
             </small>
           </li>
           <li>
-            <span>3 · Ahead horizon</span>
+            <span>Forecast horizon</span>
             <strong>
               Until {formatDateTime(forecastWindowEnd.toISOString())}
             </strong>

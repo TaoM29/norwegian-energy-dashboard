@@ -352,14 +352,14 @@ test("forecast settings drawer keeps training dates usable and preserves API bou
   await expect(
     setup
       .getByRole("listitem")
-      .filter({ hasText: "2 · Forecast issue / start" }),
+      .filter({ hasText: "Forecast start" }),
   ).toContainText("2 Apr 2025, 00:00 UTC");
   await expect(
-    setup.getByRole("listitem").filter({ hasText: "3 · Ahead horizon" }),
+    setup.getByRole("listitem").filter({ hasText: "Forecast horizon" }),
   ).toContainText("3 Apr 2025, 00:00 UTC");
   await setup.getByRole("button", { name: "72 hours", exact: true }).click();
   await expect(
-    setup.getByRole("listitem").filter({ hasText: "3 · Ahead horizon" }),
+    setup.getByRole("listitem").filter({ hasText: "Forecast horizon" }),
   ).toContainText("5 Apr 2025, 00:00 UTC");
   await drawer.getByRole("button", { name: "Run SARIMAX job" }).click();
   await expect.poll(() => submitted?.config.end).toBe("2025-03-31");

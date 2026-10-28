@@ -1,11 +1,10 @@
 .selectorPanel {
   margin-bottom: 20px;
   padding: 16px 18px;
-  border: 1px solid var(--border);
-  border-radius: var(--panel-radius, 16px);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--accent) 5%, var(--surface)), var(--surface) 48%);
-  box-shadow: 0px 2px 3px -1px rgba(0, 0, 0, 0.1), 0px 1px 0px 0px rgba(25, 28, 33, 0.02), 0px 0px 0px 1px rgba(25, 28, 33, 0.08);
+  border: 0;
+  border-radius: 0;
+  background: var(--surface);
+  box-shadow: none;
 }
 
 .jobForm p {
@@ -105,10 +104,10 @@
 
 .resultSummary {
   padding: 24px;
-  border: 1px solid var(--border);
-  border-radius: var(--panel-radius, 16px);
+  border: 0;
+  border-radius: 0;
   background: var(--surface);
-  box-shadow: var(--panel-shadow, none);
+  box-shadow: none;
   margin-bottom: 20px;
 }
 
@@ -122,7 +121,7 @@
 .resultSummaryHeading h2 {
   margin: 0;
   font-size: 21px;
-  letter-spacing: -0.02em;
+  letter-spacing: normal;
   text-wrap: balance;
 }
 
@@ -136,8 +135,8 @@
 .resultSummaryHeading > span {
   flex: 0 0 auto;
   padding: 7px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 0;
+  border-radius: 0;
   background: var(--surface-muted);
   color: var(--text-muted);
   font-size: 11px;
@@ -149,9 +148,9 @@
   gap: 1px;
   margin-top: 20px;
   overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: var(--control-radius, 10px);
-  background: var(--border);
+  border: 0;
+  border-radius: 0;
+  background: var(--surface);
 }
 
 .evidenceSummaryGrid > div {
@@ -160,7 +159,7 @@
   gap: 4px;
   min-width: 0;
   padding: 16px 18px;
-  background: color-mix(in srgb, var(--surface-muted) 82%, var(--surface));
+  background: var(--surface);
 }
 
 .evidenceSummaryGrid span,
@@ -199,7 +198,7 @@
   margin: 18px 0 14px;
   padding: 0 0 18px;
   border: 0;
-  border-bottom: 1px solid var(--border);
+  border: 0;
   border-radius: 0;
   box-shadow: none;
 }
@@ -225,10 +224,10 @@
 
 .detailDisclosure {
   margin-bottom: 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--panel-radius, 16px);
+  border: 0;
+  border-radius: 0;
   background: var(--surface);
-  box-shadow: var(--panel-shadow, none);
+  box-shadow: none;
 }
 
 .detailDisclosure > summary {
@@ -278,7 +277,7 @@
 
 .disclosureBody {
   padding: 6px 22px 22px;
-  border-top: 1px solid var(--border);
+  border: 0;
 }
 
 .disclosureBody h2 {
@@ -485,7 +484,7 @@
   height: 5px;
   overflow: hidden;
   border-radius: 99px;
-  background: var(--border);
+  background: var(--surface);
 }
 
 .progressTrack span {
@@ -687,17 +686,17 @@
   gap: 24px;
   min-width: 0;
   padding: 22px 24px;
-  border: 1px solid var(--border);
-  border-radius: var(--panel-radius, 16px);
+  border: 0;
+  border-radius: 0;
   background: var(--surface);
-  box-shadow: var(--panel-shadow, none);
+  box-shadow: none;
 }
 
 .forecastSetup {
   padding: 20px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--control-radius, 10px);
-  background: color-mix(in srgb, var(--accent) 4%, var(--surface-muted));
+  border: 0;
+  border-radius: 0;
+  background: var(--surface);
 }
 
 .setupHeading h4 {
@@ -755,8 +754,8 @@
   gap: 4px;
   min-width: 0;
   padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--control-radius, 10px);
+  border: 0;
+  border-radius: 0;
   background: var(--surface);
 }
 
@@ -778,8 +777,8 @@
 }
 
 .formDisclosure {
-  border: 1px solid var(--border);
-  border-radius: var(--control-radius, 10px);
+  border: 0;
+  border-radius: 0;
   background: var(--surface);
 }
 
@@ -796,7 +795,7 @@
   display: grid;
   gap: 16px;
   padding: 4px 14px 14px;
-  border-top: 1px solid var(--border);
+  border: 0;
 }
 
 .formDisclosure fieldset:first-child,
@@ -811,8 +810,8 @@
 .jobForm fieldset {
   min-width: 0;
   padding: 17px;
-  border: 1px solid var(--border);
-  border-radius: var(--control-radius, 10px);
+  border: 0;
+  border-radius: 0;
 }
 
 .jobForm legend {
@@ -838,8 +837,8 @@
 .comparisonToggle {
   min-height: 44px;
   padding: 13px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--control-radius, 10px);
+  border: 0;
+  border-radius: 0;
   background: var(--surface);
 }
 
@@ -984,3 +983,8 @@
   color: var(--text-muted);
   font-size: 12px;
 }
+
+.selectorPanel, .resultSummary { padding-inline: 0; }
+.resultSummaryHeading > span, .panelHeading > span, .formTitle > span { background: none; padding: 0; }
+.evidenceSummaryGrid { gap: 24px; }
+.evidenceSummaryGrid > div { padding-inline: 0; }
