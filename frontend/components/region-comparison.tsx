@@ -54,7 +54,7 @@ export function RegionComparison({
       <div className="region-table-toolbar">
         <div>
           <h2 id="region-table-title">
-            Regional consumption <span className="count-badge">5</span>
+            Regional consumption
           </h2>
         </div>
         <label className="sort-pill">

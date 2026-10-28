@@ -19,7 +19,7 @@ export function OverviewCaseStudies() {
       <div className={styles.studyGrid}>
         <article className={styles.study}>
           <span className={styles.studyScope}>
-            01 · NO1 · January–December 2025
+            NO1 · January–December 2025
           </span>
           <h3>Did Eastern Norway generate as much as it used?</h3>
           <div className={styles.finding}>
@@ -43,7 +43,7 @@ export function OverviewCaseStudies() {
         </article>
         <article className={styles.study}>
           <span className={styles.studyScope}>
-            02 · NO1–NO5 · 19 matched area-days
+            NO1–NO5 · 19 matched area-days
           </span>
           <h3>Can a model improve on repeating last week?</h3>
           <div className={styles.finding}>
@@ -72,7 +72,7 @@ export function OverviewCaseStudies() {
         </article>
         <article className={styles.study}>
           <span className={styles.studyScope}>
-            03 · Bergen weather point · July 2024–June 2025
+            Bergen weather point · July 2024–June 2025
           </span>
           <h3>What can a snow-transport model tell us?</h3>
           <div className={styles.finding}>

@@ -1,7 +1,7 @@
 .region-comparison {
   margin: 24px 0;
-  border: 1px solid var(--border);
-  border-radius: var(--panel-radius);
+  border: 0;
+  border-radius: 0;
   overflow: hidden;
   background: var(--surface);
 }
@@ -18,7 +18,7 @@
   align-items: center;
   font-size: 16px;
   margin: 0;
-  letter-spacing: -0.3px;
+  letter-spacing: normal;
 }
 .region-table-toolbar p {
   color: var(--text-muted);
@@ -27,8 +27,8 @@
 }
 .count-badge {
   padding: 1px 7px;
-  border: 1px solid var(--border);
-  border-radius: var(--control-radius);
+  border: 0;
+  border-radius: 0;
   background: var(--surface-muted);
   color: var(--text-muted);
   font-size: 11px;
@@ -73,7 +73,7 @@
 .region-comparison th,
 .region-comparison td {
   padding: 15px 24px;
-  border-top: 1px solid var(--border);
+  border-top: 0;
   white-space: nowrap;
 }
 .region-comparison tr[data-selected="true"] {
@@ -128,7 +128,7 @@
   align-items: center;
   gap: 6px;
   padding: 3px 8px;
-  border-radius: var(--control-radius);
+  border-radius: 0;
   color: var(--success);
   background: var(--success-soft);
   font-size: 12px;
@@ -161,7 +161,7 @@
   display: flex;
   justify-content: space-between;
   gap: 15px;
-  border-top: 1px solid var(--border);
+  border-top: 0;
   padding: 12px 20px;
   font-size: 11px;
   color: var(--text-muted);
@@ -200,7 +200,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 18px 24px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 0;
   flex-shrink: 0;
 }
 .region-drawer > header > span {
@@ -235,7 +235,7 @@
   display: flex;
   gap: 14px;
   align-items: center;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 0;
 }
 .region-identity .region-code {
   height: 46px;
@@ -254,7 +254,7 @@
 }
 .drawer-section {
   padding: 24px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 0;
 }
 .drawer-section h3 {
   font-size: 11px;
@@ -314,7 +314,7 @@
 }
 .region-drawer > footer {
   flex-direction: row;
-  border-top: 1px solid var(--border);
+  border-top: 0;
   border-bottom: 0;
   margin: 0;
 }
@@ -372,3 +372,7 @@ body:has(.region-drawer[open]) {
 .region-drawer[data-instant="true"] {
   transition: none;
 }
+
+.count-badge, .coverage-badge, .coverage-badge.is-partial { background: none; padding-inline: 0; color: var(--text-muted); }
+.coverage-badge i { display: none; }
+.region-table-toolbar { padding-inline: 0; }
