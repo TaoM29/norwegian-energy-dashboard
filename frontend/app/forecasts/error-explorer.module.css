@@ -1,8 +1,8 @@
 .panel {
   margin: 0 0 20px;
   padding: 26px;
-  border: 0;
-  border-radius: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--panel-radius);
   background: var(--surface);
   box-shadow: var(--panel-shadow, none);
 }
@@ -61,5 +61,3 @@
   .inspect:hover span { text-decoration: underline; }
   .controls select:hover { border-color: var(--border-strong); }
 }
-
-.panel { padding-inline: 0; }
