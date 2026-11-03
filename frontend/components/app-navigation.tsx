@@ -24,7 +24,6 @@ type Destination = {
   href: string;
   label: string;
   icon: LucideIcon;
-  title?: string;
 };
 
 const navigationGroups: { label: string; destinations: Destination[] }[] = [
@@ -34,7 +33,6 @@ const navigationGroups: { label: string; destinations: Destination[] }[] = [
       {
         href: "/",
         label: "Overview",
-        title: "Energy overview",
         icon: LayoutDashboard,
       },
       { href: "/explore", label: "Explore", icon: Compass },
@@ -71,9 +69,6 @@ export function AppNavigation() {
       window.removeEventListener(DASHBOARD_URL_CHANGE_EVENT, update);
     };
   }, [path]);
-
-  const activeDestination =
-    destinations.find(({ href }) => href === path) ?? destinations[0];
 
   return (
     <>
@@ -157,9 +152,6 @@ export function AppNavigation() {
       </aside>
 
       <header className="site-header">
-        <div className="site-header-context" aria-label="Current workspace">
-          <strong>{activeDestination.title ?? activeDestination.label}</strong>
-        </div>
         <ThemeToggle />
       </header>
     </>

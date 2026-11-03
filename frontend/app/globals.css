@@ -722,25 +722,10 @@ footer code {
   padding: 0 32px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 16px;
   background: var(--surface);
   border: 0;
-}
-.site-header-context {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  min-width: 0;
-  color: var(--text-muted);
-  font-size: 12px;
-}
-.site-header-context strong {
-  overflow: hidden;
-  color: var(--text);
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .workspace > main,
 main.analysis-main {
@@ -904,10 +889,6 @@ button:active:not(:disabled) {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-  .site-header-context > span:first-child,
-  .site-header-context > span:nth-child(2) {
-    display: none;
   }
   .page-heading {
     align-items: flex-start;
