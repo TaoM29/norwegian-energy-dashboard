@@ -195,7 +195,7 @@
 
 .primaryChart .resultFilters {
   gap: 16px 18px;
-  margin: 18px 0 14px;
+  margin: 16px 0 14px;
   padding: 0 0 18px;
   border: 0;
   border-bottom: 1px solid var(--border);
@@ -991,3 +991,5 @@
 .resultSummaryHeading > span, .panelHeading > span, .formTitle > span { background: none; padding: 0; }
 .evidenceSummaryGrid { gap: 24px; }
 .evidenceSummaryGrid > div { padding-inline: 0; }
+
+.primaryChart .panelHeading h2 { margin: 0; }

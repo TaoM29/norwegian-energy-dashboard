@@ -112,7 +112,7 @@ test("applied filters, navigation hrefs and Back preserve the observation worksp
   await nav.getByRole("link", { name: "Forecasts", exact: true }).click();
   await page.getByText("Metric details and downloads", { exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Accuracy and interval quality" }),
+    page.getByRole("combobox", { name: "Metric breakdown", exact: true }),
   ).toBeVisible();
   await page
     .getByRole("form", { name: "Stored result filters" })
@@ -154,7 +154,7 @@ test("diagnostic drafts retain applied results and regional groups need no modif
     .click();
   await page.getByText("Regional values and coverage", { exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Regional values" }),
+    page.getByRole("table", { name: "Regional values", exact: true }),
   ).toBeVisible();
   const groups = page.getByRole("group", {
     name: "Energy groups",
@@ -382,7 +382,7 @@ test("regional tasks load independently and preserve mode history", async ({
   );
   await page.getByText("Regional values and coverage", { exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Regional values", exact: true }),
+    page.getByRole("table", { name: "Regional values", exact: true }),
   ).toBeVisible();
   expect(calls.some((url) => url.includes("snow-drift"))).toBe(false);
   await expect(
@@ -408,7 +408,7 @@ test("regional tasks load independently and preserve mode history", async ({
   ).toHaveAttribute("aria-selected", "true");
   await page.getByText("Regional values and coverage", { exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Regional values", exact: true }),
+    page.getByRole("table", { name: "Regional values", exact: true }),
   ).toBeVisible();
 });
 

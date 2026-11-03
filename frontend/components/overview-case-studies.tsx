@@ -1,20 +1,16 @@
 import { ArrowRight } from "lucide-react";
 import styles from "./overview-insights.module.css";
 
-export function OverviewCaseStudies() {
+export function OverviewCaseStudies({ className = "" }: { className?: string }) {
   return (
-    <section className={styles.studies} aria-labelledby="case-studies-title">
+    <section className={`${styles.studies} ${className}`} aria-labelledby="case-studies-title">
       <div className={styles.sectionHeading}>
         <div>
-          <h2 id="case-studies-title">Recorded findings</h2>
           <p>
             Recorded examples from the September 2026 validation snapshots,
             independent of current filters and synthetic fixtures.
           </p>
         </div>
-        <a href="/methods">
-          Methods & evidence <ArrowRight size={14} />
-        </a>
       </div>
       <div className={styles.studyGrid}>
         <article className={styles.study}>

@@ -80,7 +80,7 @@ test("analysis and regional workspaces use the offline snapshots", async ({
   await page.goto("/regional");
   await page.getByText("Regional values and coverage", { exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Regional values" }),
+    page.getByRole("table", { name: "Regional values", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Seasonal transport", exact: true }),
@@ -114,7 +114,7 @@ test("prepared forecasts are readable with public custom jobs disabled", async (
   ).toContainText("1 Nov 2025");
   await page.getByText("Metric details and downloads", { exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Accuracy and interval quality" }),
+    page.getByRole("combobox", { name: "Metric breakdown", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Run SARIMAX job" }),
@@ -203,13 +203,13 @@ test("light and dark choices persist across pages and ignore device theme change
     animations: "disabled",
   });
   const darkSurface = await page
-    .locator(".site-header")
+    .locator(".theme-toggle")
     .evaluate((node) => getComputedStyle(node).backgroundColor);
   await page.getByRole("button", { name: "Light", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   expect(
     await page
-      .locator(".site-header")
+      .locator(".theme-toggle")
       .evaluate((node) => getComputedStyle(node).backgroundColor),
   ).not.toBe(darkSurface);
   await page

@@ -1607,7 +1607,7 @@ export default function ForecastsClient() {
 
           <details className={styles.detailDisclosure}>
             <summary>
-              <span>Evidence, availability and limitations</span>
+              <span>Data availability</span>
             </summary>
             <div className={styles.disclosureBody}>
               <section
@@ -1726,20 +1726,15 @@ export default function ForecastsClient() {
               <span>Metric details and downloads</span>
             </summary>
             <div className={styles.disclosureBody}>
-              <div className={styles.panelHeading}>
-                <div>
-                  <span className={styles.sectionKicker}>
-                    {detail.kind === "sarimax"
-                      ? "Rolling-origin development metrics"
-                      : ["holdout", "matched_holdout"].includes(view.split)
-                        ? isExploratoryStudy
-                          ? "Matched exploratory study"
-                          : "Untouched final holdout"
-                        : "Model development split"}
-                  </span>
-                  <h2>Accuracy and interval quality</h2>
-                </div>
-              </div>
+              <p className={styles.summaryScope}>
+                {detail.kind === "sarimax"
+                  ? "Rolling-origin development metrics"
+                  : ["holdout", "matched_holdout"].includes(view.split)
+                    ? isExploratoryStudy
+                  ? "Matched exploratory study"
+                  : "Untouched final holdout"
+                    : "Model development split"}
+              </p>
               <HelpTip label="Metric definitions" iconOnly>
                 MAE and RMSE use kWh. Coverage is the share of outcomes inside
                 the interval; width measures sharpness, and pinball loss
@@ -1802,7 +1797,7 @@ export default function ForecastsClient() {
 
           <details className={styles.detailDisclosure}>
             <summary>
-              <span>Methods, sources and limitations</span>
+              <span>Methods & provenance</span>
             </summary>
             <div className={styles.disclosureBody}>
               <p>

@@ -27,8 +27,8 @@
 .sourceDetails {
   min-width: 0;
 }
-.docDisclosure {
-  margin-bottom: 0;
+.content .docDisclosure {
+  margin: 0;
   border-bottom: 1px solid var(--border);
 }
 .docDisclosure > summary,
@@ -38,7 +38,7 @@
   font-weight: 650;
 }
 .docDisclosure > summary {
-  padding: 22px 0;
+  padding: 16px 0;
 }
 .sourceDetails > summary {
   width: fit-content;
@@ -52,6 +52,7 @@
 }
 .docDisclosure > :global(.analysis-panel) {
   margin: 0;
+  padding: 0 0 20px;
   border: 0;
   background: transparent;
   box-shadow: none;
@@ -119,4 +120,10 @@
     gap: 24px;
     padding-top: 24px;
   }
+}
+
+.content .caseStudies {
+  margin: 0;
+  padding: 0 0 20px;
+  border: 0;
 }

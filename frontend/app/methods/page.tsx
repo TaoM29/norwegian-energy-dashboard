@@ -94,7 +94,6 @@ export default function Methods() {
         <details className={styles.docDisclosure}>
           <summary>Forecast models and evaluation</summary>
         <section className={`analysis-panel ${styles.modelSection}`}>
-          <h2>Forecast model cards</h2>
           <p>
             The flagship task predicts 24 hours of household demand in all five
             areas. Energy becomes eligible after the interval ends plus an
@@ -145,9 +144,8 @@ export default function Methods() {
         </section>
         </details>
         <details className={styles.docDisclosure}>
-          <summary>Demand sensitivity</summary>
+          <summary>Weather-adjusted demand sensitivity</summary>
         <section className="analysis-panel">
-          <h2>Weather-adjusted demand sensitivity</h2>
           <p>
             The <a href="/diagnostics?view=sensitivity">Demand sensitivity</a>
             study is a saved retrospective analysis of hourly household demand
@@ -175,13 +173,12 @@ export default function Methods() {
         </section>
         </details>
         <details className={styles.docDisclosure}>
-          <summary>Validation case studies</summary>
-        <OverviewCaseStudies />
+          <summary id="case-studies-title">Validation case studies</summary>
+        <OverviewCaseStudies className={styles.caseStudies} />
         </details>
         <details className={styles.docDisclosure}>
           <summary>Architecture and reproducibility</summary>
         <section className="analysis-panel">
-          <h2>Architecture and reproducibility</h2>
           <p>
             Public sources → validated hourly SQLite and weather snapshots →
             FastAPI analysis and stored forecast artifacts → Next.js charts and

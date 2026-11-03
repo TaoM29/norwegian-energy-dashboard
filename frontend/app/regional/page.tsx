@@ -1118,9 +1118,8 @@ export default function RegionalPage() {
         <details className={styles.secondaryAnalysis}>
           <summary>Regional values and coverage</summary>
         <section className="analysis-panel">
-          <h2>Regional values</h2>
           <div className={styles.tableWrap}>
-            <table>
+            <table aria-label="Regional values">
               <thead>
                 <tr>
                   <th>Area</th>
