@@ -3,6 +3,7 @@
 import { type ReactNode } from "react";
 import { AppNavigation } from "./app-navigation";
 import "./analysis.css";
+import { ThemeToggle } from "./theme-toggle";
 
 export function AnalysisShell({
   title,
@@ -22,6 +23,7 @@ export function AnalysisShell({
           <div>
             <h1>{title}</h1>
           </div>
+          <ThemeToggle />
         </header>
         {children}
         <footer className="analysis-footer">

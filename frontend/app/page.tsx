@@ -1,5 +1,7 @@
 "use client";
 
+import { ThemeToggle } from "@/components/theme-toggle";
+
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
@@ -225,6 +227,7 @@ export default function Page() {
               <h1>Energy overview</h1>
             </div>
             <div className="page-actions">
+              <ThemeToggle />
               <ExportMenu>
                 <Button
                   variant="outline"

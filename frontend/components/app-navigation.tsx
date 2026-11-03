@@ -14,7 +14,6 @@ import {
   Waves,
   type LucideIcon,
 } from "lucide-react";
-import { ThemeToggle } from "./theme-toggle";
 import {
   DASHBOARD_URL_CHANGE_EVENT,
   dashboardDestination,
@@ -151,9 +150,6 @@ export function AppNavigation() {
         <a className="site-source-link" href="https://github.com/TaoM29/norwegian-energy-dashboard">View source ↗</a>
       </aside>
 
-      <header className="site-header">
-        <ThemeToggle />
-      </header>
     </>
   );
 }

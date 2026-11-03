@@ -713,20 +713,6 @@ footer code {
 .site-navigation a[aria-current="page"] svg {
   color: var(--accent);
 }
-.site-header {
-  position: sticky;
-  z-index: 15;
-  top: 0;
-  height: 64px;
-  margin-left: var(--sidebar-width);
-  padding: 0 32px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 16px;
-  background: var(--surface);
-  border: 0;
-}
 .workspace > main,
 main.analysis-main {
   width: calc(100% - var(--sidebar-width));
@@ -849,12 +835,6 @@ button:active:not(:disabled) {
     min-height: 32px;
     padding: 6px 7px;
   }
-  .site-header {
-    position: sticky;
-    height: 48px;
-    margin-left: 0;
-    padding: 0 18px;
-  }
   .workspace {
     width: 100%;
     margin-left: 0;
@@ -949,7 +929,7 @@ button:active:not(:disabled) {
 
 .site-source-link { display: inline-block; margin: 28px 12px 0; padding: 8px 0; color: var(--text-muted); font-size: 12px; }
 .analysis-heading > .help-trigger { flex-shrink: 0; }
-@media (max-width: 620px) { .analysis-heading { align-items: start; flex-direction: column; gap: 8px; } }
+@media (max-width: 620px) { .analysis-heading { align-items: center; gap: 16px; } }
 @media (max-width: 800px) { .site-source-link { display: none; } }
 
 .area-filter { display: grid; gap: 7px; min-width: 230px; }
@@ -1013,3 +993,11 @@ button:active:not(:disabled) {
 .site-navigation a[aria-current="page"] svg { color: inherit; }
 .fixture-banner, .notice { background: var(--surface); }
 em { font-style: normal; font-weight: 600; }
+
+/* Theme controls share the page heading instead of reserving an empty toolbar. */
+.page-heading h1, .analysis-heading h1 { margin-bottom: 0; }
+.page-actions, .analysis-heading > .theme-toggle { flex-shrink: 0; }
+@media (max-width: 650px) {
+  .page-heading { gap: 12px; }
+  .page-actions { width: 100%; justify-content: flex-end; }
+}
