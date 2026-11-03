@@ -116,8 +116,8 @@ h1 > span {
   display: flex;
   align-items: center;
   gap: 28px;
-  border: 0;
-  border-radius: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--panel-radius);
   background: var(--surface);
   padding: 22px 24px;
   margin-bottom: 24px;
@@ -200,8 +200,8 @@ h1 > span {
   gap: 22px;
 }
 .panel {
-  border: 0;
-  border-radius: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--panel-radius);
   box-shadow: none;
   padding: 26px;
   scroll-margin-top: 20px;
@@ -351,7 +351,7 @@ th,
 td {
   padding: 11px 16px;
   text-align: right;
-  border: 0;
+  border-bottom: 1px solid var(--border);
   font-weight: 400;
   white-space: nowrap;
 }
@@ -396,8 +396,8 @@ footer code {
 }
 .state-panel {
   min-height: 380px;
-  border: 0;
-  border-radius: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--panel-radius);
   background: var(--surface);
   padding: 70px 30px;
   display: flex;
@@ -1023,9 +1023,7 @@ button:active:not(:disabled) {
   }
 }
 
-/* Open sections use spacing rather than decorative frames. */
-.panel, .filterbar { padding-inline: 0; }
-.panel { padding-block: 28px; }
+/* Keep summary metrics open inside the framed analytical sections. */
 .metrics { gap: 24px; }
 .metric { padding-inline: 0; }
 .metric-title { flex-direction: row; align-items: center; }
